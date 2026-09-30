@@ -15,7 +15,7 @@ OSM_SNAPSHOT_DATE = "2026-07-27"
 
 # Common CRS — UTM zone 45N covers all of Nepal
 CRS = "EPSG:32645"
-
+PIXEL_SIZE = 30
 # Data directories
 DEM_DIR       = "data/raw/dem"
 S1_DIR        = "data/raw/s1"
