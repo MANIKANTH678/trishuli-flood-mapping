@@ -1,0 +1,16 @@
+numpy==2.1.*
+scipy==1.14.*
+pandas==2.2.*
+rasterio==1.5.*
+rioxarray==0.18.*
+geopandas==1.0.*
+shapely==2.0.*
+pyproj==3.7.*
+pyrosm==0.6.*
+tifffile==2024.*
+imagecodecs==2024.*
+Pillow==11.*
+networkx==3.4.*
+folium==0.18.*
+boto3==1.35.*
+requests==2.32.*
