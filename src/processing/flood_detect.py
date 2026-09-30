@@ -54,7 +54,9 @@ def detect_flood(pre_vv_path, post_vv_path, dem_path, out_path,
     print(f"   threshold = {t:.2f} dB")
 
     print("🌊 Classifying pixels...")
-    flood = (diff < t).astype(np.uint8)
+    threshold = min(t, -1.5)
+    print(f"   using threshold = {threshold:.2f} dB (Otsu was {t:.2f})")
+    flood = (diff < threshold).astype(np.uint8)
 
     print("🚫 Masking steep slopes (>15°) and permanent water (<-18 dB)...")
     dy, dx = np.gradient(dem.values, 30, 30)
