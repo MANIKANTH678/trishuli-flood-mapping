@@ -38,10 +38,17 @@ roads, and settlements.
 
 ## Reproduce
 
+```bash
 python -m src.processing.align
 python -m src.processing.flood_detect
-python -m src.models.train_xgb
-python -m src.processing.damage
-python -m src.processing.cutoff
+python -m src.modeling.features
+python -m src.modeling.train
+python -m src.modeling.predict
 python -m src.report.impact
 python -m src.report.dashboard_full
+```
+
+The building, road and settlement intersections (P1) were delivered as
+`outputs/affected_buildings.gpkg`, `outputs/affected_roads.geojson` and
+`outputs/cutoff_settlements.json`; `src.report.impact` and the dashboard
+build from those files.
