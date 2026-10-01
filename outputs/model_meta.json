@@ -1,0 +1,18 @@
+{
+  "auc": 0.997936389999871,
+  "optimal_threshold": 0.96,
+  "f1_at_optimal": 0.5796539661529735,
+  "n_features": 9,
+  "features": [
+    "elevation",
+    "slope",
+    "aspect",
+    "tpi",
+    "dist_lowland",
+    "vv_diff",
+    "vh_diff",
+    "vv_pre",
+    "vh_pre"
+  ],
+  "neg_ratio": 10
+}
