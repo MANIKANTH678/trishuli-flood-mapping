@@ -2,6 +2,7 @@
 
 **Track B — Multimodal AI Hackathon 2026**
 
+
 Post-event damage assessment for the **26 August 2026 Trishuli–Bhote Koshi
 flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, DEM,
 OpenStreetMap, and Copernicus EMS Rapid Mapping reference data.
@@ -82,3 +83,5 @@ Full discussion: `FINAL_REPORT.md`.
 ## Attribution
 
 See [ATTRIBUTION.md](ATTRIBUTION.md). Code: MIT. Data: own licenses.
+=======
+
