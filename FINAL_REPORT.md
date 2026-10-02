@@ -327,6 +327,49 @@ Key artifacts:
 
 ---
 
+---
+
+## Appendix A — Figures
+
+**Figure A1.** Binary flood mask (`data/processed/flood_mask.tif`) over the study
+area. The 47 km² of detected pixels are scattered across the whole 1.5° × 1.0°
+mosaic and do not follow the Trishuli / Bhote Koshi corridor. This is the
+negative result in one image.
+
+![Flood mask](outputs/figures/01_flood_mask.png)
+
+**Figure A2.** EMSR927 AOIs (colored outlines) over the post-event VV
+backscatter. The four AOIs cover the GLOF-affected corridor, but the SAR
+imagery is dominated by terrain rather than a flood signature.
+
+![EMSR927 AOIs over VV](outputs/figures/02_emsr927_aois.png)
+
+**Figure A3.** Median VV backscatter change per AOI, compared against the
+expected GLOF signature band (−5 to −10 dB, green shaded). Every AOI sits
+within ±0.5 dB of zero — the signal is not in the data.
+
+![Backscatter change per AOI](outputs/figures/03_backscatter_change.png)
+
+**Figure A4.** U-Net training history on Sen1Floods11. Loss decreases
+monotonically; validation IoU peaks at 0.523 (epoch 6) and then oscillates —
+the model has converged on a 252-chip dataset.
+
+![U-Net training history](outputs/figures/04_unet_training.png)
+
+**Figure A5.** Damage overcount. Our flood-driven pipeline flags 61,977
+buildings; EMSR927 mapped 3,816 damaged structures. The 16× gap quantifies
+that the SAR mask driving our impact layer is noise.
+
+![Damage overcount](outputs/figures/05_damage_overcount.png)
+
+**Figure A6.** Per-AOI EMSR927 validation. Destroyed-building recall is zero at
+both Rasuwa AOIs (Syapru Besi, Timure) — the locations where the GLOF actually
+occurred.
+
+![EMSR927 validation](outputs/figures/06_emsr927_validation.png)
+
+---
+
 ## 8. Attribution
 
 Full data attribution in [ATTRIBUTION.md](ATTRIBUTION.md). Contains modified
