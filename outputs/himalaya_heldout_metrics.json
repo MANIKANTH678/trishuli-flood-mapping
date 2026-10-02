@@ -1,0 +1,155 @@
+{
+  "dataset": "Sen1Floods11 v1.1 (hand-labeled)",
+  "model_checkpoint": "outputs/flood_unet.pt",
+  "device": "cpu",
+  "caveat": "Sen1Floods11 contains no true Himalayan/SAR-mountain-flood scenes. The 'proxy_himalaya' section uses the closest-available monsoon-subcontinent chips (India, Pakistan). The 'rasuwa_prediction' section is prediction-only \u2014 no ground truth exists for that event.",
+  "sen1floods11_full_val": {
+    "iou": 0.5736,
+    "f1": 0.7291,
+    "precision": 0.723,
+    "recall": 0.7352,
+    "overall_accuracy": 0.9398,
+    "n_chips": 89
+  },
+  "proxy_himalaya": {
+    "regions": [
+      "India",
+      "Pakistan"
+    ],
+    "iou": 0.5543,
+    "f1": 0.7132,
+    "precision": 0.6849,
+    "recall": 0.744,
+    "overall_accuracy": 0.9234,
+    "n_chips": 20,
+    "per_chip": [
+      {
+        "chip": "India_1050276_S1Hand.tif",
+        "iou": 0.4023,
+        "f1": 0.5738,
+        "n_water_px": 49005
+      },
+      {
+        "chip": "India_764946_S1Hand.tif",
+        "iou": 0.3454,
+        "f1": 0.5134,
+        "n_water_px": 3146
+      },
+      {
+        "chip": "India_118868_S1Hand.tif",
+        "iou": 0.0431,
+        "f1": 0.0826,
+        "n_water_px": 10782
+      },
+      {
+        "chip": "India_533192_S1Hand.tif",
+        "iou": 0.6471,
+        "f1": 0.7857,
+        "n_water_px": 49070
+      },
+      {
+        "chip": "India_180633_S1Hand.tif",
+        "iou": 0.8492,
+        "f1": 0.9184,
+        "n_water_px": 75763
+      },
+      {
+        "chip": "India_244057_S1Hand.tif",
+        "iou": 0.0,
+        "f1": 0.0,
+        "n_water_px": 5
+      },
+      {
+        "chip": "India_691027_S1Hand.tif",
+        "iou": 0.2763,
+        "f1": 0.4329,
+        "n_water_px": 8394
+      },
+      {
+        "chip": "India_769408_S1Hand.tif",
+        "iou": 0.2603,
+        "f1": 0.4131,
+        "n_water_px": 8582
+      },
+      {
+        "chip": "India_1018317_S1Hand.tif",
+        "iou": 0.8638,
+        "f1": 0.9269,
+        "n_water_px": 150710
+      },
+      {
+        "chip": "India_869358_S1Hand.tif",
+        "iou": 0.1889,
+        "f1": 0.3177,
+        "n_water_px": 5050
+      },
+      {
+        "chip": "India_164336_S1Hand.tif",
+        "iou": 0.0475,
+        "f1": 0.0906,
+        "n_water_px": 1881
+      },
+      {
+        "chip": "India_70352_S1Hand.tif",
+        "iou": 0.6372,
+        "f1": 0.7784,
+        "n_water_px": 13188
+      },
+      {
+        "chip": "India_833266_S1Hand.tif",
+        "iou": 0.0751,
+        "f1": 0.1397,
+        "n_water_px": 18262
+      },
+      {
+        "chip": "India_1068117_S1Hand.tif",
+        "iou": 0.4497,
+        "f1": 0.6204,
+        "n_water_px": 47960
+      },
+      {
+        "chip": "Pakistan_43105_S1Hand.tif",
+        "iou": 0.0001,
+        "f1": 0.0002,
+        "n_water_px": 271
+      },
+      {
+        "chip": "Pakistan_94095_S1Hand.tif",
+        "iou": 0.5244,
+        "f1": 0.688,
+        "n_water_px": 53566
+      },
+      {
+        "chip": "Pakistan_210595_S1Hand.tif",
+        "iou": 0.0,
+        "f1": 0.0,
+        "n_water_px": 0
+      },
+      {
+        "chip": "Pakistan_1027214_S1Hand.tif",
+        "iou": 0.4286,
+        "f1": 0.6,
+        "n_water_px": 23870
+      },
+      {
+        "chip": "Pakistan_336228_S1Hand.tif",
+        "iou": 0.0,
+        "f1": 0.0,
+        "n_water_px": 0
+      },
+      {
+        "chip": "Pakistan_9684_S1Hand.tif",
+        "iou": 0.2383,
+        "f1": 0.3849,
+        "n_water_px": 1196
+      }
+    ]
+  },
+  "rasuwa_prediction": {
+    "n_tiles": 234,
+    "flood_px": 0,
+    "total_px": 61341696,
+    "predicted_flood_fraction": 0.0,
+    "note": "Prediction-only. No ground-truth mask exists for the Rasuwa GLOF; the S1 pre/post pair was shown not to contain the flood signal (see outputs/diagnostics/aoi_backscatter_diagnostics.json). Values here reflect the model's response, not real accuracy."
+  }
+}

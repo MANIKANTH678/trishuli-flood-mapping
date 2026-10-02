@@ -116,6 +116,27 @@ def detect(pre_vv_p, post_vv_p, pre_vh_p, post_vh_p, dem_p, out_dir):
         print("wrote %s: %d px (%.2f km2)" % (name, int(arr.sum()), arr.sum()*900/1e6))
 
 
+
+# ---- public helpers (importable, tested) --------------------------------
+
+def lee_filter_db(img_db, size=SPECKLE_SIZE, enl=4.0):
+    """dB-in/dB-out wrapper around lee_filter. Stable public name."""
+    return lee_filter(img_db, size=size)
+
+
+def otsu_or_fallback(diff, fallback, nbins=256):
+    """Return (threshold, source). Prefer skimage Otsu; fall back to constant."""
+    d = np.asarray(diff, dtype=np.float32)
+    v = d[np.isfinite(d)]
+    if v.size < 100:
+        return float(fallback), "fallback(insufficient-pixels)"
+    try:
+        from skimage.filters import threshold_otsu
+        return float(threshold_otsu(v, nbins=nbins)), "otsu"
+    except Exception as e:
+        return float(fallback), f"fallback({type(e).__name__})"
+
+
 if __name__ == "__main__":
     d = PROCESSED_DIR
     detect(

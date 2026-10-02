@@ -54,3 +54,11 @@ desktop.ini
 *.safe/
 *.zip
 *.log
+src/config.py
+*.env
+.env
+
+# --- remediation additions ---
+data/processed_southern_only/
+src/download/_archive/
+outputs/features/

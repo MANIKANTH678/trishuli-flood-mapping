@@ -6,13 +6,15 @@ Writes:
   outputs/flood_unet_last.pt   (last epoch)
   outputs/unet_metrics.json    (per-epoch metrics)
 """
-import json, time, signal, sys
+import json, time, signal, sys, os
 from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.modeling.dataset import Sen1Floods11
 from src.modeling.unet import UNet
