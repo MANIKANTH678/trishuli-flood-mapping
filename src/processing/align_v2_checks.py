@@ -11,7 +11,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-S1_ROOT = Path("data/raw/s1")
+S1_ROOT = Path("data/raw/sentinel1")
 
 
 def read_manifest(safe_dir: Path):

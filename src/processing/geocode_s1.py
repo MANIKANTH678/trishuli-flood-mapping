@@ -9,7 +9,7 @@ import subprocess, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-S1_ROOT = Path("data/raw/s1")
+S1_ROOT = Path("data/raw/sentinel1")
 SPLITS  = ["pre", "post"]
 POLS    = ["vv", "vh"]
 TARGET_EPSG = "32645"
