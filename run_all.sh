@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-BBOX="${1:-84.50,27.40,86.00,28.40}"
+BBOX="${1:-84.95,27.80,85.55,28.35}"
 
 echo "=== Trishuli flood pipeline  bbox=$BBOX ==="
 
