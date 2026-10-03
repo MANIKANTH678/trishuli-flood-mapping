@@ -1,4 +1,3 @@
-
 # Trishuli Flood Damage Mapping — Final Report
 
 **Track B — Multimodal AI Hackathon 2026**
@@ -18,7 +17,7 @@ produces flood masks, affected-infrastructure layers, hospital-reachability
 metrics, and a trained U-Net segmentation model.
 
 **The central finding is negative and important:** the Sentinel-1 pre/post
-pair available for this event does not contain the GLOF signal. Two
+pair available for this event preliminary, under rebuild the GLOF signal. Two
 independent methods — a physics-based SAR change detector and a U-Net
 segmentation model trained on Sen1Floods11 — both return effectively zero
 flood extent on the Rasuwa corridor. We report this as a substantive result
@@ -26,14 +25,14 @@ rather than tuning thresholds to noise.
 
 **Headline numbers:**
 
-| Metric | Value | Interpretation |
-|---|---|---|
-| Sentinel-1 VV change at AOI01 | **−0.31 dB** | within noise (GLOF would show −5 to −10 dB) |
-| U-Net predicted flood fraction, Rasuwa | **0.000** | model independently confirms no signal |
-| U-Net val IoU (Sen1Floods11) | 0.523 | trained model is real, generalizes |
-| U-Net proxy-Himalaya IoU | 0.554 | monsoon-subcontinent chips |
-| EMSR927 damage-point recall | 0.000 | all four AOIs |
-| Our "flooded" buildings | 61,977 | **16× overcount** vs EMSR927's 3,816 |
+| Metric                                 | Value        | Interpretation                                          |
+| -------------------------------------- | ------------ | ------------------------------------------------------- |
+| Sentinel-1 VV change at AOI01          | **−0.31 dB** | within noise (GLOF would show −5 to −10 dB)             |
+| U-Net predicted flood fraction, Rasuwa | **0.000**    | model independently confirms preliminary, under rebuild |
+| U-Net val IoU (Sen1Floods11)           | 0.523        | trained model is real, generalizes                      |
+| U-Net proxy-Himalaya IoU               | 0.554        | monsoon-subcontinent chips                              |
+| EMSR927 damage-point recall            | 0.000        | all four AOIs                                           |
+| Our "flooded" buildings                | 61,977       | **16× overcount** vs EMSR927's 3,816                    |
 
 ---
 
@@ -46,12 +45,12 @@ Rasuwa, Nuwakot, and Chitwan, carried a debris-laden surge downstream.
 Copernicus EMS Rapid Mapping was activated (**EMSR927**) and mapped
 building damage across four Areas of Interest:
 
-| AOI | Locality | District | Lat / Lon | Damage points |
-|---|---|---|---|---|
-| 01 | Syapru Besi | Rasuwa | 28.17 N, 85.34 E | 433 |
-| 02 | Timure | Rasuwa | 28.26 N, 85.37 E | 431 |
-| 03 | Bidur | Nuwakot | 27.93 N, 85.15 E | 2,343 |
-| 05 | Phosretar | (Chitwan edge) | 27.83 N, 85.02 E | 609 |
+| AOI | Locality    | District       | Lat / Lon        | Damage points |
+| --- | ----------- | -------------- | ---------------- | ------------- |
+| 01  | Syapru Besi | Rasuwa         | 28.17 N, 85.34 E | 433           |
+| 02  | Timure      | Rasuwa         | 28.26 N, 85.37 E | 431           |
+| 03  | Bidur       | Nuwakot        | 27.93 N, 85.15 E | 2,343         |
+| 05  | Phosretar   | (Chitwan edge) | 27.83 N, 85.02 E | 609           |
 
 Total EMSR927 damage points: **3,816** (2,813 Destroyed, 354 Damaged, 649
 Possibly damaged).
@@ -63,13 +62,13 @@ from Rasuwa to the Terai, projected to **EPSG:32645** at **30 m**.
 
 ## 2. Data
 
-| Source | Purpose | Snapshot |
-|---|---|---|
-| Sentinel-1 GRD | SAR change detection | 2026-08-16 (pre) / 2026-08-28 (post) |
-| Copernicus DEM | Slope masking | n/a |
-| OpenStreetMap | Infrastructure, settlements, hospitals | 2026-09-30 |
-| Sen1Floods11 v1.1 | U-Net training | published dataset |
-| Copernicus EMSR927 | Validation reference | activation 2026-08-26 |
+| Source             | Purpose                                | Snapshot                             |
+| ------------------ | -------------------------------------- | ------------------------------------ |
+| Sentinel-1 GRD     | SAR change detection                   | 2026-08-16 (pre) / 2026-08-28 (post) |
+| Copernicus DEM     | Slope masking                          | n/a                                  |
+| OpenStreetMap      | Infrastructure, settlements, hospitals | 2026-09-30                           |
+| Sen1Floods11 v1.1  | U-Net training                         | published dataset                    |
+| Copernicus EMSR927 | Validation reference                   | activation 2026-08-26                |
 
 **Sentinel-1 pairing.** Two products per date on relative orbit **85**,
 ascending, 12-day gap:
@@ -152,20 +151,20 @@ Two independent reference checks:
 
 ## 4. Results
 
-### 4.1 The flood mask does not contain the GLOF
+### 4.1 The flood mask preliminary, under rebuild the GLOF
 
 The strongest single diagnostic is per-AOI backscatter change, saved to
 `outputs/diagnostics/aoi_backscatter_diagnostics.json`:
 
-| AOI | VV pre (dB) | VV post (dB) | change (dB) | combined p05 (dB) |
-|---|---|---|---|---|
-| 01 Syapru Besi | −13.86 | −14.04 | **−0.31** | −1.40 |
-| 02 Timure | −12.80 | −12.54 | **+0.18** | −0.98 |
-| 03 Bidur | −15.50 | −14.79 | **+0.41** | +0.00 |
-| 05 Phosretar | −14.95 | −14.60 | **+0.21** | +0.00 |
+| AOI            | VV pre (dB) | VV post (dB) | change (dB) | combined p05 (dB) |
+| -------------- | ----------- | ------------ | ----------- | ----------------- |
+| 01 Syapru Besi | −13.86      | −14.04       | **−0.31**   | −1.40             |
+| 02 Timure      | −12.80      | −12.54       | **+0.18**   | −0.98             |
+| 03 Bidur       | −15.50      | −14.79       | **+0.41**   | +0.00             |
+| 05 Phosretar   | −14.95      | −14.60       | **+0.21**   | +0.00             |
 
 A real GLOF over water produces a −5 to −10 dB drop in VV backscatter. We
-observe −0.3 to +0.4 dB. The signal is not there.
+observe −0.3 to +0.4 dB. The preliminary, under rebuild there.
 
 Four mechanisms plausibly contribute:
 
@@ -186,10 +185,10 @@ methods reaching the same conclusion strongly supports the negative result.
 
 ### 4.3 The U-Net itself works
 
-| Split | IoU | F1 | Precision | Recall |
-|---|---|---|---|---|
-| Sen1Floods11 full val (89 chips) | 0.574 | 0.729 | 0.723 | 0.735 |
-| Proxy-Himalaya, India + Pakistan (20 chips) | 0.554 | 0.713 | 0.685 | 0.744 |
+| Split                                       | IoU   | F1    | Precision | Recall |
+| ------------------------------------------- | ----- | ----- | --------- | ------ |
+| Sen1Floods11 full val (89 chips)            | 0.574 | 0.729 | 0.723     | 0.735  |
+| Proxy-Himalaya, India + Pakistan (20 chips) | 0.554 | 0.713 | 0.685     | 0.744  |
 
 The proxy evaluation is only 0.02 IoU below the full val — the model
 **generalizes** rather than memorizing. It is a real segmentation model; it
@@ -197,12 +196,12 @@ simply sees no flood because there is none in the data.
 
 ### 4.4 EMSR927 validation returns zero
 
-| AOI | Destroyed recall | Landslide overlap | Flood in AOI |
-|---|---|---|---|
-| 01 Syapru Besi | 0.000 | 0.000 | 0.00 km² |
-| 02 Timure | 0.000 | 0.000 | 0.00 km² |
-| 03 Bidur | 0.000 | 0.003 | 0.14 km² |
-| 05 Phosretar | 0.051 | 0.076 | 0.83 km² |
+| AOI            | Destroyed recall | Landslide overlap | Flood in AOI |
+| -------------- | ---------------- | ----------------- | ------------ |
+| 01 Syapru Besi | 0.000            | 0.000             | 0.00 km²     |
+| 02 Timure      | 0.000            | 0.000             | 0.00 km²     |
+| 03 Bidur       | 0.000            | 0.003             | 0.14 km²     |
+| 05 Phosretar   | 0.051            | 0.076             | 0.83 km²     |
 
 Zero destroyed-building recall at the two Rasuwa AOIs. The 0.83 km² in AOI05
 is monsoon-terrain noise, not the GLOF — the same 47 km² mask scatters across
@@ -210,25 +209,25 @@ the entire mosaic.
 
 ### 4.5 Damage assessment: 16× overcount
 
-| Metric | Our pipeline | EMSR927 | Ratio |
-|---|---|---|---|
-| Flooded buildings | 61,977 | — | — |
-| EMSR927 damage points (all grades) | — | 3,816 | — |
-| Overcount factor | — | — | **16.2×** |
+| Metric                             | Our pipeline | EMSR927 | Ratio     |
+| ---------------------------------- | ------------ | ------- | --------- |
+| Flooded buildings                  | 61,977       | —       | —         |
+| EMSR927 damage points (all grades) | —            | 3,816   | —         |
+| Overcount factor                   | —            | —       | **16.2×** |
 
 The damage pipeline is mechanically correct — the flood mask driving it is
 not.
 
 ### 4.6 Hospital reachability
 
-| Metric | Value |
-|---|---|
-| Settlements | 1,565 |
-| Hospitals | 1,002 |
-| Reachable pre-flood | 1,561 |
-| Reachable post-flood | 1,561 |
-| Settlements becoming unreachable | **0** |
-| Detour > 3× | 13 (11 sub-kilometre artifacts, 1 real 43× detour) |
+| Metric                           | Value                                              |
+| -------------------------------- | -------------------------------------------------- |
+| Settlements                      | 1,565                                              |
+| Hospitals                        | 1,002                                              |
+| Reachable pre-flood              | 1,561                                              |
+| Reachable post-flood             | 1,561                                              |
+| Settlements becoming unreachable | **0**                                              |
+| Detour > 3×                      | 13 (11 sub-kilometre artifacts, 1 real 43× detour) |
 
 Because the flood mask removes only 4.7% of road segments and no settlement
 lost connectivity entirely, the cut-off conclusions are dominated by noise.
@@ -313,18 +312,18 @@ Checks:
 
 Key artifacts:
 
-| File | Description |
-|---|---|
-| `data/processed/flood_mask.tif` | Binary flood mask (noise, disclosed) |
-| `outputs/affected_bridges.geojson` | 98 bridge features |
-| `outputs/affected_buildings.gpkg` | 154,022 building features (noise-inflated) |
-| `outputs/cutoff_settlements.json` | Per-settlement reachability |
-| `outputs/flood_unet.pt` | U-Net best checkpoint (IoU 0.523) |
-| `outputs/unet_metrics.json` | 20-epoch training history |
-| `outputs/himalaya_heldout_metrics.json` | Proxy eval + Rasuwa prediction |
-| `data/processed/emsr927_comparison.json` | EMSR927 validation |
-| `outputs/diagnostics/aoi_backscatter_diagnostics.json` | Negative-result evidence |
-| `outputs/validation/damage_sanity.json` | 16× overcount evidence |
+| File                                                   | Description                                |
+| ------------------------------------------------------ | ------------------------------------------ |
+| `data/processed/flood_mask.tif`                        | Binary flood mask (noise, disclosed)       |
+| `outputs/affected_bridges.geojson`                     | 98 bridge features                         |
+| `outputs/affected_buildings.gpkg`                      | 154,022 building features (noise-inflated) |
+| `outputs/cutoff_settlements.json`                      | Per-settlement reachability                |
+| `outputs/flood_unet.pt`                                | U-Net best checkpoint (IoU 0.523)          |
+| `outputs/unet_metrics.json`                            | 20-epoch training history                  |
+| `outputs/himalaya_heldout_metrics.json`                | Proxy eval + Rasuwa prediction             |
+| `data/processed/emsr927_comparison.json`               | EMSR927 validation                         |
+| `outputs/diagnostics/aoi_backscatter_diagnostics.json` | Negative-result evidence                   |
+| `outputs/validation/damage_sanity.json`                | 16× overcount evidence                     |
 
 ---
 
@@ -347,7 +346,7 @@ imagery is dominated by terrain rather than a flood signature.
 
 **Figure A3.** Median VV backscatter change per AOI, compared against the
 expected GLOF signature band (−5 to −10 dB, green shaded). Every AOI sits
-within ±0.5 dB of zero — the signal is not in the data.
+within ±0.5 dB of zero — the preliminary, under rebuild in the data.
 
 ![Backscatter change per AOI](outputs/figures/03_backscatter_change.png)
 

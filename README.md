@@ -2,17 +2,15 @@
 
 **Track B — Multimodal AI Hackathon 2026**
 
-
 Post-event damage assessment for the **26 August 2026 Trishuli–Bhote Koshi
 flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, DEM,
-OpenStreetMap, and Copernicus EMS Rapid Mapping reference data.
+OpenStreetMap, and reference data used for checking only.
 
-> **Headline finding.** The Sentinel-1 pre/post pair available for this event
-> (2026-08-16 / 2026-08-28, relOrbit 85, ascending) **does not contain the GLOF
-> signal**. Two independent methods — a physics-based SAR change detector and a
-> U-Net segmentation model — both return effectively zero flood on the Rasuwa
-> corridor. The pipeline is correct; the data does not resolve the event.
-> See `outputs/diagnostics/` and `FINAL_REPORT.md`.
+> **Status.** Earlier versions of this README claimed the Sentinel-1 pair contains no
+> GLOF signal. That claim is withdrawn: the diagnostic behind it used 600 m window
+> medians at EMSR927 coordinates on GCP-geocoded, uncalibrated imagery, which cannot
+> support it. Preprocessing is being rebuilt (calibrated, terrain-corrected σ⁰).
+> Numbers below come from the baseline pipeline (`v0-baseline`) and are **not reliable**.
 
 ## Pipeline
 
@@ -46,7 +44,7 @@ Set credentials in `src/config.py`:
     COPERNICUS_USER = "you@example.com"
     COPERNICUS_PASS = "your-password"
 
-Register free at <https://dataspace.copernicus.eu/>. `src/config.py` is
+Register free at . `src/config.py` is
 `.gitignore`d to prevent accidental commits.
 
 ## Run
@@ -65,12 +63,10 @@ final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
 
 ## Key results
 
-| Metric | Value |
+| Metric | Value (baseline, unreliable) |
 |---|---|
 | U-Net val IoU (Sen1Floods11) | 0.523 |
 | U-Net proxy-Himalaya IoU | 0.554 |
-| U-Net Rasuwa flood fraction | **0.000** |
-| SAR change at AOI01 | -0.31 dB |
 | EMSR927 damage-point recall | 0.000 |
 | Our flooded buildings | 61,977 (16x EMSR927 3,816) |
 
@@ -83,5 +79,3 @@ Full discussion: `FINAL_REPORT.md`.
 ## Attribution
 
 See [ATTRIBUTION.md](ATTRIBUTION.md). Code: MIT. Data: own licenses.
-=======
-

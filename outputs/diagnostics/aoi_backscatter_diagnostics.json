@@ -1,58 +1,58 @@
 {
-  "note": "AOI backscatter diagnostics showing GLOF signal is NOT in the S1 pre/post pair",
-  "pre_date": "2026-08-16",
-  "post_date": "2026-08-28",
-  "event_date": "2026-08-26",
-  "relOrbit": 85,
-  "passDirection": "ASCENDING",
-  "aois": {
-    "AOI01_Syapru_Besi": {
-      "lon": 85.3357,
-      "lat": 28.1686,
-      "valid_px": 400,
-      "vv_pre_median_db": -13.86201286315918,
-      "vv_post_median_db": -14.044755935668945,
-      "vv_change_median_db": -0.3116016387939453,
-      "vh_change_median_db": -0.2984628677368164,
-      "combined_change_p02_db": -1.6733520030975342,
-      "combined_change_p05_db": -1.3961424827575684,
-      "combined_change_median_db": -0.2646818161010742
-    },
-    "AOI02_Timure": {
-      "lon": 85.3688,
-      "lat": 28.2612,
-      "valid_px": 400,
-      "vv_pre_median_db": -12.79529094696045,
-      "vv_post_median_db": -12.5445556640625,
-      "vv_change_median_db": 0.17590904235839844,
-      "vh_change_median_db": 0.2510795593261719,
-      "combined_change_p02_db": -1.3597670793533325,
-      "combined_change_p05_db": -0.9780774116516113,
-      "combined_change_median_db": 0.19380927085876465
-    },
-    "AOI03_Bidur": {
-      "lon": 85.1461,
-      "lat": 27.9329,
-      "valid_px": 400,
-      "vv_pre_median_db": -15.497549057006836,
-      "vv_post_median_db": -14.793352127075195,
-      "vv_change_median_db": 0.40881776809692383,
-      "vh_change_median_db": 0.35175609588623047,
-      "combined_change_p02_db": -1.2289170026779175,
-      "combined_change_p05_db": -0.9194339513778687,
-      "combined_change_median_db": 0.4199867248535156
-    },
-    "AOI05_Phosretar": {
-      "lon": 85.0246,
-      "lat": 27.83,
-      "valid_px": 400,
-      "vv_pre_median_db": -14.947803497314453,
-      "vv_post_median_db": -14.598276138305664,
-      "vv_change_median_db": 0.21091651916503906,
-      "vh_change_median_db": 0.19433975219726562,
-      "combined_change_p02_db": -1.2988905906677246,
-      "combined_change_p05_db": -0.9649030566215515,
-      "combined_change_median_db": 0.23602080345153809
+    "note": "PRELIMINARY. 20x20-px window medians at EMSR927 coordinates on GCP-geocoded, uncalibrated data. NOT evidence of absence of signal.",
+    "pre_date": "2026-08-16",
+    "post_date": "2026-08-28",
+    "event_date": "2026-08-26",
+    "relOrbit": 85,
+    "passDirection": "ASCENDING",
+    "aois": {
+        "AOI01_Syapru_Besi": {
+            "lon": 85.3357,
+            "lat": 28.1686,
+            "valid_px": 400,
+            "vv_pre_median_db": -13.86201286315918,
+            "vv_post_median_db": -14.044755935668945,
+            "vv_change_median_db": -0.3116016387939453,
+            "vh_change_median_db": -0.2984628677368164,
+            "combined_change_p02_db": -1.6733520030975342,
+            "combined_change_p05_db": -1.3961424827575684,
+            "combined_change_median_db": -0.2646818161010742
+        },
+        "AOI02_Timure": {
+            "lon": 85.3688,
+            "lat": 28.2612,
+            "valid_px": 400,
+            "vv_pre_median_db": -12.79529094696045,
+            "vv_post_median_db": -12.5445556640625,
+            "vv_change_median_db": 0.17590904235839844,
+            "vh_change_median_db": 0.2510795593261719,
+            "combined_change_p02_db": -1.3597670793533325,
+            "combined_change_p05_db": -0.9780774116516113,
+            "combined_change_median_db": 0.19380927085876465
+        },
+        "AOI03_Bidur": {
+            "lon": 85.1461,
+            "lat": 27.9329,
+            "valid_px": 400,
+            "vv_pre_median_db": -15.497549057006836,
+            "vv_post_median_db": -14.793352127075195,
+            "vv_change_median_db": 0.40881776809692383,
+            "vh_change_median_db": 0.35175609588623047,
+            "combined_change_p02_db": -1.2289170026779175,
+            "combined_change_p05_db": -0.9194339513778687,
+            "combined_change_median_db": 0.4199867248535156
+        },
+        "AOI05_Phosretar": {
+            "lon": 85.0246,
+            "lat": 27.83,
+            "valid_px": 400,
+            "vv_pre_median_db": -14.947803497314453,
+            "vv_post_median_db": -14.598276138305664,
+            "vv_change_median_db": 0.21091651916503906,
+            "vh_change_median_db": 0.19433975219726562,
+            "combined_change_p02_db": -1.2988905906677246,
+            "combined_change_p05_db": -0.9649030566215515,
+            "combined_change_median_db": 0.23602080345153809
+        }
     }
-  }
 }
