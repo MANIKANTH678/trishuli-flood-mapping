@@ -1,0 +1,47 @@
+{
+  "snapshot": "2026-07-27",
+  "event_date": "2026-08-26",
+  "bbox_wsen": [
+    84.95,
+    27.8,
+    85.55,
+    28.35
+  ],
+  "source": "ohsome API v2 (HeiGIT); (c) OpenStreetMap contributors, ODbL",
+  "filters": {
+    "buildings": "building=* and geometry:polygon",
+    "roads": "highway=* and geometry:line",
+    "hospitals": "(amenity=hospital or healthcare=hospital)",
+    "clinics": "(amenity=clinic or healthcare=clinic)",
+    "settlements": "place in (city, town, village, hamlet)",
+    "rivers": "waterway=river and geometry:line"
+  },
+  "counts": {
+    "buildings": 189503,
+    "roads": 14536,
+    "hospitals": 20,
+    "clinics": 6,
+    "settlements": 446,
+    "rivers": 112
+  },
+  "max_last_edit": {
+    "buildings": "2026-07-06T10:50:52+00:00",
+    "roads": "2026-07-26T19:19:52+00:00",
+    "hospitals": "2026-03-04T09:53:48+00:00",
+    "clinics": "2025-01-24T09:42:43+00:00",
+    "settlements": "2026-05-05T14:21:57+00:00",
+    "rivers": "2026-07-15T09:31:23+00:00"
+  },
+  "ohsome_metadata": {
+    "apiVersion": "2.0.0",
+    "attribution": {
+      "url": "https://ohsome.org/copyrights",
+      "text": "\u00a9 OpenStreetMap contributors"
+    },
+    "temporalExtent": {
+      "start": "2007-10-08T00:00:00Z",
+      "end": "2026-10-03T20:11:35Z"
+    }
+  },
+  "fetched_utc": "2026-10-03T20:20:28+00:00"
+}

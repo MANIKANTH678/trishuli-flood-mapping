@@ -9,15 +9,13 @@ echo "[1/9] fetch Sentinel-1"
 python src/fetch/fetch_sentinel1.py --download
 
 echo "[2/9] unzip scenes"
-for z in data/raw/s1/pre/*.zip data/raw/s1/post/*.zip; do
-  unzip -n -q "\(z" -d "\)(dirname "$z")"
-done
+python -c "import pathlib, zipfile; [zipfile.ZipFile(z).extractall(z.parent) for p in ['data/raw/sentinel1/pre', 'data/raw/sentinel1/post'] for z in pathlib.Path(p).glob('*.SAFE.zip') if not z.with_suffix('').exists()]"
 
-echo "[3/9] orbit / pass / 12-day gate"          # exits 1 and stops the pipeline on violation
+echo "[3/9] orbit / pass / 12-day gate"         # exits 1 and stops the pipeline on violation
 python src/processing/align_v2_checks.py
 
 echo "[4/9] fetch OSM"                           # no fallback: failure must stop the run
-python -m src.download.fetch_osm --bbox "$BBOX" --date 2026-07-27 --out data/raw/osm
+python -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-07-27" --out data/raw/osm
 
 echo "[5/9] geocode S1"
 python src/processing/geocode_s1.py
