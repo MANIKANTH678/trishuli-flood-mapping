@@ -1,0 +1,11 @@
+{
+  "split": "flood_test_data.csv",
+  "n_chips": 90,
+  "mean_iou": 0.5534,
+  "mean_f1": 0.6878,
+  "global_iou": 0.6387,
+  "global_f1": 0.7795,
+  "tp": 1865791,
+  "fp": 355230,
+  "fn": 700310
+}

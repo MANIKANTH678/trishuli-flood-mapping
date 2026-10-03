@@ -1,0 +1,37 @@
+{
+  "validation": {
+    "checks": [
+      {
+        "name": "same_orbit_direction",
+        "ok": true,
+        "pre": "ASCENDING",
+        "post": "ASCENDING"
+      },
+      {
+        "name": "same_acquisition_mode",
+        "ok": true,
+        "pre": "IW",
+        "post": "IW"
+      },
+      {
+        "name": "temporal_separation",
+        "ok": true,
+        "ideal_match": true,
+        "gap_days": 12,
+        "ideal_values": [
+          6,
+          12,
+          18,
+          24
+        ]
+      }
+    ],
+    "passed": true,
+    "reason": null,
+    "pre_scene": "S1D_IW_GRDH_1SDV_20260816T122116_20260816T122141_004151_007980_B057.SAFE",
+    "post_scene": "S1D_IW_GRDH_1SDV_20260828T122116_20260828T122141_004326_007FA4_C523.SAFE",
+    "gap_days": 12,
+    "orbit_direction": "ASCENDING"
+  },
+  "timestamp": "2026-10-02T04:48:41.366468+00:00"
+}

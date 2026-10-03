@@ -79,13 +79,17 @@ def build_dem(output_name="dem_30m.tif"):
 
 
 def to_db(arr):
-    """Convert Sentinel-1 GRD amplitude DN to dB."""
-    finite = arr[np.isfinite(arr)]
-    if len(finite) == 0:
-        return arr
+    """Convert Sentinel-1 GRD amplitude DN to dB. 0 DN → NaN."""
+    arr = np.asarray(arr, dtype=np.float32)
+    # Treat raw zeros as nodata (Sentinel-1 uses 0 for no-data)
+    valid_mask = np.isfinite(arr) & (arr > 0)
+    if valid_mask.sum() == 0:
+        return np.full_like(arr, np.nan)
+    finite = arr[valid_mask]
     if np.median(finite) > 10:      # linear amplitude DN
-    # Copernicus SAFE export is missing the ~60 dB calibration constant.
-    return 20.0 * np.log10(np.maximum(arr, 1e-6)) - 60.0 
+        out = 20.0 * np.log10(np.maximum(arr, 1e-6)) - 60.0
+        out[~valid_mask] = np.nan
+        return out
     return arr
 
 
@@ -97,10 +101,14 @@ def align_s1(pre_dir, post_dir, out_prefix="s1"):
     ref = rioxarray.open_rasterio(dem_path, masked=True).squeeze()
 
     for label, folder in [("pre", pre_dir), ("post", post_dir)]:
-        files = sorted(
-            glob.glob(os.path.join(folder, "**", "*.tif"),  recursive=True) +
-            glob.glob(os.path.join(folder, "**", "*.tiff"), recursive=True)
-        )
+        geocoded = os.path.join(folder, "geocoded")
+        if os.path.isdir(geocoded):
+            files = sorted(glob.glob(os.path.join(geocoded, "*.tif")))
+        else:
+            files = sorted(
+                glob.glob(os.path.join(folder, "**", "*.tif"),  recursive=True) +
+                glob.glob(os.path.join(folder, "**", "*.tiff"), recursive=True)
+            )
         if not files:
             print(f"⚠️  No S1 files in {folder}")
             continue

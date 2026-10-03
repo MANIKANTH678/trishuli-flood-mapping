@@ -1,0 +1,47 @@
+{
+  "our_impact_summary": {
+    "total_buildings": 1372591,
+    "flooded_buildings": 61977,
+    "debris_buildings": 92045,
+    "total_roads": 127081,
+    "flooded_roads": 6032,
+    "total_bridges": 2479,
+    "flooded_bridges": 98
+  },
+  "emsr927_by_aoi": {
+    "AOI01": {
+      "locality": "Syapru Besi",
+      "Destroyed": 323,
+      "Damaged": 32,
+      "Possibly damaged": 78,
+      "total": 433
+    },
+    "AOI02": {
+      "locality": "Timure",
+      "Destroyed": 372,
+      "Damaged": 33,
+      "Possibly damaged": 26,
+      "total": 431
+    },
+    "AOI03": {
+      "locality": "Bidur",
+      "Destroyed": 1826,
+      "Damaged": 220,
+      "Possibly damaged": 297,
+      "total": 2343
+    },
+    "AOI05": {
+      "locality": "Phosretar",
+      "Destroyed": 292,
+      "Damaged": 69,
+      "Possibly damaged": 248,
+      "total": 609
+    }
+  },
+  "comparison": {
+    "our_flooded_buildings": 61977,
+    "emsr927_destroyed_total": 2813,
+    "emsr927_damaged_total": 354,
+    "emsr927_possibly_total": 649
+  }
+}

@@ -1,88 +1,87 @@
 # Trishuli Flood Damage Mapping
 
-Track B — Multimodal AI Hackathon 2026
+**Track B — Multimodal AI Hackathon 2026**
 
-Maps flood and debris damage from the 26 August 2026 Trishuli–Bhote Koshi
-flood (Nepal) using free satellite data: Sentinel-1 radar change detection,
-an XGBoost susceptibility model, and OpenStreetMap buildings, roads and
-settlements.
 
-**Headline results** (see `outputs/dashboard.html` and `FINAL_REPORT.md`):
+Post-event damage assessment for the **26 August 2026 Trishuli–Bhote Koshi
+flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, DEM,
+OpenStreetMap, and Copernicus EMS Rapid Mapping reference data.
 
-| Metric | Value |
-| --- | --- |
-| Flooded buildings | 33,040 of 1,372,591 (2.4%) |
-| Flooded road segments | 3,440 of 129,560 (2.7%) |
-| Cut-off settlements | 172 of 1,565 (11.0%) |
-| Susceptibility model | AUC 0.998, F1 0.58 at threshold 0.96 |
-
-## Setup
-
-```bash
-python3 -m venv ~/flood-venv
-source ~/flood-venv/bin/activate
-pip install -r requirements.txt
-```
-
-Edit `src/config.py` for the bounding box, event dates and Copernicus
-Dataspace credentials before downloading data.
+> **Headline finding.** The Sentinel-1 pre/post pair available for this event
+> (2026-08-16 / 2026-08-28, relOrbit 85, ascending) **does not contain the GLOF
+> signal**. Two independent methods — a physics-based SAR change detector and a
+> U-Net segmentation model — both return effectively zero flood on the Rasuwa
+> corridor. The pipeline is correct; the data does not resolve the event.
+> See `outputs/diagnostics/` and `FINAL_REPORT.md`.
 
 ## Pipeline
 
-Each step is a module run with `python -m`. Steps 1–3 need the raw data under
-`data/raw/`; steps 4–5 only need the files already committed in `outputs/`.
+    fetch (S1 + OSM) -> geocode S1 -> align (30 m UTM 45N) -> detect (SAR)
+        -> damage (OSM intersect) -> cutoff (hospital reachability)
+        -> validate (EMSR927) -> sanity checks -> report
 
-```bash
-# 1. Download inputs
-python -m src.download.dem              # 30 m DEM tiles
-python -m src.download.osm_overpass     # OSM buildings, roads, places
+| Stage | Script | Output |
+|---|---|---|
+| S1 download | `src/fetch/fetch_sentinel1.py` | `data/raw/s1/{pre,post}/*.SAFE` |
+| OSM download | `src/download/fetch_osm.py` | `data/raw/osm/*.geojson` |
+| Geocode | `src/processing/geocode_s1.py` | `data/raw/s1/*/geocoded/*.tif` |
+| Align | `src/processing/align.py` | `data/processed/s1_*_30m.tif` |
+| Orbit check | `src/processing/align_v2_checks.py` | (validation gate) |
+| Flood detect | `src/processing/flood_detect_v2.py` | `data/processed/flood_mask.tif` |
+| Damage | `src/processing/damage_v2.py` | `outputs/affected_*.geojson` |
+| Cutoff | `src/processing/cutoff_v2.py` | `outputs/cutoff_settlements.json` |
+| Train U-Net | `src/modeling/train_segmentation.py` | `outputs/flood_unet.pt` |
+| Eval U-Net | `src/modeling/eval_himalaya_heldout.py` | `outputs/himalaya_heldout_metrics.json` |
+| EMSR927 validation | `src/validation/emsr927_comparison.py` | `data/processed/emsr927_comparison.json` |
+| Damage sanity | `src/validation/damage_sanity_check.py` | `outputs/validation/damage_sanity.json` |
 
-# 2. Align and detect
-python -m src.processing.align          # common 30 m grid, calibrated dB
-python -m src.processing.align_post_vh  # VH patch for the post scene
-python -m src.processing.flood_detect   # flood_mask.tif
+## Setup
 
-# 3. Susceptibility model
-python -m src.modeling.features         # terrain + SAR feature stack
-python -m src.modeling.train            # XGBoost, writes model_meta.json
-python -m src.modeling.predict          # susceptibility.tif
+    python3 -m venv ~/flood-venv
+    source ~/flood-venv/bin/activate
+    pip install -r requirements.txt
 
-# 4. Impact statistics and static maps
-python -m src.report.impact
+Set credentials in `src/config.py`:
 
-# 5. Dashboard (standard library only — works without the geo stack)
-python -m src.report.dashboard_full
-```
+    COPERNICUS_USER = "you@example.com"
+    COPERNICUS_PASS = "your-password"
 
-## Dashboard
+Register free at <https://dataspace.copernicus.eu/>. `src/config.py` is
+`.gitignore`d to prevent accidental commits.
 
-`outputs/dashboard.html` is a self-contained page: impact KPIs, the four
-maps with a zoomable lightbox, the model card with feature importance, a
-searchable table and interactive map of cut-off settlements, methods and
-limitations, and links to every output file. Images are embedded, so it
-works offline; only the settlement map tiles need a connection.
+## Run
 
-Open it directly in a browser, or serve the folder so the output-file links
-resolve:
+    bash run_all.sh
 
-```bash
-python -m http.server -d outputs 8000   # then visit http://localhost:8000/dashboard.html
-```
+or step-by-step (see Pipeline table above).
+
+## Train / eval U-Net
+
+    python -m src.modeling.train_segmentation      # ~2.5 h CPU, 20 epochs
+    python src/modeling/eval_himalaya_heldout.py   # ~5 min
+
+Trained on **Sen1Floods11 v1.1** (252 train / 89 val). Best val IoU **0.523**,
+final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
+
+## Key results
+
+| Metric | Value |
+|---|---|
+| U-Net val IoU (Sen1Floods11) | 0.523 |
+| U-Net proxy-Himalaya IoU | 0.554 |
+| U-Net Rasuwa flood fraction | **0.000** |
+| SAR change at AOI01 | -0.31 dB |
+| EMSR927 damage-point recall | 0.000 |
+| Our flooded buildings | 61,977 (16x EMSR927 3,816) |
+
+Full discussion: `FINAL_REPORT.md`.
 
 ## Tests
 
-```bash
-python -m pytest tests/
-```
+    python -m pytest tests/ -q
 
-## Layout
+## Attribution
 
-```
-src/
-  config.py          bounding box, dates, CRS, paths
-  download/          DEM and OpenStreetMap acquisition
-  processing/        grid alignment and SAR flood detection
-  modeling/          feature engineering, XGBoost training, prediction
-  report/            impact statistics, static maps, HTML dashboard
-outputs/             committed results of the latest run
-```
+See [ATTRIBUTION.md](ATTRIBUTION.md). Code: MIT. Data: own licenses.
+=======
+
