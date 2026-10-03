@@ -260,7 +260,7 @@ def main():
                      "roads whose midpoint lies inside flood_mask.tif. Because the "
                      "SAR flood mask was shown not to contain the GLOF signal "
                      "(see outputs/diagnostics/aoi_backscatter_diagnostics.json), "
-                     "the 'cut_off' flags here reflect the noisy mask, not the "
+                     "the 'cut_off' flags here reflect the preliminary, under rebuild, not the "
                      "real event. The machinery is correct; the input is not."),
         },
         "summary": {

@@ -1,37 +1,42 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+cd "$(dirname "$0")"
 BBOX="${1:-84.50,27.40,86.00,28.40}"
-PRE_DATE="${2:-2026-08-16}"
-POST_DATE="${3:-2026-08-28}"
-echo "=== Trishuli flood pipeline ==="
-echo "bbox=$BBOX  pre=$PRE_DATE  post=$POST_DATE"
 
-echo "[1/8] fetch Sentinel-1 (pre + post, password auth via src/config.py)"
+echo "=== Trishuli flood pipeline  bbox=$BBOX ==="
+
+echo "[1/9] fetch Sentinel-1"
 python src/fetch/fetch_sentinel1.py --download
 
-echo "[2/8] fetch OSM (pre-flood snapshot)"
-python -m src.download.fetch_osm --bbox "$BBOX" --date 2026-07-27 --out data/raw/osm || \
-  echo "  (fetch_osm failed — reuse existing data/raw/osm/)"
+echo "[2/9] unzip scenes"
+for z in data/raw/s1/pre/*.zip data/raw/s1/post/*.zip; do
+  unzip -n -q "\(z" -d "\)(dirname "$z")"
+done
 
-echo "[3/8] geocode S1 SAFE → georeferenced TIFFs (EPSG:32645)"
+echo "[3/9] orbit / pass / 12-day gate"          # exits 1 and stops the pipeline on violation
+python src/processing/align_v2_checks.py
+
+echo "[4/9] fetch OSM"                           # no fallback: failure must stop the run
+python -m src.download.fetch_osm --bbox "$BBOX" --date 2026-07-27 --out data/raw/osm
+
+echo "[5/9] geocode S1"
 python src/processing/geocode_s1.py
 
-echo "[4/8] align (DEM + S1 + S2 → 30 m UTM 45N grid)"
+echo "[6/9] align"
 python src/processing/align.py
 
-echo "[5/8] flood detect v2"
+echo "[7/9] flood detect"
 python src/processing/flood_detect_v2.py
 
-echo "[6/8] damage v2"
+echo "[8/9] damage"
 python src/processing/damage_v2.py
 
-echo "[7/8] EMSR927 validation"
-python src/validation/emsr927_comparison.py \
-  --flood-mask data/processed/flood_mask.tif \
-  --emsr-dir data/external/EMSR927 \
-  --out data/processed/emsr927_comparison.json
-
-echo "[8/8] damage sanity check"
-python src/validation/damage_sanity_check.py
+echo "[9/9] validation (EMSR927, check-only)"
+if [ -d data/external/EMSR927 ]; then
+  python src/validation/emsr927_comparison.py
+  python src/validation/damage_sanity_check.py
+else
+  echo "  EMSR927 folder absent, skipping validation"
+fi
 
 echo "=== DONE ==="
