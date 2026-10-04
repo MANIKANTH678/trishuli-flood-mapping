@@ -18,6 +18,7 @@ ap.add_argument("--thr", type=float, default=3.5); ap.add_argument("--min-patch"
 ap.add_argument("--main-names", default=r"trishuli|trisuli|bhote\s*koshi|bhotekoshi")
 ap.add_argument("--main-line"); ap.add_argument("--main-buf-m", type=float, default=1500)
 ap.add_argument("--trib-min-m", type=float, default=2500); ap.add_argument("--tag", default="event")
+ap.add_argument("--save-masks", action="store_true")
 a = ap.parse_args(); R = a.res
 MINPX = a.min_patch * (9 if R == 10 else 1)
 
@@ -142,3 +143,10 @@ Path(f"outputs/diagnostics/step3_{a.tag}.json").write_text(json.dumps(
     {"tag": a.tag, "args": vars(a), "geometry": json.load(open("outputs/diagnostics/look_geometry.json")),
      "observability": obs, "stats": stats, "bootstrap": bs}, indent=2))
 print(json.dumps({"stats": stats, "bootstrap": bs}, indent=2))
+
+if a.save_masks:
+    np.savez_compressed(P / f"step3_masks_{a.tag}.npz",
+                        main_floor=classes["main_floor"], trib_floor=classes["trib_floor"],
+                        main_all=main_all, valid=valid,
+                        **{f"neg_{p}": neg[p] for p in neg}, **{f"pos_{p}": pos[p] for p in pos},
+                        transform=np.array(T)[:6], crs=str(crs))
