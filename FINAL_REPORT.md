@@ -18,18 +18,18 @@ DEM, OpenStreetMap, and Copernicus EMS Rapid Mapping reference data and
 produces flood masks, affected-infrastructure layers, hospital-reachability
 metrics, and a trained U-Net segmentation model.
 
-**Status of the findings.** An earlier run on a larger study area found no detectable GLOF signal in the Sentinel-1 pair. The pipeline was then rebuilt (ohsome pre-event OSM, bbox tightened to the Rasuwa corridor, corrected reachability analysis). On the rebuilt inputs the flood mask is small (5.22 km²) and has no pixels in the two Rasuwa AOIs (Syapru Besi, Timure). It contains 966 of 3,816 EMSR927 damage points (25.3%), all of them in Bidur and Phosretar, where about 97% of the mask area inside the AOI lies on mapped landslide polygons. The mask remains unvalidated and should not be read as the extent of the event.
+**Status of the findings.** An earlier run on a larger study area found no detectable GLOF signal in the Sentinel-1 pair. The pipeline was then rebuilt (ohsome pre-event OSM, bbox tightened to the Rasuwa corridor, corrected reachability analysis). On the rebuilt inputs the flood mask is small (5.22 km²) and has no pixels in the two Rasuwa AOIs (Syapru Besi, Timure). It contains 966 of 3,816 EMSR927 damage points (25.3%), all of them in Bidur and Phosretar, where 97-98% of the mask area inside the AOI lies on mapped landslide polygons. The mask remains unvalidated and should not be read as the extent of the event.
 
 **Headline numbers:**
 
-| Metric                                         | Value                    | Interpretation                                                                                       |
-| ---------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Sentinel-1 VV change, river corridor (median)  | **+0.02 dB**             | within noise (GLOF would show −5 to −10 dB) (§4.1)                                                   |
-| U-Net flagged fraction of corridor, post / pre | **5.03% / 5.05%**        | cannot discriminate the two scenes (§4.2)                                                            |
-| U-Net val IoU (Sen1Floods11)                   | 0.523                    | best epoch chosen on val; pooled held-out 0.574                                                      |
-| U-Net proxy-Himalaya IoU                       | 0.554                    | monsoon-subcontinent chips                                                                           |
-| EMSR927 damage-point recall                    | **966 of 3,816 (25.3%)** | none at Syapru Besi or Timure; mask area at Bidur and Phosretar is ~97% on landslide polygons (§4.4) |
-| Our "flooded" buildings                        | **991** (+102 debris)    | counts not comparable to EMSR927 (different areas, §4.5)                                             |
+| Metric                                         | Value                    | Interpretation                                                                                         |
+| ---------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Sentinel-1 VV change, river corridor (median)  | **+0.02 dB**             | median unchanged; a GLOF over water would shift it to −5 to −10 dB (§4.1)                              |
+| U-Net flagged fraction of corridor, post / pre | **5.03% / 5.05%**        | cannot discriminate the two scenes (§4.2)                                                              |
+| U-Net val IoU (Sen1Floods11)                   | 0.523                    | best epoch chosen on val; pooled held-out 0.574                                                        |
+| U-Net proxy-Himalaya IoU                       | 0.554                    | monsoon-subcontinent chips                                                                             |
+| EMSR927 damage-point recall                    | **966 of 3,816 (25.3%)** | none at Syapru Besi or Timure; mask area at Bidur and Phosretar is 97-98% on landslide polygons (§4.4) |
+| Our "flooded" buildings                        | **991** (+102 debris)    | counts not comparable to EMSR927 (different areas, §4.5)                                               |
 
 ---
 
@@ -92,7 +92,15 @@ per polarization per frame (`src/processing/geocode_s1.py`).
 
 Pre and post frames are then merged, converted to dB, and matched to the
 reference DEM grid (`src/processing/align.py`). Amplitude-to-dB conversion
-uses `20·log10(DN) − 60`; zero DN is treated as nodata.
+uses `20·log10(DN) − 60`; zero DN is treated as nodata. No radiometric
+calibration is applied (the calibration annotation files are not used) and the
+rasters are not terrain-flattened, so the dB values are relative backscatter,
+not calibrated σ⁰. Both scenes come from relative orbit 85, so the post-minus-pre
+difference should largely cancel static terrain effects, but any date-to-date
+radiometric difference is not corrected. The GCP warp is first-order (`-order 1`)
+with no DEM-based terrain correction, so SAR pixels can be displaced relative to
+the DEM grid in steep terrain (§5.8). Frames whose median value is at most 10 are
+assumed to be in dB already (`to_db` in `align.py`).
 
 ### 3.2 Flood detection
 
@@ -143,14 +151,52 @@ Two reference checks:
 - `src/validation/damage_sanity_check.py` — compares our `impact_summary.json`
   counts against EMSR927 per-AOI damage totals.
 
+### 3.7 Main-stem z-score analysis (exploratory)
+
+`src/analysis/` adds a terrain and radar-geometry check on the river floor
+(`geometry.py`, `hand.py`, `radar_mask.py`, `zscore.py`). Three populations are
+compared:
+
+- **Main-stem floor:** floor pixels (HAND, height above nearest drainage, at most
+  `--floor-m`, default 30 m) within `--main-buf-m` (1,500 m) of the OSM main-stem
+  line. The line is the segments whose names match Trishuli, Trisuli or Bhote
+  Koshi (18 segments).
+- **Tributary floor:** floor pixels at least `--trib-min-m` (2,500 m) from the
+  main stem.
+- **Hillslope control:** valid pixels with HAND of at least `--ctrl-m` (100 m).
+
+Every population uses valid pixels only: finite change in both polarizations and
+radar-mask class ok, with no spatial smoothing (`--smooth 1`). The observable
+fraction in §4.1b is the share of main-stem floor pixels (HAND at most
+`--floor-m`, within `--main-buf-m`) that are valid.
+
+HAND at 30 m puts 4.0%, 6.2% and 10.1% of valid pixels within 15 m, 30 m and
+60 m. The radar mask uses a single scene-wide incidence angle (38.77°): layover
+and shadow from DEM slope, cast shadow from a ridge line-of-sight test, and a
+poor-local-incidence class. Scene-wide it classes 74.1% of pixels as ok, 5.4%
+layover, 0.5% shadow, 0.4% cast shadow and 19.6% poor local incidence.
+Pixels in any of the four non-ok classes are unobservable and excluded.
+
+The z score is a robust z (median and MAD) of the change between the two scenes,
+standardized against the hillslope control within 250 m elevation bands (bands with fewer than 5,000 control
+pixels use the global median and MAD). The hillslope row is therefore the normalization baseline (median z near 0 by
+construction), not an independent control; the tributary floor is the
+independent comparator. A pixel counts as strongly negative or strongly positive
+if z < −3.5 or z > +3.5 (`--thr`) and it lies in a connected patch of at least
+8 px (`--min-patch`). For each polarization, `zscore.py` reports these fractions
+per population and a block bootstrap (2 km blocks, 2,000 replicates, seed 0) of the main-stem
+minus tributary-floor difference, summarised by the 2.5, 50 and 97.5
+percentiles. The criteria in `docs/step3_criteria.md` were written after the
+first event run, so the event-run results in §4.1b are exploratory.
+
 ---
 
 ## 4. Results
 
 ### 4.1 Backscatter change on the rebuilt inputs
 
-Backscatter change (post minus pre, VV, dB) on the calibrated, terrain-corrected 30 m rasters,
-summarised in `outputs/validation/signal_check.json`:
+Backscatter change (post minus pre, VV, dB) on the GCP-geocoded, uncalibrated 30 m rasters (§3.1),
+summarised in `outputs/validation/signal_check.json` (the script that wrote this file is not in the repository):
 
 | Population            | n         | median (dB) | p5 (dB) | p1 (dB) |
 | --------------------- | --------- | ----------- | ------- | ------- |
@@ -174,11 +220,65 @@ Four mechanisms plausibly contribute:
 1. **Temporal mismatch.** GLOFs drain in hours; the 2-day post-event gap
    (2026-08-26 event → 2026-08-28 acquisition) likely missed standing water.
 2. **Radar geometry.** The ascending pass illuminates the Trishuli valley
-   obliquely; deep N–S gorges are partly in radar shadow.
+   obliquely. The 30 m radar-geometry mask (§3.7) puts only about 7.5% of the
+   main-stem floor in layover, shadow or poor local incidence (poor local
+   incidence 6.3%, layover 0.7%, cast shadow 0.4%, shadow 0.01%), so shadow is
+   not the main loss at this resolution. A 30 m DEM may still under-resolve a
+   narrow gorge.
 3. **Spatial resolution.** At 30 m, the ~30–50 m wide Bhote Koshi channel is
    under-resolved; each pixel mixes water with bank rock.
 4. **Debris and vegetation.** Post-GLOF debris flows leave rough surfaces
    that scatter radar rather than specularly reflecting.
+
+### 4.1b Main-stem floor z-scores (exploratory)
+
+Output: `outputs/diagnostics/step3_event.json`. 92.5% of the main-stem floor
+(36,708 of 39,663 px) is observable. The unobservable share is mostly poor
+local incidence (6.3%), then layover (0.74%) and cast shadow (0.37%).
+
+| Polarization | Population         | n px      | median z | strongly negative | strongly positive |
+| ------------ | ------------------ | --------- | -------- | ----------------- | ----------------- |
+| VV           | Main-stem floor    | 36,708    | −0.12    | 1.87%             | 0.28%             |
+| VV           | Tributary floors   | 176,217   | +0.04    | 0.05%             | 0.08%             |
+| VV           | Hillslope controls | 2,466,085 | 0.00     | 0.008%            | 0.006%            |
+| VH           | Main-stem floor    | 36,708    | −0.39    | 4.53%             | 0.05%             |
+| VH           | Tributary floors   | 176,217   | +0.06    | 0.06%             | 0.04%             |
+| VH           | Hillslope controls | 2,466,085 | 0.00     | 0.006%            | 0.003%            |
+
+Strongly negative or positive means robust z beyond ±3.5 within a patch of at
+least 8 px (§3.7). The excess is the main-stem floor fraction minus the tributary-floor fraction,
+with a 95% interval from a block bootstrap (2 km blocks, 2,000 replicates, seed 0). The negative-tail
+excess is 1.8 percentage points in VV (CI 0.9 to 2.9) and 4.4 points in VH
+(CI 2.7 to 6.5). The positive-tail excess CIs include zero in both polarizations
+(VV −0.001 to 0.42 points, VH −0.07 to 0.15 points). Median z is only −0.12 (VV)
+and −0.39 (VH), so the darkening is confined to a minority of pixels, not a
+corridor-wide shift. The hillslope row is the normalization baseline (§3.7),
+so it is not an independent control, and the bootstrap compares only the
+main-stem and tributary floors. The blocks are spatial, so the intervals
+reflect spatial clustering rather than independent pixels. This is consistent with
+flooding but does not separate it from debris, sediment or channel change. The
+main-stem floor also differs from tributary floors in size, discharge and surface,
+and the scene pair spans the monsoon, so a seasonal rise in river level or wet
+surfaces could darken it without the event. A placebo pair that does not span the
+event is needed to separate these. The
+excess is quoted rather than the ratio, whose CIs span more than an order of
+magnitude (VV 12 to 193, VH 34 to 354). The SAR-to-DEM alignment in the gorge has not been checked (§5.8). The criteria were
+written after the run, so these results are exploratory.
+
+Along the main stem (`outputs/diagnostics/step3_profile_event.csv`, 0.01° latitude
+bins), strongly negative pixels occur only in the downstream reach. South of
+28.02°N, the VV strongly negative fraction is above zero in 15 of 23 bins and the
+VH fraction in 21 of 23. From 28.025°N to 28.285°N (27 bins), which includes Syapru
+Besi (28.17°N) and Timure (28.26°N), the VV fraction is zero in every bin and the
+VH fraction is above zero in three (28.075°N, 28.275°N, 28.285°N). This is not an
+observability effect: the mean observable fraction per bin is 0.81 in the northern
+reach (0.54 to 0.95) and 0.95 in the southern reach (0.80 to 0.99). The main-stem
+excess therefore comes from the downstream reach, at the latitudes of Bidur
+(27.93°N) and Phosretar (27.83°N), and does not appear in the Rasuwa reach where
+the event occurred. This matches §4.4, where the flood mask has no pixels in the
+two Rasuwa AOIs. The excess in the lower reach could reflect the event, landslide
+debris or sediment, or a wider floor with more channel in each pixel; these data do
+not separate them.
 
 ### 4.2 U-Net applied to the corridor
 
@@ -204,7 +304,7 @@ The proxy evaluation is only 0.02 IoU below the full val, so the proxy score is 
 
 Landslide overlap is the fraction of mapped landslide area inside the flood mask.
 
-Overall, 966 of 3,816 damage points (25.3%) fall inside the flood mask: 867 of 2,343 at Bidur and 99 of 609 at Phosretar. No mask pixels fall in the two Rasuwa AOIs, where the event occurred. At Bidur, 1.73 of the 1.77 km² of mask inside the AOI lies on mapped landslide polygons (98%); at Phosretar, 1.62 of 1.67 km² (97%). A null-model comparison (`outputs/validation/null_recall_aoi.json`) gives expected recall 0.113 ± 0.010 at Bidur and 0.091 ± 0.017 at Phosretar, against observed 0.370 and 0.170, so the mask coincides with mapped damage more than the null does. This does not show that the mask maps flooding. EMSR927 contains no flood-extent layer, damage may reflect mass movement rather than flooding, and nearly all of the mask area inside these AOIs lies on landslide polygons. In the two AOIs where the event occurred, recall is zero.
+Overall, 966 of 3,816 damage points (25.3%) fall inside the flood mask: 867 of 2,343 at Bidur and 99 of 609 at Phosretar. No mask pixels fall in the two Rasuwa AOIs, where the event occurred. At Bidur, 1.73 of the 1.77 km² of mask inside the AOI lies on mapped landslide polygons (98%); at Phosretar, 1.62 of 1.67 km² (97%). A null-model comparison (`outputs/validation/null_recall_aoi.json`) gives expected recall 0.113 ± 0.010 at Bidur and 0.091 ± 0.017 at Phosretar, against observed 0.370 and 0.163, so the mask coincides with mapped damage more than the null does. This does not show that the mask maps flooding. EMSR927 contains no flood-extent layer, damage may reflect mass movement rather than flooding, and nearly all of the mask area inside these AOIs lies on landslide polygons. In the two AOIs where the event occurred, recall is zero.
 
 ### 4.5 Damage assessment versus EMSR927
 
@@ -218,7 +318,7 @@ Hospital reachability was computed on a road graph of 14,536 OSM segments (14,15
 
 ## 5. Limitations
 
-**5.1 The event is not demonstrably observable in the input data.** In both the earlier and the rebuilt run, the Sentinel-1 pair (16 and 28 August, ascending, 30 m) shows no detectable signal at the two Rasuwa AOIs. Possible reasons include the two-day gap after a fast-draining flood, radar shadow in the gorge, and 30 m resolution. We have not shown that the event is unobservable, only that this pair and this method do not detect it. Optical imagery or higher-resolution SAR would be needed to map the flood surface directly.
+**5.1 The event is not demonstrably observable in the input data.** In both the earlier and the rebuilt run, the Sentinel-1 pair (16 and 28 August, ascending, 30 m) shows no detectable signal at the two Rasuwa AOIs. Possible reasons include the two-day gap after a fast-draining flood, the 30 m resolution, and debris-roughened surfaces. The radar-geometry mask (§3.7) makes shadow an unlikely main cause on the main-stem floor, although a 30 m DEM may under-resolve a narrow gorge. We have not shown that the event is unobservable, only that this pair and this method do not detect it. Optical imagery or higher-resolution SAR would be needed to map the flood surface directly.
 
 **5.2 EMSR927 GRA products contain no flood extent layer.** The activation
 mapped building damage and mass movements, not water. Our validation is
@@ -239,6 +339,25 @@ mountain valleys.
 **5.6 Hospital reachability assumes road-network completeness.** OSM road
 coverage in rural Rasuwa is incomplete; missing minor tracks may
 over-estimate cut-off.
+
+**5.7 The step 3 analysis is exploratory.** `docs/step3_criteria.md` was
+written after the first event run (the file was empty when the results were written),
+so the results in §4.1b are not a pre-registered test. There is also no
+placebo yet: the same analysis on a scene pair that does not span the event
+(for example 4 August against 16 August on the same orbit) is the first run
+that can be tested against fixed criteria.
+
+**5.8 Backscatter is uncalibrated, and the SAR is not terrain-corrected.**
+The dB values (§3.1) are relative backscatter. Differencing two scenes from the
+same relative orbit reduces static terrain effects, but slope-dependent or
+date-to-date radiometric differences are not corrected and could contribute to
+local changes. The scenes are geocoded with a first-order GCP warp and no
+DEM-based terrain correction, while HAND, the valley-floor classes, the radar
+mask and the OSM main-stem line are defined on the DEM grid. In steep terrain a
+SAR pixel can be displaced relative to the DEM by relief (about 1.25 m per metre
+of height above the reference surface at the 38.77° incidence angle), so the
+main-stem floor class may not coincide with the channel in the SAR image. The
+z-score result (§4.1b) has not been checked for this offset.
 
 ---
 
@@ -277,7 +396,9 @@ environment. Stage order used for the results in this report:
     python src/processing/cutoff_v2.py
     python src/validation/emsr927_comparison.py
     python src/validation/damage_sanity_check.py
-    python src/report/dashboard_full.py
+    python -m src.analysis.zscore --tag event
+    python -m src.report.situation_report
+    python -m src.report.dashboard_full
 
 `src/config.py` is not committed (it holds credentials and dates); copy the
 values from `src/config.example.py`.
@@ -289,51 +410,43 @@ Checks:
 
 Key artifacts:
 
-| File                                                   | Description                                                  |
-| ------------------------------------------------------ | ------------------------------------------------------------ |
-| `data/raw/osm/manifest.json`                           | OSM snapshot provenance (ohsome, 2026-07-27)                 |
-| `data/processed/flood_mask.tif`                        | Binary flood mask (unvalidated)                              |
-| `outputs/impact_summary.json`                          | Building, road and bridge counts                             |
-| `outputs/affected_bridges.geojson`                     | 21 bridge features                                           |
-| `outputs/affected_buildings.gpkg`                      | 1,093 building features (flooded + debris)                   |
-| `outputs/cutoff_settlements.json`                      | Per-settlement reachability                                  |
-| `outputs/validation/damage_sanity.json`                | EMSR927 damage-point totals                                  |
-| `data/processed/emsr927_comparison.json`               | EMSR927 proxy validation (not committed)                     |
-| `outputs/diagnostics/aoi_backscatter_diagnostics.json` | Pre-rebuild backscatter diagnostic (no generator)            |
-| `outputs/flood_unet.pt`                                | U-Net best checkpoint (IoU 0.523), earlier run               |
-| `outputs/unet_metrics.json`                            | 20-epoch training history, earlier run                       |
-| `outputs/himalaya_heldout_metrics.json`                | Proxy eval, earlier run (its Rasuwa prediction is withdrawn) |
+| File                                                             | Description                                                             |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `data/raw/osm/manifest.json`                                     | OSM snapshot provenance (ohsome, 2026-07-27)                            |
+| `data/processed/flood_mask.tif`                                  | Binary flood mask (unvalidated)                                         |
+| `outputs/impact_summary.json`                                    | Building, road and bridge counts                                        |
+| `outputs/affected_bridges.geojson`                               | 21 bridge features                                                      |
+| `outputs/affected_buildings.gpkg`                                | 1,093 building features (flooded + debris)                              |
+| `outputs/cutoff_settlements.json`                                | Per-settlement reachability                                             |
+| `outputs/validation/damage_sanity.json`                          | EMSR927 damage-point totals                                             |
+| `data/processed/emsr927_comparison.json`                         | EMSR927 proxy validation (not committed)                                |
+| `outputs/diagnostics/aoi_backscatter_diagnostics.json`           | Pre-rebuild backscatter diagnostic (no generator)                       |
+| `outputs/flood_unet.pt`                                          | U-Net best checkpoint (IoU 0.523), earlier run                          |
+| `outputs/unet_metrics.json`                                      | 20-epoch training history, earlier run                                  |
+| `outputs/himalaya_heldout_metrics.json`                          | Proxy eval, earlier run (its Rasuwa prediction is withdrawn)            |
+| `outputs/validation/signal_check.json`                           | VV change along the river and controls (no generator in the repository) |
+| `outputs/diagnostics/step3_event.json`                           | Main-stem z-score statistics and bootstrap (exploratory)                |
+| `outputs/diagnostics/step3_profile_event.csv`                    | Profile data behind the step 3 profile figure                           |
+| `outputs/diagnostics/look_geometry.json`                         | Look geometry used by the radar mask                                    |
+| `outputs/figures/step3_map_event.png`, `step3_profile_event.png` | Step 3 map and profile figures                                          |
 
 ---
 
 ## Appendix A — Figures
 
-**Figure A1 (earlier run, larger study area; not regenerated).** Binary flood mask (`data/processed/flood_mask.tif`) over the study
-area. The 47 km² of detected pixels are scattered across the whole 1.5° × 1.0°
-mosaic and do not follow the Trishuli / Bhote Koshi corridor. This is the
-negative result in one image.
-
-![Flood mask](outputs/figures/01_flood_mask.png)
-
-**Figure A2.** EMSR927 AOIs (colored outlines) over the post-event VV
+**Figure A1 (earlier run; not regenerated).** EMSR927 AOIs (colored outlines) over the post-event VV
 backscatter. The four AOIs cover the GLOF-affected corridor, but the SAR
 imagery is dominated by terrain rather than a flood signature.
 
 ![EMSR927 AOIs over VV](outputs/figures/02_emsr927_aois.png)
 
-**Figure A3.** Median VV backscatter change per AOI, compared against the
-expected GLOF signature band (−5 to −10 dB, green shaded). Every AOI sits
-within ±0.5 dB of zero — no clear signal in the earlier run.
-
-![Backscatter change per AOI](outputs/figures/03_backscatter_change.png)
-
-**Figure A4.** U-Net training history on Sen1Floods11. Loss decreases
+**Figure A2 (earlier run; not regenerated).** U-Net training history on Sen1Floods11. Loss decreases
 monotonically; validation IoU peaks at 0.523 (epoch 6) and then oscillates —
 the model has converged on a 252-chip dataset.
 
 ![U-Net training history](outputs/figures/04_unet_training.png)
 
-**Figure A5.** Per-AOI EMSR927 validation. Destroyed-building recall is zero at
+**Figure A3 (earlier run; not regenerated).** Per-AOI EMSR927 validation. Destroyed-building recall is zero at
 both Rasuwa AOIs (Syapru Besi, Timure) — the locations where the GLOF actually
 occurred.
 
