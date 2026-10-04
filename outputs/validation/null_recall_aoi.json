@@ -1,0 +1,34 @@
+{
+  "AOI01": {
+    "points": 433,
+    "mask_px": 0,
+    "flat_px": 163,
+    "observed": 0.0,
+    "null_mean": 0.0,
+    "null_sd": 0.0
+  },
+  "AOI02": {
+    "points": 431,
+    "mask_px": 0,
+    "flat_px": 282,
+    "observed": 0.0,
+    "null_mean": 0.0,
+    "null_sd": 0.0
+  },
+  "AOI03": {
+    "points": 2343,
+    "mask_px": 2278,
+    "flat_px": 14388,
+    "observed": 0.3700384122919334,
+    "null_mean": 0.11310285958173281,
+    "null_sd": 0.010251454980544663
+  },
+  "AOI05": {
+    "points": 581,
+    "mask_px": 2544,
+    "flat_px": 13058,
+    "observed": 0.1703958691910499,
+    "null_mean": 0.09067986230636833,
+    "null_sd": 0.017222524567682865
+  }
+}

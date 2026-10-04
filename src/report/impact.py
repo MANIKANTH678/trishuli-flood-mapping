@@ -22,6 +22,8 @@ s_path = OUT / "cutoff_settlements.json"
 if s_path.exists():
     with open(s_path, "r", encoding="utf-8") as f:
         s = json.load(f)
+    if isinstance(s, dict):  # new format: {"summary": ..., "settlements": [...]}
+        s = s.get("settlements", [])
 
 summary = {}
 summary_path = OUT / "impact_summary.json"
@@ -80,5 +82,5 @@ def save_map(gdf, title, fname, color="#c0392b"):
     plt.close(fig)
     print("saved", fname)
 
-save_map(b, f"Flooded buildings ({len(b):,})", "affected_buildings_map.png")
-save_map(r, f"Flooded roads ({len(r):,})",     "affected_roads_map.png", color="#2980b9")
+save_map(b, f"Buildings in mask ({len(b):,})", "affected_buildings_map.png")
+save_map(r, f"Road segments in mask ({len(r):,})", "affected_roads_map.png", color="#2980b9")

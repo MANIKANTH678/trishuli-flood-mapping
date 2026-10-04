@@ -34,64 +34,56 @@ from src import config  # noqa: E402
 # Static content
 # --------------------------------------------------------------------------- #
 
-FEATURE_GLOSSARY = {
-    "elevation":    ("Elevation", "Height above sea level from the 30 m DEM (m)."),
-    "slope":        ("Slope", "Terrain steepness derived from the DEM (degrees)."),
-    "aspect":       ("Aspect", "Compass direction the slope faces (degrees)."),
-    "tpi":          ("Topographic position", "Height relative to the surrounding 5-pixel neighbourhood (m)."),
-    "dist_lowland": ("Distance to lowland", "Distance to the nearest low-lying terrain (m)."),
-    "vv_diff":      ("VV change", "Sentinel-1 VV backscatter, post minus pre (dB). Strong drops mean open water."),
-    "vh_diff":      ("VH change", "Sentinel-1 VH backscatter, post minus pre (dB)."),
-    "vv_pre":       ("VV pre-event", "Pre-flood VV backscatter (dB)."),
-    "vh_pre":       ("VH pre-event", "Pre-flood VH backscatter (dB)."),
-}
-
 FIGURES = [
-    ("flood_mask", "flood_mask.png", "Flood mask",
-     "Sentinel-1 VV change detection on the 30 m grid. Blue pixels dropped more than "
-     "1.5 dB between the pre- and post-event scenes after masking slopes above 15° and "
-     "permanent water. Patches under 100 pixels were removed.", True),
-    ("susceptibility", "susceptibility_preview.png", "Flood susceptibility",
-     "Per-pixel probability of flooding from the XGBoost model trained on terrain and "
-     "SAR features. Darker red means higher probability.", False),
-    ("buildings", "affected_buildings_map.png", "Flooded buildings",
-     "OpenStreetMap building footprints whose centroid falls inside the flood mask.", False),
-    ("roads", "affected_roads_map.png", "Flooded roads",
-     "OpenStreetMap road segments whose midpoint falls inside the flood mask.", False),
+    ("buildings", "affected_buildings_map.png", "Buildings in mask",
+     "OpenStreetMap building footprints whose centroid falls inside the mask.", False),
+    ("roads", "affected_roads_map.png", "Road segments in mask",
+     "OpenStreetMap road segments whose midpoint falls inside the mask.", False),
 ]
 
 METHOD_STEPS = [
-    ("Acquire", "Sentinel-1 GRD scenes before and after the event, a 30 m DEM, and an "
-                "OpenStreetMap snapshot taken before the flood."),
-    ("Align", "Calibrate SAR backscatter to dB and resample everything to a common 30 m "
-              "grid in UTM 45N (EPSG:32645)."),
-    ("Detect", "Difference post and pre VV backscatter, threshold at −1.5 dB (Otsu-guided), "
-               "mask steep slopes and permanent water, then clean small patches."),
-    ("Model", "Train an XGBoost classifier on nine terrain and SAR features with 10:1 "
-              "negative undersampling; score the whole area of interest."),
-    ("Impact", "Intersect the flood mask with buildings, roads and settlements; find "
+    ("Acquire", f"Sentinel-1 GRD scenes from {config.PRE_DATE} (pre) and {config.POST_DATE} (post), "
+                f"the Copernicus GLO-30 DEM, and an OpenStreetMap snapshot of "
+                f"{config.OSM_SNAPSHOT_DATE} taken before the flood."),
+    ("Align", "SNAP preprocessing (orbit file, border and thermal-noise removal, sigma0 "
+              "calibration, range-Doppler terrain correction at 10 m), then linear-power "
+              "averaging to a common 30 m grid in UTM 45N (EPSG:32645)."),
+    ("Detect", "Lee speckle filter, then the mean of the VV and VH change (post minus pre, dB). "
+               "Threshold at the 5th percentile of that change, clipped to between −3.5 and "
+               "−1.5 dB; keep flat land (slope under 12°) outside permanent water; remove "
+               "patches under 20 pixels."),
+    ("Impact", "Intersect the mask with buildings, roads and settlements; find "
                "settlements disconnected from the road graph once flooded segments are removed."),
+    ("Validate", "Compare the mask with EMSR927 damage points against a random mask of the "
+                 "same size on flat pixels, and check the VV change along the river against "
+                 "shifted-river controls."),
 ]
 
 LIMITATIONS = [
-    "30 m pixels smear small structures, so individual building counts are indicative.",
-    "OpenStreetMap completeness varies across the valley; rural areas are under-mapped.",
+    "The post scene is two days after the event; a flash flood in a narrow gorge may already have drained.",
+    "30 m pixels mix narrow channels and smear small structures, so building counts are indicative.",
+    "EMSR927 has no flood-extent layer, so validation against damage points is proxy only.",
+    "The detector threshold is clipped to −3.5…−1.5 dB, and the mask is selected from noise-level change.",
+    f"The OpenStreetMap snapshot of {config.OSM_SNAPSHOT_DATE} predates the flood; later edits are "
+    "not reflected, and rural Rasuwa is under-mapped, so missing buildings undercount damage and "
+    "missing tracks can overstate cut-off.",
     "Cut-off detection samples one midpoint per road segment and ignores footpaths.",
-    "Steep terrain is masked out, so debris flows on slopes are not captured.",
+    "Steep terrain (slope 12° or more) is masked out, so debris flows on slopes are not captured.",
 ]
 
 DATA_FILES = [
-    ("flood_mask.png", "Flood mask preview", "PNG"),
-    ("susceptibility.tif", "Susceptibility probability raster", "GeoTIFF"),
-    ("susceptibility_binary.tif", "Susceptibility above threshold", "GeoTIFF"),
-    ("affected_buildings.gpkg", "Flooded building footprints", "GeoPackage"),
-    ("affected_roads.geojson", "Flooded road segments", "GeoJSON"),
+    ("affected_buildings.gpkg", "Building footprints inside the mask", "GeoPackage"),
+    ("affected_roads.geojson", "Road segments inside the mask", "GeoJSON"),
+    ("affected_bridges.geojson", "Bridges inside the mask", "GeoJSON"),
     ("cutoff_settlements.json", "Settlements with cut-off flag", "JSON"),
-    ("impact_stats.json", "Headline statistics", "JSON"),
-    ("impact_by_district.csv", "Flooded buildings by tagged locality", "CSV"),
-    ("flood_model.joblib", "Trained XGBoost model", "joblib"),
-    ("model_meta.json", "Model metrics and feature list", "JSON"),
-    ("feature_importance.json", "XGBoost feature importance", "JSON"),
+    ("impact_summary.json", "Headline statistics", "JSON"),
+    ("impact_by_district.csv", "Buildings in mask by tagged locality", "CSV"),
+    ("validation/signal_check.json", "VV change along the river and controls", "JSON"),
+    ("validation/null_recall_aoi.json", "Mask hit rate against a random-mask null", "JSON"),
+    ("validation/unet_corridor.json", "U-Net corridor check", "JSON"),
+    ("unet_metrics.json", "U-Net training metrics", "JSON"),
+    ("flood_unet.pt", "Trained U-Net weights", "PyTorch"),
+    ("reports/situation_report_EN.md", "Situation report (English)", "Markdown"),
 ]
 
 # --------------------------------------------------------------------------- #
@@ -175,32 +167,6 @@ def settlement_record(raw: dict) -> dict:
     }
 
 
-def feature_chart_svg(importance: dict) -> str:
-    """Horizontal bar chart of feature importance as inline SVG."""
-    if not importance:
-        return "<p class='muted'>No feature importance file found.</p>"
-    items = sorted(importance.items(), key=lambda kv: -kv[1])
-    top = max(v for _, v in items) or 1.0
-    row_h, left, right, width = 30, 150, 60, 640
-    height = row_h * len(items) + 8
-    bar_w = width - left - right
-    parts = [f'<svg class="fi-chart" viewBox="0 0 {width} {height}" role="img" '
-             f'aria-label="Feature importance bar chart" xmlns="http://www.w3.org/2000/svg">']
-    for i, (key, val) in enumerate(items):
-        y = i * row_h + 4
-        w = max(2.0, bar_w * val / top)
-        name = FEATURE_GLOSSARY.get(key, (key, ""))[0]
-        parts.append(
-            f'<g class="fi-row"><title>{esc(name)}: {val:.3f}</title>'
-            f'<text x="{left - 10}" y="{y + 15}" text-anchor="end" class="fi-label">{esc(name)}</text>'
-            f'<rect x="{left}" y="{y + 2}" width="{bar_w}" height="{row_h - 8}" rx="4" class="fi-track"/>'
-            f'<rect x="{left}" y="{y + 2}" width="{w:.1f}" height="{row_h - 8}" rx="4" class="fi-bar"/>'
-            f'<text x="{left + w + 8:.1f}" y="{y + 15}" class="fi-value">{val:.3f}</text></g>'
-        )
-    parts.append("</svg>")
-    return "".join(parts)
-
-
 def locality_rows(csv_path: Path, flooded_total: int) -> tuple[str, int]:
     """Merge the messy ``addr:city`` tags case-insensitively and render rows."""
     if not csv_path.exists():
@@ -246,7 +212,7 @@ PAGE = Template(r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Trishuli Flood Impact</title>
-<meta name="description" content="Flood extent, susceptibility and infrastructure impact for the $flood_date Trishuli–Bhote Koshi flood, Nepal.">
+<meta name="description" content="Detector-mask exposure analysis (unvalidated) for the $flood_date Trishuli–Bhote Koshi flood, Nepal.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
 :root{
@@ -310,6 +276,7 @@ p{margin:.3rem 0 .8rem}
   border-radius:999px;padding:5px 12px;font-size:.85rem;color:var(--muted)}
 .chip b{color:var(--text);font-weight:600}
 
+.notice{margin-top:16px;border:1px solid var(--warn);border-left-width:4px;background:var(--surface);border-radius:10px;padding:12px 16px;font-size:.92rem;max-width:80ch}
 /* sections */
 section{padding:28px 0}
 .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -441,7 +408,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
   <div class="wrap">
     <div class="brand"><span class="dot" aria-hidden="true"></span><span class="text">Trishuli Flood Impact</span></div>
     <nav class="nav-links" aria-label="Sections">
-      <a href="#overview">Overview</a><a href="#maps">Maps</a><a href="#model">Model</a>
+      <a href="#overview">Overview</a><a href="#maps">Maps</a>
       <a href="#settlements">Settlements</a><a href="#methods">Methods</a><a href="#data">Data</a>
     </nav>
     <button class="btn icon" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">◐</button>
@@ -452,8 +419,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
 <section class="hero" id="overview">
   <div class="eyebrow">Track B · Multimodal AI Hackathon 2026</div>
   <h1>Trishuli–Bhote Koshi flood, $flood_date_long</h1>
-  <p class="lead">Flood extent mapped from Sentinel-1 radar change detection, a learned susceptibility
-  surface, and the buildings, roads and settlements the water reached. All inputs are free, open data.</p>
+  <p class="lead">Sentinel-1 radar change detection, and the buildings, roads and settlements that
+  fall inside the detector's mask. All inputs are free, open data.</p>
+  <div class="notice" role="note"><b>Unvalidated result.</b> On the $pre_date / $post_date Sentinel-1 pair no
+  flood signal could be detected along the Trishuli or in the Rasuwa reach. This pair cannot resolve the
+  event; it does not show that no flood occurred. The mask is the thresholded dark tail of the VV/VH change,
+  not a validated flood extent, and the counts below show exposure to that mask. EMSR927 has no flood-extent
+  layer, so validation against its damage points is proxy only.</div>
   <div class="chips">
     <span class="chip">Pre-event scene <b>$pre_date</b></span>
     <span class="chip">Post-event scene <b>$post_date</b></span>
@@ -465,66 +437,39 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
 </section>
 
 <section aria-labelledby="kpi-head">
-  <div class="section-head"><h2 id="kpi-head">Impact at a glance</h2><p class="muted">Counts come from intersecting the flood mask with the pre-flood OpenStreetMap snapshot.</p></div>
+  <div class="section-head"><h2 id="kpi-head">Impact at a glance</h2><p class="muted">Counts come from intersecting the detector mask (unvalidated) with the pre-event OpenStreetMap snapshot.</p></div>
   <div class="kpis">
     <div class="card kpi buildings">
-      <div class="label">Flooded buildings</div>
+      <div class="label">Buildings in mask</div>
       <div class="value">$flooded_buildings</div>
       <div class="sub">$pct_buildings of $total_buildings mapped buildings</div>
       <div class="meter"><i style="width:$pct_buildings_w%"></i></div>
     </div>
     <div class="card kpi roads">
-      <div class="label">Flooded road segments</div>
+      <div class="label">Road segments in mask</div>
       <div class="value">$flooded_roads</div>
       <div class="sub">$pct_roads of $total_roads road segments</div>
       <div class="meter"><i style="width:$pct_roads_w%"></i></div>
     </div>
     <div class="card kpi settlements">
-      <div class="label">Cut-off settlements</div>
+      <div class="label">Cut-off settlements (under mask)</div>
       <div class="value">$cutoff_settlements</div>
       <div class="sub">$pct_cutoff of $total_settlements settlements lost road access</div>
       <div class="meter"><i style="width:$pct_cutoff_w%"></i></div>
     </div>
     <div class="card kpi model">
-      <div class="label">Susceptibility model</div>
-      <div class="value">$auc <span class="sub">AUC</span></div>
-      <div class="sub">F1 $f1 at threshold $threshold · $n_features features</div>
-      <div class="meter"><i style="width:$auc_w%"></i></div>
+      <div class="label">Bridges in mask</div>
+      <div class="value">$flooded_bridges</div>
+      <div class="sub">of $total_bridges mapped bridges</div>
+      <div class="meter"><i style="width:$pct_bridges_w%"></i></div>
     </div>
   </div>
 </section>
 
 <section id="maps" aria-labelledby="maps-head">
-  <div class="section-head"><h2 id="maps-head">Maps</h2><p class="muted">Click any map to enlarge. The flood mask is a raw raster; use the toggle to view it on a light background.</p></div>
+  <div class="section-head"><h2 id="maps-head">Maps</h2><p class="muted">Click any map to enlarge.</p></div>
   <div class="figgrid">
 $figures
-  </div>
-</section>
-
-<section id="model" aria-labelledby="model-head">
-  <div class="section-head"><h2 id="model-head">Susceptibility model</h2><p class="muted">XGBoost classifier, 70/30 split, negatives undersampled $neg_ratio:1 in training only.</p></div>
-  <div class="model-grid">
-    <div class="card"><div class="pad">
-      <div class="metrics">
-        <div class="metric"><div class="v">$auc</div><div class="k">ROC AUC (held-out)</div></div>
-        <div class="metric"><div class="v">$f1</div><div class="k">Best F1</div></div>
-        <div class="metric"><div class="v">$threshold</div><div class="k">Probability threshold</div></div>
-        <div class="metric"><div class="v">$n_features</div><div class="k">Input features</div></div>
-      </div>
-      <h3>Feature importance</h3>
-      <p class="muted" style="margin-top:0">Gain-based importance from the trained booster. Radar change dominates; slope and distance to lowland add the terrain context.</p>
-      <div class="fi-wrap">$feature_chart</div>
-      <details><summary>Raw model metadata</summary><pre>$model_meta_json</pre></details>
-    </div></div>
-    <div class="card"><div class="pad" style="padding-bottom:6px">
-      <h3>What the features mean</h3>
-      <p class="muted" style="margin-top:0">All layers are sampled on the same $pixel_size m grid.</p>
-    </div>
-      <table>
-        <thead><tr><th>Feature</th><th class="num">Importance</th></tr></thead>
-        <tbody>$feature_rows</tbody>
-      </table>
-    </div>
   </div>
 </section>
 
@@ -589,7 +534,7 @@ $limitations
 
 <footer><div class="wrap">
   <span>Generated $generated_at$commit_note</span>
-  <span>Data: Copernicus Sentinel-1 · OpenStreetMap contributors · 30 m DEM</span>
+  <span>Contains modified Copernicus Sentinel data 2026 · © OpenStreetMap contributors (ODbL) · Copernicus DEM GLO-30 © DLR e.V. / Airbus DS, provided under COPERNICUS by the EU and ESA · Copernicus EMS EMSR927</span>
 </div></footer>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged map">
@@ -748,15 +693,11 @@ $limitations
 
 def build(out_dir: Path) -> Path:
     stats = load_json(out_dir / "impact_summary.json", {})
-    meta = load_json(out_dir / "model_meta.json", {})
-    importance = load_json(out_dir / "feature_importance.json", {})
     raw_settlements = load_json(out_dir / "cutoff_settlements.json", [])
     cut_summary = {}
     if isinstance(raw_settlements, dict):
         cut_summary = raw_settlements.get("summary", {})
         raw_settlements = raw_settlements.get("settlements", [])
-    if not isinstance(importance, dict):
-        importance = {}
 
     settlements = [settlement_record(x) for x in raw_settlements if isinstance(x, dict)]
     cut = [s for s in settlements if s["cut"]]
@@ -765,6 +706,7 @@ def build(out_dir: Path) -> Path:
 
     total_b, flooded_b = stats.get("total_buildings"), stats.get("flooded_buildings")
     total_r, flooded_r = stats.get("total_roads"), stats.get("flooded_roads")
+    total_br, flooded_br = stats.get("total_bridges"), stats.get("flooded_bridges")
 
     def width(part, whole):
         try:
@@ -772,14 +714,10 @@ def build(out_dir: Path) -> Path:
         except (TypeError, ZeroDivisionError):
             return "0"
 
-    auc = meta.get("auc")
-    f1 = meta.get("f1_at_optimal")
-    threshold = meta.get("optimal_threshold")
-
     # Figures ---------------------------------------------------------------
     legends = {
-        "flood_mask": ("Flooded", "var(--water)"),
-        "susceptibility": ("High probability", "#9e0c2a"),
+        "flood_mask": ("In mask", "var(--water)"),
+        "validation": ("EMSR927", "var(--warn)"),
         "buildings": ("Building", "var(--building)"),
         "roads": ("Road", "var(--road)"),
     }
@@ -801,18 +739,6 @@ def build(out_dir: Path) -> Path:
             f'<p>{esc(caption)}</p></figcaption></figure>'
         )
 
-    # Model -----------------------------------------------------------------
-    feature_rows = []
-    order = meta.get("features") or list(FEATURE_GLOSSARY)
-    for key in order:
-        name, desc = FEATURE_GLOSSARY.get(key, (key, ""))
-        imp = importance.get(key)
-        feature_rows.append(
-            f"<tr><td><b>{esc(name)}</b> <code class='muted' style='font-size:.78rem'>{esc(key)}</code>"
-            f"<div class='muted' style='font-size:.86rem'>{esc(desc)}</div></td>"
-            f"<td class='num'>{'—' if imp is None else f'{imp:.3f}'}</td></tr>"
-        )
-
     # Settlements -----------------------------------------------------------
     type_counts: dict[str, int] = {}
     for s in cut:
@@ -828,8 +754,8 @@ def build(out_dir: Path) -> Path:
         locality_block = f"""
   <div class="card" style="margin-top:16px;overflow:hidden">
     <div class="pad" style="padding-bottom:8px">
-      <h3>Flooded buildings by tagged locality</h3>
-      <p class="muted" style="margin:0">Only {tagged:,} of the {fmt_int(flooded_b)} flooded buildings ({coverage}) carry an
+      <h3>Buildings in mask by tagged locality</h3>
+      <p class="muted" style="margin:0">Only {tagged:,} of the {fmt_int(flooded_b)} buildings in the mask ({coverage}) carry an
       OpenStreetMap <code>addr:city</code> tag, so this ranks where tagging is dense rather than where damage is worst.
       Spelling variants were merged.</p>
     </div>
@@ -884,15 +810,9 @@ def build(out_dir: Path) -> Path:
         cutoff_settlements=fmt_int(cutoff_settlements), total_settlements=fmt_int(total_settlements),
         pct_cutoff=pct(cutoff_settlements, total_settlements),
         pct_cutoff_w=width(cutoff_settlements, total_settlements),
-        auc="—" if auc is None else f"{auc:.3f}", auc_w="0" if auc is None else f"{100 * auc:.1f}",
-        f1="—" if f1 is None else f"{f1:.2f}",
-        threshold="—" if threshold is None else f"{threshold:.2f}",
-        n_features=esc(meta.get("n_features", len(order))),
-        neg_ratio=esc(meta.get("neg_ratio", "—")),
+        flooded_bridges=fmt_int(flooded_br), total_bridges=fmt_int(total_br),
+        pct_bridges_w=width(flooded_br, total_br),
         figures="\n".join(fig_html),
-        feature_chart=feature_chart_svg(importance),
-        feature_rows="\n".join(feature_rows),
-        model_meta_json=esc(json.dumps(meta, indent=2)),
         type_options=type_options,
         locality_block=locality_block,
         method_steps=method_steps,

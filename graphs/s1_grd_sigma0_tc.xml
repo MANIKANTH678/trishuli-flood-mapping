@@ -1,0 +1,40 @@
+<graph id="s1_grd_sigma0_tc">
+  <version>1.0</version>
+  <node id="Read"><operator>Read</operator>
+    <parameters><file>${input}</file></parameters></node>
+  <node id="Orbit"><operator>Apply-Orbit-File</operator>
+    <sources><sourceProduct refid="Read"/></sources>
+    <parameters><orbitType>Sentinel Precise (Auto Download)</orbitType>
+      <polyDegree>3</polyDegree><continueOnFail>true</continueOnFail></parameters></node>
+  <node id="Border"><operator>Remove-GRD-Border-Noise</operator>
+    <sources><sourceProduct refid="Orbit"/></sources>
+    <parameters><selectedPolarisations>VV,VH</selectedPolarisations></parameters></node>
+  <node id="Noise"><operator>ThermalNoiseRemoval</operator>
+    <sources><sourceProduct refid="Border"/></sources>
+    <parameters><removeThermalNoise>true</removeThermalNoise></parameters></node>
+  <node id="Calib"><operator>Calibration</operator>
+    <sources><sourceProduct refid="Noise"/></sources>
+    <parameters><selectedPolarisations>VV,VH</selectedPolarisations>
+      <outputSigmaBand>true</outputSigmaBand>
+      <outputImageScaleInDb>false</outputImageScaleInDb></parameters></node>
+  <node id="Subset"><operator>Subset</operator>
+    <sources><sourceProduct refid="Calib"/></sources>
+    <parameters><geoRegion>${region}</geoRegion><copyMetadata>true</copyMetadata></parameters></node>
+  <node id="TC"><operator>Terrain-Correction</operator>
+    <sources><sourceProduct refid="Subset"/></sources>
+    <parameters>
+      <demName>External DEM</demName>
+      <externalDEMFile>${dem}</externalDEMFile>
+      <externalDEMNoDataValue>-9999.0</externalDEMNoDataValue>
+      <externalDEMApplyEGM>true</externalDEMApplyEGM>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
+      <pixelSpacingInMeter>${spacing}</pixelSpacingInMeter>
+      <mapProjection>${crs}</mapProjection>
+      <nodataValueAtSea>false</nodataValueAtSea>
+      <saveSelectedSourceBand>true</saveSelectedSourceBand>
+    </parameters></node>
+  <node id="Write"><operator>Write</operator>
+    <sources><sourceProduct refid="TC"/></sources>
+    <parameters><file>${output}</file><formatName>BEAM-DIMAP</formatName></parameters></node>
+</graph>

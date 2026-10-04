@@ -1,0 +1,12 @@
+{
+  "post": {
+    "flood_px": 184673,
+    "covered_px": 3670016
+  },
+  "pre": {
+    "flood_px": 185280,
+    "covered_px": 3670016
+  },
+  "new_water_px": 21020,
+  "lost_water_px": 21627
+}
