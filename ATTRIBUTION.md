@@ -36,7 +36,7 @@ Data sources retain their own licenses; this project's MIT license covers code.
   settlements (1,565)
 - **Sources:** Overpass API (<https://overpass-api.de/>) and Geofabrik
   (`nepal-latest.osm.pbf`, <https://download.geofabrik.de/asia/nepal.html>)
-- **Snapshot:** OSM as of 2026-09-30 (file timestamps); **post-event** —
+- **Snapshot:** OSM as of ohsome API snapshot 2026-07-27 (pre-event); **post-event** —
   flagged as a limitation for pre/post comparisons.
 - **License:** (c) OpenStreetMap contributors, ODbL v1.0
   <https://www.openstreetmap.org/copyright>
