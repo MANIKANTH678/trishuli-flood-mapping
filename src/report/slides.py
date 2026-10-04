@@ -1,52 +1,113 @@
+"""Build outputs/presentation.pptx from the current pipeline outputs.
+
+All numbers come from the same JSON / raster files the situation report uses, so the
+deck cannot drift from the report. Run from anywhere:
+
+    python src/report/slides.py
+"""
+import datetime
+import json
+import sys
+from pathlib import Path
+
 from pptx import Presentation
+from pptx.util import Pt
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from src import config  # noqa: E402
+
+
+def J(rel):
+    return json.loads((ROOT / rel).read_text(encoding="utf-8"))
+
+
+def mask_stats():
+    import rasterio
+    with rasterio.open(ROOT / "data/processed/flood_mask.tif") as s:
+        px = int((s.read(1) > 0).sum())
+        area = px * abs(s.res[0] * s.res[1]) / 1e6
+    return px, area
+
+
+imp = J("outputs/impact_summary.json")
+cut = J("outputs/cutoff_settlements.json")["summary"]
+nul = J("outputs/validation/null_recall_aoi.json")
+px, area = mask_stats()
+empty_aois = [k for k, v in nul.items() if v["mask_px"] == 0]
 
 prs = Presentation()
 
-def slide(title, content):
+
+def slide(title, lines, size=22):
     s = prs.slides.add_slide(prs.slide_layouts[1])
     s.shapes.title.text = title
-    s.placeholders[1].text = content
+    tf = s.placeholders[1].text_frame
+    tf.text = lines[0]
+    for line in lines[1:]:
+        tf.add_paragraph().text = line
+    for p in tf.paragraphs:
+        p.font.size = Pt(size)
 
-slide("Trishuli Flood Mapping — 2026",
-      "Sentinel-1 SAR + Machine Learning\nP1 · P2 · P3 · P4\n2026-10-01")
+
+slide("Trishuli / Bhote Koshi flood: Sentinel-1 analysis",
+      ["Calibrated, terrain-corrected SAR and OpenStreetMap exposure",
+       "Preliminary and unvalidated",
+       datetime.date.today().isoformat()])
+
 slide("Problem",
-      "• Trishuli / Bhote Koshi corridor flooding\n"
-      "• Need rapid extent + impact mapping\n"
-      "• 48-hour SAR-to-decision pipeline")
-slide("Data",
-      "• Sentinel-1 GRD (VV/VH) — 30 m\n"
-      "• Copernicus DEM — 30 m\n"
-      "• OpenStreetMap buildings & roads")
-slide("Method",
-      "1. Align DEM + S1 to 30 m UTM grid\n"
-      "2. Detect flood: Δ VV < -1.5 dB\n"
-      "3. Train XGBoost on 9 features\n"
-      "4. Overlay on OSM for impact")
-slide("Flood Detection (P2)",
-      "• 22.66 km² observed flooded\n"
-      "• Threshold -1.5 dB (clamped Otsu)\n"
-      "• Slope & permanent water masked")
-slide("Susceptibility Model (P3)",
-      "• XGBoost, 9 features\n"
-      "• AUC 0.998\n"
-      "• Predicted 23.11 km² — 1.02× observed")
-slide("Validation",
-      "• F1 ~0.91\n"
-      "• IoU ~0.84\n"
-      "• 90%+ of observed flood captured")
-slide("Impact (P1)",
-      "• Buildings flooded: <FILL IN>\n"
-      "• Road segments affected: <FILL IN>\n"
-      "• Cut-off settlements: <FILL IN>")
-slide("Deliverables",
-      "• flood_dashboard_full.html\n"
-      "• flood_model.joblib\n"
-      "• FINAL_REPORT.pdf\n"
-      "• Reproducible pipeline on GitHub")
-slide("Limitations & Next Steps",
-      "• Single-event training\n"
-      "• 30 m misses sub-pixel urban flooding\n"
-      "• Next: dual-orbit fusion, S2 validation")
+      [f"• Suspected GLOF on {config.FLOOD_DATE}, Rasuwa District, Nepal",
+       "• Can free Sentinel-1 data map flood extent and impact quickly?",
+       "• EMSR927 mapped damaged structures but has no flood-extent layer"])
 
-prs.save("outputs/presentation.pptx")
-print("✅ outputs/presentation.pptx")
+slide("Data",
+      [f"• Sentinel-1 GRD VV/VH: {config.PRE_DATE} (pre), {config.POST_DATE} (post)",
+       "• Copernicus GLO-30 DEM",
+       f"• OpenStreetMap snapshot of {config.OSM_SNAPSHOT_DATE} (pre-event)",
+       "• EMSR927 damage points, used only for validation"])
+
+slide("Method",
+      ["1. SNAP: orbit file, noise removal, sigma0, terrain correction",
+       "2. Average to a 30 m grid (UTM 45N)",
+       "3. Detect: mean VV/VH change below a threshold, flat land only",
+       "4. Overlay on OSM and validate against EMSR927"])
+
+slide("Key finding",
+      ["• No detectable flood signal on this Sentinel-1 pair",
+       "• River VV change in the Rasuwa reach is no darker than shifted controls",
+       "• The pair cannot resolve the event; it does not show that no flood occurred"])
+
+slide("Detector mask (unvalidated)",
+      [f"• {px:,} px ({area:.2f} km²), scattered",
+       "• Threshold clipped to -3.5 to -1.5 dB, slope under 12°, patches of 20+ px",
+       "• Selected from noise-level change, so not a flood extent"])
+
+slide("Exposure to the mask",
+      [f"• Buildings: {imp['flooded_buildings']:,} of {imp['total_buildings']:,} "
+       f"(+{imp['debris_buildings']:,} debris-affected)",
+       f"• Road segments: {imp['flooded_roads']:,} of {imp['total_roads']:,}",
+       f"• Bridges: {imp['flooded_bridges']:,} of {imp['total_bridges']:,}",
+       f"• Settlements cut off: {cut['cut_off']} of {cut['total_settlements']}"])
+
+slide("Validation",
+      ["• Mask hit rate on EMSR927 damage points vs a random-mask null",
+       f"• No mask pixels in {len(empty_aois)} of {len(nul)} AOIs: a coverage limit, "
+       "not a detection error",
+       "• U-Net (Sen1Floods11) cannot separate the two scenes, so it is not "
+       "independent evidence"])
+
+slide("Deliverables",
+      ["• Interactive dashboard (outputs/dashboard.html)",
+       "• Situation report and final report",
+       "• Reproducible pipeline (run_all.sh)",
+       "• Trained U-Net weights (flood_unet.pt)"])
+
+slide("Limitations and next steps",
+      ["• Post scene is two days after the event",
+       "• 30 m pixels, steep terrain masked, OSM incomplete in rural Rasuwa",
+       "• Next: Sentinel-2, PlanetScope or high-resolution SAR within 24-72 h",
+       "• Replace the threshold detector before reuse"])
+
+out = ROOT / "outputs/presentation.pptx"
+prs.save(out)
+print("wrote", out)
