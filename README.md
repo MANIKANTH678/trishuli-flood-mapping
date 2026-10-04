@@ -63,12 +63,13 @@ final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
 
 ## Key results
 
-| Metric                       | Value (baseline, unreliable) |
-| ---------------------------- | ---------------------------- |
-| U-Net val IoU (Sen1Floods11) | 0.523                        |
-| U-Net proxy-Himalaya IoU     | 0.554                        |
-| EMSR927 damage-point recall  | 0.000                        |
-| Our flooded buildings        | 61,977 (16x EMSR927 3,816)   |
+| Metric                                   | Value                                              |
+| ---------------------------------------- | -------------------------------------------------- |
+| U-Net val IoU (best epoch, per-batch mean) | 0.523 (pooled held-out: 0.574)                   |
+| U-Net proxy-Himalaya IoU                 | 0.554                                              |
+| EMSR927 hit rate vs random null          | Bidur 0.370 vs 0.113; Phosretar 0.170 vs 0.091     |
+| Mask pixels in Syapru Besi / Timure      | 0 (slope filter leaves 163 / 282 flat pixels)      |
+| Buildings in mask (not a validated flood)| 991 flooded + 102 debris (of 189,503)              |
 
 Full discussion: `FINAL_REPORT.md`.
 
