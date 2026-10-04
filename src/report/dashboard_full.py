@@ -77,7 +77,6 @@ DATA_FILES = [
     ("affected_bridges.geojson", "Bridges inside the mask", "GeoJSON"),
     ("cutoff_settlements.json", "Settlements with cut-off flag", "JSON"),
     ("impact_summary.json", "Headline statistics", "JSON"),
-    ("impact_by_district.csv", "Buildings in mask by tagged locality", "CSV"),
     ("validation/signal_check.json", "VV change along the river and controls", "JSON"),
     ("validation/null_recall_aoi.json", "Mask hit rate against a random-mask null", "JSON"),
     ("validation/unet_corridor.json", "U-Net corridor check", "JSON"),
