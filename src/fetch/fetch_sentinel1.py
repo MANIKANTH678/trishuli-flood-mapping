@@ -150,7 +150,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="Search only; print candidates; don't download.")
     ap.add_argument("--download", action="store_true",
-                    help="Download matching scenes to data/raw/s1/.")
+                    help="Download matching scenes to data/raw/sentinel1/{pre,post}.")
     ap.add_argument("--any-orbit", action="store_true",
                     help="Don't filter on relOrbit=85 / ASCENDING.")
     args = ap.parse_args()
