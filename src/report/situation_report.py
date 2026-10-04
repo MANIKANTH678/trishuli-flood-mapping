@@ -35,7 +35,6 @@ try:
     sig = J("outputs/validation/signal_check.json")
     nul = J("outputs/validation/null_recall_aoi.json")
     un = J("outputs/validation/unet_corridor.json")
-    hm = J("outputs/himalaya_heldout_metrics_v0.json")
 
     with rasterio.open(mask_p) as s:
         px = int((s.read(1) > 0).sum()); area = px * abs(s.res[0] * s.res[1]) / 1e6
@@ -93,7 +92,6 @@ The mask below is the thresholded dark tail of the VV change. It is **not a vali
 | Buildings in mask | {imp['flooded_buildings']:,} flooded + {imp['debris_buildings']:,} debris-affected (of {imp['total_buildings']:,}) |
 | Bridges in mask | {imp['flooded_bridges']:,} (of {imp['total_bridges']:,}) |
 | Settlements cut off | {cut['cut_off']} of {cut['total_settlements']} ({cut['cut_off_no_path']} no path, {cut['cut_off_detour_only']} detour only; {cut['hospitals_total']} hospitals) |
-um = J("outputs/unet_metrics.json")
 
 ## 4. Comparison with EMSR927 damage points
 

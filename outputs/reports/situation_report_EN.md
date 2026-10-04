@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-04 from commit `46f812a + uncommitted changes`. Numbers will change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-04 from commit `711ec12 + uncommitted changes`. Numbers will change if the detector or inputs change.
 
 **Event:** 2026-08-26 flash flood (suspected GLOF), Rasuwa District, Nepal
 **Status:** Post-event analysis. **On this Sentinel-1 pair, no flood signal could be detected.**
@@ -37,7 +37,6 @@ The mask below is the thresholded dark tail of the VV change. It is **not a vali
 | Buildings in mask | 991 flooded + 102 debris-affected (of 189,503) |
 | Bridges in mask | 21 (of 385) |
 | Settlements cut off | 4 of 446 (4 no path, 0 detour only; 20 hospitals) |
-um = J("outputs/unet_metrics.json")
 
 ## 4. Comparison with EMSR927 damage points
 
