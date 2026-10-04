@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-04 from commit `711ec12 + uncommitted changes`. Numbers will change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-04 from commit `459b759 + uncommitted changes`. Numbers will change if the detector or inputs change.
 
 **Event:** 2026-08-26 flash flood (suspected GLOF), Rasuwa District, Nepal
 **Status:** Post-event analysis. **On this Sentinel-1 pair, no flood signal could be detected.**
