@@ -200,14 +200,20 @@ def main():
         print("\n(dry-run) Not downloading. Re-run with --download to fetch.")
         return
 
-    token = get_token()
     out_dir = Path(S1_DIR)
+    token = None  # fetched lazily, only if something is actually missing
     for label, s in picks:
         sub = out_dir / label
         print(f"\n⬇️  downloading {label}: {s['name']}")
+        have = any(
+            (sub / f"{s['name']}{suf}").exists()
+            and (sub / f"{s['name']}{suf}").stat().st_size > 1_000_000
+            for suf in (".zip", ".SAFE.zip")
+        )
+        if not have and token is None:
+            token = get_token()
         try:
             path = download(s["id"], s["name"], token, sub)
-            print(f"   saved to {path}")
         except requests.HTTPError as e:
             print(f"   download failed: {e}")
             print(f"   body: {getattr(e.response, 'text', '')[:300]}")

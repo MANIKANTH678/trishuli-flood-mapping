@@ -3,79 +3,137 @@
 **Track B — Multimodal AI Hackathon 2026**
 
 Post-event damage assessment for the **26 August 2026 Trishuli–Bhote Koshi
-flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, DEM,
-OpenStreetMap data: ohsome API snapshot 2026-07-27 (pre-event), manifest in `data/raw/osm/manifest.json`. © OpenStreetMap contributors (ODbL).
+flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, a DEM and
+OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
+`data/raw/osm/manifest.json`). © OpenStreetMap contributors (ODbL).
 
-> **Status.** Earlier versions of this README claimed the Sentinel-1 pair contains no
-> GLOF signal. That claim is withdrawn: the diagnostic behind it used 600 m window
-> medians at EMSR927 coordinates on GCP-geocoded, uncalibrated imagery, which cannot
-> support it. Preprocessing is being rebuilt (calibrated, terrain-corrected σ⁰).
-> Numbers below come from the baseline pipeline (`v0-baseline`) and are **not reliable**.
+> **Status.** Sentinel-1 preprocessing is SNAP-based (calibrated, terrain-corrected
+> σ⁰, Copernicus GLO-30 DEM). The flood mask is a SAR change-detection product, **not a
+> validated flood extent**. Evidence is mixed (see Key results): the backscatter drop is
+> tied to the river and beats a random null at two EMSR927 sites, but absolute recall is
+> low, the mask is empty at two others, and an independent U-Net water check shows no net
+> change. An earlier README claimed the pair holds no GLOF signal; that claim is
+> withdrawn, because its diagnostic used uncalibrated, GCP-geocoded imagery.
 
 ## Pipeline
 
-    fetch (S1 + OSM) -> geocode S1 -> align (30 m UTM 45N) -> detect (SAR)
-        -> damage (OSM intersect) -> cutoff (hospital reachability)
-        -> validate (EMSR927) -> sanity checks -> report
+`run_all.sh` runs these stages in order. A failure stops the run.
 
-| Stage              | Script                                  | Output                                   |
-| ------------------ | --------------------------------------- | ---------------------------------------- |
-| S1 download        | `src/fetch/fetch_sentinel1.py`          | `data/raw/s1/{pre,post}/*.SAFE`          |
-| OSM download       | `src/download/fetch_osm.py`             | `data/raw/osm/*.geojson`                 |
-| Geocode            | `src/processing/geocode_s1.py`          | `data/raw/s1/*/geocoded/*.tif`           |
-| Align              | `src/processing/align.py`               | `data/processed/s1_*_30m.tif`            |
-| Orbit check        | `src/processing/align_v2_checks.py`     | (validation gate)                        |
-| Flood detect       | `src/processing/flood_detect_v2.py`     | `data/processed/flood_mask.tif`          |
-| Damage             | `src/processing/damage_v2.py`           | `outputs/affected_*.geojson`             |
-| Cutoff             | `src/processing/cutoff_v2.py`           | `outputs/cutoff_settlements.json`        |
-| Train U-Net        | `src/modeling/train_segmentation.py`    | `outputs/flood_unet.pt`                  |
-| Eval U-Net         | `src/modeling/eval_himalaya_heldout.py` | `outputs/himalaya_heldout_metrics.json`  |
-| EMSR927 validation | `src/validation/emsr927_comparison.py`  | `data/processed/emsr927_comparison.json` |
-| Damage sanity      | `src/validation/damage_sanity_check.py` | `outputs/validation/damage_sanity.json`  |
+| #   | Stage                           | Script                                                                          | Output                                             |
+| --- | ------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1   | S1 download                     | `src/fetch/fetch_sentinel1.py`                                                  | `data/raw/sentinel1/{pre,post}/*.SAFE.zip`         |
+| 2   | Unzip                           | inline in `run_all.sh`                                                          | `data/raw/sentinel1/{pre,post}/*.SAFE`             |
+| 3   | Orbit / pass / 12-day gate      | `src/processing/align_v2_checks.py`                                             | (gate; exits 1 on violation)                       |
+| 4   | OSM download                    | `src/download/fetch_osm.py`                                                     | `data/raw/osm/*.geojson`, `manifest.json`          |
+| 5   | DEM                             | `src/fetch/fetch_dem.py`                                                        | `data/raw/dem/dem_glo30_wgs84.tif`                 |
+| 6   | SNAP preprocessing              | `src/processing/s1_preprocess.py`                                               | `data/interim/s1_tc/`                              |
+| 7   | Grid + dB                       | `src/processing/s1_to_grid.py`                                                  | 30 m UTM 45N VV/VH dB rasters in `data/processed/` |
+| 8   | Flood detect                    | `src/processing/flood_detect_v2.py`                                             | `flood_mask.tif`, `debris_mask.tif`                |
+| 9   | Damage                          | `src/processing/damage_v2.py`                                                   | `outputs/affected_*`, `impact_summary.json`        |
+| 9b  | Cutoff                          | `src/processing/cutoff_v2.py`                                                   | `outputs/cutoff_settlements.json`                  |
+| 10  | EMSR927 validation              | `src/validation/emsr927_comparison.py`                                          | `data/processed/emsr927_comparison.json`           |
+| 10  | Damage sanity                   | `src/validation/damage_sanity_check.py`                                         | `outputs/validation/damage_sanity.json`            |
+| 11  | Mask validation                 | `tools/signal_check.py`, `tools/unet_corridor.py`, `tools/null_recall_aoi.py`   | JSON per tool                                      |
+| 12  | Maps, dashboard, slides, report | `src/report/impact.py`, `dashboard_full.py`, `slides.py`, `situation_report.py` | `outputs/`                                         |
+
+Steps 10 and 11 (`null_recall_aoi.py`) and the situation report need `data/external/EMSR927`;
+without it they are skipped.
+
+Not part of `run_all.sh`:
+
+| Stage       | Script                                  | Output                                  |
+| ----------- | --------------------------------------- | --------------------------------------- |
+| Train U-Net | `src/modeling/train_segmentation.py`    | `outputs/flood_unet.pt`                 |
+| Eval U-Net  | `src/modeling/eval_himalaya_heldout.py` | `outputs/himalaya_heldout_metrics.json` |
 
 ## Setup
 
-    python3 -m venv ~/flood-venv
-    source ~/flood-venv/bin/activate
-    pip install -r requirements.txt
+```
+python -m venv .venv
+.venv\Scripts\activate          # Windows;  Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-Set credentials in `src/config.py`:
+Requirements beyond Python packages:
 
-    COPERNICUS_USER = "you@example.com"
-    COPERNICUS_PASS = "your-password"
+- **bash** to run `run_all.sh` (Git Bash or WSL on Windows).
+- **ESA SNAP** installed, for step 6.
+- **Network access** for the OSM (ohsome) and DEM downloads.
+- **Copernicus Data Space credentials**, needed only if scenes are not already on disk.
+  Register free at https://dataspace.copernicus.eu/ and set in `src/config.py`
+  (`.gitignore`d):
 
-Register free at . `src/config.py` is
-`.gitignore`d to prevent accidental commits.
+```
+COPERNICUS_USER = "you@example.com"
+COPERNICUS_PASS = "your-password"
+```
 
 ## Run
 
-    bash run_all.sh
+```
+bash run_all.sh
+```
 
-or step-by-step (see Pipeline table above).
+The Sentinel-1 date windows (pre 13–19 Aug, post 25–31 Aug 2026, relative orbit 85,
+ascending) and the event date are fixed for this flood. The pair used is 2026-08-16
+and 2026-08-28, 12 days apart; each date is two consecutive frames of one pass.
+
+**ohsome quota.** Step 4 can fail with `403 Quota exceeded`. Restore a complete earlier
+snapshot into `data/raw/osm/` (its `manifest.json` must say `snapshot: 2026-07-27`) and
+skip the download:
+
+```
+SKIP_OSM=1 bash run_all.sh          # cmd: set SKIP_OSM=1, then run bash run_all.sh
+```
+
+**Freshness guards.** The situation report refuses to run if the OSM manifest snapshot
+differs from `config.OSM_SNAPSHOT_DATE`, or if `cutoff_settlements.json` and the three
+validation JSONs from step 11 are older than `flood_mask.tif`.
 
 ## Train / eval U-Net
 
-    python -m src.modeling.train_segmentation      # ~2.5 h CPU, 20 epochs
-    python src/modeling/eval_himalaya_heldout.py   # ~5 min
+```
+python -m src.modeling.train_segmentation      # ~2.5 h CPU, 20 epochs
+python src/modeling/eval_himalaya_heldout.py   # ~5 min
+```
 
 Trained on **Sen1Floods11 v1.1** (252 train / 89 val). Best val IoU **0.523**,
 final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
 
 ## Key results
 
-| Metric                                   | Value                                              |
-| ---------------------------------------- | -------------------------------------------------- |
-| U-Net val IoU (best epoch, per-batch mean) | 0.523 (pooled held-out: 0.574)                   |
-| U-Net proxy-Himalaya IoU                 | 0.554                                              |
-| EMSR927 hit rate vs random null          | Bidur 0.370 vs 0.113; Phosretar 0.170 vs 0.091     |
-| Mask pixels in Syapru Besi / Timure      | 0 (slope filter leaves 163 / 282 flat pixels)      |
-| Buildings in mask (not a validated flood)| 991 flooded + 102 debris (of 189,503)              |
+| Metric                                     | Value                                                                                                 |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| U-Net val IoU (best epoch, per-batch mean) | 0.523 (pooled held-out: 0.574)                                                                        |
+| U-Net proxy-Himalaya IoU                   | 0.554                                                                                                 |
+| SAR flood / debris mask                    | 5,802 px (5.22 km²) / 652 px (0.59 km²)                                                               |
+| Backscatter change inside mask             | median −3.03 dB vs ≈0 dB whole scene; river shifted ±1500 m: −0.08 dB                                 |
+| EMSR927 hit rate vs random null            | Bidur 0.370 vs 0.113 ± 0.010; Phosretar 0.170 vs 0.091 ± 0.017                                        |
+| Mask pixels in Syapru Besi / Timure        | 0 (slope filter leaves 163 / 282 flat pixels), so recall 0.0                                          |
+| U-Net corridor water check                 | 21,020 new vs 21,627 lost water px: no net change, so it does **not** independently confirm the flood |
+| Buildings in mask (not a validated flood)  | 991 flooded + 102 debris, of 189,503 (0.523 % flooded)                                                |
+| Roads / bridges in mask                    | 83 of 14,151 roads (0.587 %); 21 of 385 bridges                                                       |
+| Settlements cut off from all 20 hospitals  | 4 of 446 (no remaining road path); derived from the mask                                              |
+
+Hit rates are "better than chance", not accuracy. No locality or district breakdown is
+reported: none of the flooded buildings carries an OSM `addr:city` tag and no administrative
+boundary layer is included.
 
 Full discussion: `FINAL_REPORT.md`.
 
+## Known issues
+
+- Step 6 prints no console output. Check timestamps in `data/interim/s1_tc/` to confirm
+  whether SNAP re-ran.
+- `flood_detect_v2.py` prints `Error in sys.excepthook` three times at exit; the masks are
+  written and the pipeline continues.
+- `fetch_sentinel1.py` shows `pol=?` because it reads the wrong attribute name (cosmetic).
+
 ## Tests
 
-    python -m pytest tests/ -q
+```
+python -m pytest tests/ -q
+```
 
 ## Attribution
 
