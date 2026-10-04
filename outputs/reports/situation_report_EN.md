@@ -1,78 +1,81 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-**Event:** 26 August 2026 flash flood (suspected GLOF), Rasuwa District, Nepal
-**Report date:** 2026-10-02
-**Issued by:** Trishuli Flood Damage Mapping project (Track B, Multimodal AI Hackathon 2026)
-**Status:** Post-event analysis — **negative-result on satellite flood detection**
+> **PRELIMINARY** — generated 2026-10-04 from commit `e345851 + uncommitted changes`. Numbers will change if the detector or inputs change.
 
----
+**Event:** 2026-08-26 flash flood (suspected GLOF), Rasuwa District, Nepal
+**Status:** Post-event analysis. **On this Sentinel-1 pair, no flood signal could be detected.**
 
 ## 1. Situation
 
-On 26 August 2026 a debris-laden flash flood struck the Bhote Koshi and
-Trishuli river corridor draining south from the Nepal–China border. The
-Copernicus EMS Rapid Mapping service was activated (EMSR927) and mapped
-building damage in four Areas of Interest (AOIs):
-
-- **AOI01 Syapru Besi** (Rasuwa) — 433 damaged structures
-- **AOI02 Timure** (Rasuwa) — 431 damaged structures
-- **AOI03 Bidur** (Nuwakot) — 2,343 damaged structures
-- **AOI05 Phosretar** (Chitwan edge) — 609 damaged structures
-
-Total: **3,816 damaged structures** (2,813 Destroyed, 354 Damaged, 649
-Possibly damaged).
+Copernicus EMS Rapid Mapping (EMSR927) mapped 3,816 damaged structures in four Areas of Interest (2,813 Destroyed, 354 Damaged, 649 Possibly damaged).
 
 ## 2. Key finding
 
-**No flood signal was detectable in the available Sentinel-1 pair with this method; the rebuilt flood mask is unvalidated.**
+On calibrated, terrain-corrected Sentinel-1 (σ⁰, Copernicus GLO-30), the 2026-08-16 / 2026-08-28 pair shows no detectable flood signal along the Trishuli or in the Rasuwa reach. **This pair cannot resolve the event; it does not show that no flood occurred.**
 
-- Pre-event: 2026-08-16, post-event: 2026-08-28 (relOrbit 85, ascending).
-- Median VV backscatter change across all four AOIs: **−0.31 to +0.41 dB**.
-  A real flood over water produces −5 to −10 dB. The signal is within noise.
-- A U-Net segmentation model trained on Sen1Floods11 independently predicts
-  **zero flood pixels** across the Rasuwa corridor.
+| VV change (post − pre), dB | n | median | p5 | p1 |
+|---|---|---|---|---|
+| all pixels | 4,113,397 | 0.00 | -2.91 | -4.30 |
+| river, 60 m buffer | 61,080 | 0.02 | -3.64 | -6.22 |
+| river, Rasuwa (north) half | 21,498 | 0.24 | -3.04 | -4.71 |
+| river, south half | 39,582 | -0.10 | -3.95 | -6.91 |
+| river shifted +1.5 km (control) | 61,084 | -0.08 | -3.24 | -4.74 |
+| river shifted −1.5 km (control) | 61,079 | -0.08 | -3.03 | -4.46 |
 
-Two independent methods converge on the same conclusion. The pipeline is
-correct; the data does not resolve the event.
+A real flood over water would be expected to give a clearly negative river median. The Rasuwa half is no darker than the shifted controls.
 
-## 3. What we produced
+The U-Net (Sen1Floods11) flags 5.03% of the corridor in the post scene and 5.05% in the pre scene; 21,020 px gained and 21,627 px lost. It cannot discriminate the two scenes, so it is **not** independent evidence either way.
 
-| Deliverable        | Content                                          | Confidence                                                      |
-| ------------------ | ------------------------------------------------ | --------------------------------------------------------------- |
-| Flood mask         | 47 km² scattered wet terrain                     | ⚠️ **not the GLOF**                                             |
-| Affected bridges   | 98 bridge features                               | ⚠️ mask-driven                                                  |
-| Affected buildings | 423 flooded + 432 debris-affected (855 features) | Mask does not locate EMSR927 damage (26 of 3,816 points inside) |
-| Hospital cut-off   | 13 settlements with >3× detour                   | ⚠️ mostly sub-km artifacts                                      |
-| U-Net              | IoU 0.523 (val), 0.554 (proxy-Himalaya)          | ✅ model is real                                                |
+## 3. Exposure to the detector's mask
 
-## 4. Limitations
+The mask below is the thresholded dark tail of the VV change. It is **not a validated flood extent**; the figures show sensitivity of exposure to that mask.
 
-- Sentinel-1's 12-day repeat and 30 m resolution cannot resolve a fast-draining
-  GLOF in a 30–50 m gorge.
-- The ascending pass illuminates the valley obliquely; deep N–S gorges are
-  partly in radar shadow.
-- EMSR927 GRA products contain no flood extent layer — validation is proxy
-  (building damage points and landslide overlap).
-- OSM snapshot is post-event (2026-09-30), contaminating the pre-flood
-  infrastructure baseline.
+| Item | Value |
+|---|---|
+| Flood mask | 5,802 px (5.22 km²) |
+| Debris mask | 652 px (0.59 km²) |
+| Buildings in mask | 991 flooded + 102 debris-affected (of 189,503) |
+| Bridges in mask | 21 (of 385) |
+| Settlements cut off | 4 of 446 (4 no path, 0 detour only; 20 hospitals) |
+um = J("outputs/unet_metrics.json")
 
-## 5. Recommendations
+## 4. Comparison with EMSR927 damage points
 
-1. Re-acquire with optical imagery (Sentinel-2, PlanetScope) for sediment
-   plumes, or with high-resolution SAR (TerraSAR-X) to resolve the channel.
-2. Try the descending-pass Sentinel-1 scenes (relOrbit 121 or 19) if a
-   shorter revisit becomes available.
-3. For future GLOF events, task optical assets within 24–72 hours — the
-   Sentinel-1 repeat cycle is too slow.
-4. Fix the debris-mask classifier before re-use (currently speckle-dominated).
+Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the same size placed on flat pixels inside the AOI:
 
-## 6. Data sources
+| AOI | Damage points | Points in raster | Inside mask | Mask px in AOI | Flat px in AOI | Observed hit | Null (mean ± sd) |
+|---|---|---|---|---|---|---|---|
+| Syapru Besi | 433 | 433 | 0 | 0 | 163 | 0.000 | 0.000 ± 0.000 |
+| Timure | 431 | 431 | 0 | 0 | 282 | 0.000 | 0.000 ± 0.000 |
+| Bidur | 2,343 | 2,343 | 867 | 2,278 | 14,388 | 0.370 | 0.113 ± 0.010 |
+| Phosretar | 609 | 581 | 99 | 2,544 | 13,058 | 0.170 | 0.091 ± 0.017 |
 
-- Sentinel-1 GRD (Copernicus Data Space Ecosystem) — relOrbit 85, ascending.
-- Copernicus EMS Rapid Mapping — activation EMSR927.
-- OpenStreetMap (ODbL) — buildings, roads, hospitals, settlements.
-- Copernicus DEM / SRTM — 30 m slope mask.
-- Sen1Floods11 v1.1 (CC BY 4.0) — U-Net training.
+Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
+
+## 5. Limitations
+
+- The post scene is two days after the event; a flash flood in a narrow gorge may already have drained.
+- 30 m pixels mix narrow channels; the slope filter removes almost all steep terrain.
+- EMSR927 GRA products contain no flood-extent layer; validation is proxy only.
+- The detector's threshold sits at its lower clip limit, so the mask is selected from noise-level change.
+- Held-out U-Net IoU values come from an earlier run (Sen1Floods11 is not on disk).
+- **OSM currency and completeness.** Infrastructure comes from the ohsome snapshot of 2026-07-27, the latest pre-event snapshot available (see `data/raw/osm/manifest.json`). Edits between 2026-07-27 and 2026-08-26 are not reflected, and OSM coverage of rural Rasuwa is incomplete: missing buildings undercount damage, and missing tracks can overstate cut-off.
+
+## 6. Recommendations
+
+1. Re-acquire with optical imagery (Sentinel-2, PlanetScope) or high-resolution SAR.
+2. Task optical assets within 24–72 hours of future GLOF events.
+3. Replace the threshold detector before reuse.
+
+## 7. Data sources
+
+- Sentinel-1 GRD (Copernicus Data Space Ecosystem), calibrated σ⁰, terrain-corrected with Copernicus GLO-30
+- Copernicus EMS Rapid Mapping, EMSR927
+- OpenStreetMap, ohsome snapshot 2026-07-27 (pre-event), ODbL
+- Sen1Floods11 v1.1 (CC BY 4.0)
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md).
-Full analysis: [FINAL_REPORT.md](../../FINAL_REPORT.md).
+
+## Changelog
+
+- The `v0-baseline` run used post-event OSM and was discarded.
