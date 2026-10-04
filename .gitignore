@@ -72,3 +72,9 @@ data/raw/osm/*
 data/processed/
 data/labels/
 data/external/
+data/interim/
+outputs/impact_stats.json
+outputs/flood_model.joblib
+outputs/susceptibility_preview.png
+outputs/affected_buildings_map.png
+outputs/affected_roads_map.png

@@ -1,12 +1,12 @@
 {
   "our_impact_summary": {
     "total_buildings": 189503,
-    "flooded_buildings": 423,
-    "debris_buildings": 432,
+    "flooded_buildings": 991,
+    "debris_buildings": 102,
     "total_roads": 14151,
-    "flooded_roads": 33,
+    "flooded_roads": 83,
     "total_bridges": 385,
-    "flooded_bridges": 1
+    "flooded_bridges": 21
   },
   "emsr927_by_aoi": {
     "AOI01": {
@@ -39,7 +39,7 @@
     }
   },
   "comparison": {
-    "our_flooded_buildings": 423,
+    "our_flooded_buildings": 991,
     "emsr927_destroyed_total": 2813,
     "emsr927_damaged_total": 354,
     "emsr927_possibly_total": 649
