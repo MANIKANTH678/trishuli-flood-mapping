@@ -2,65 +2,75 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 BBOX="${1:-84.95,27.80,85.55,28.35}"
+SPLITS="pre,placebo,pre3,pre4,post"
+
+if [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe
+elif [ -x .venv/bin/python ]; then PY=.venv/bin/python
+else PY=python; fi
 
 echo "=== Trishuli flood pipeline  bbox=$BBOX ==="
 
 echo "[1/12] fetch Sentinel-1"
-python src/fetch/fetch_sentinel1.py --download
+$PY src/fetch/fetch_sentinel1.py --download
 
 echo "[2/12] unzip scenes"
-python -c "import pathlib, zipfile; [zipfile.ZipFile(z).extractall(z.parent) for p in ['data/raw/sentinel1/pre', 'data/raw/sentinel1/post'] for z in pathlib.Path(p).glob('*.SAFE.zip') if not z.with_suffix('').exists()]"
+$PY -c "import pathlib, zipfile; [zipfile.ZipFile(z).extractall(z.parent) for p in ['data/raw/sentinel1/'+s for s in '$SPLITS'.split(',')] for z in pathlib.Path(p).glob('*.SAFE.zip') if not z.with_suffix('').exists()]"
 
 echo "[3/12] orbit / pass / 12-day gate"        # exits 1 and stops the pipeline on violation
-python src/processing/align_v2_checks.py
+$PY src/processing/align_v2_checks.py
+$PY -m src.processing.check_stack "$SPLITS"
 
 echo "[4/12] fetch OSM"                          # no fallback: failure must stop the run
 # event = flood date; fetch_osm snapshots 30 days earlier (2026-07-27, pre-event)
-python -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
+$PY -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
 
-EPSG=$(python -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))")
+EPSG=$($PY -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))" | tr -d '\r')
 
 echo "[5/12] DEM (Copernicus GLO-30)"
-python -m src.fetch.fetch_dem --bbox "$BBOX"
+$PY -m src.fetch.fetch_dem --bbox "$BBOX"
 
 echo "[6/12] S1 SNAP preprocessing"
-python -m src.processing.s1_preprocess --bbox "$BBOX" --epsg "$EPSG"
+$PY -m src.processing.s1_preprocess --bbox "$BBOX" --epsg "$EPSG" --splits "$SPLITS"
 
 echo "[7/12] grid + dB"
-python -m src.processing.s1_to_grid --bbox "$BBOX" --epsg "$EPSG"
+$PY -m src.processing.s1_to_grid --bbox "$BBOX" --epsg "$EPSG" --splits "$SPLITS"
 
-echo "[8/12] flood detect"
-python src/processing/flood_detect_v2.py
+echo "[8/12] change detection (geometry, HAND, radar mask, null calibration, detector)"
+$PY -m src.analysis.geometry --bbox "$BBOX"
+$PY -m src.analysis.hand
+$PY -m src.analysis.radar_mask
+$PY -m src.analysis.calibrate_null
+$PY -m src.analysis.detect
 
 echo "[9/12] damage"
-python src/processing/damage_v2.py
+$PY src/processing/damage_v2.py
 
 echo "[9b/12] cutoff (hospital reachability; the report checks this is newer than flood_mask.tif)"
-python src/processing/cutoff_v2.py
+$PY src/processing/cutoff_v2.py
 
 echo "[10/12] validation (EMSR927, check-only)"
 HAVE_EMSR=0
 if [ -d data/external/EMSR927 ]; then
   HAVE_EMSR=1
-  python src/validation/emsr927_comparison.py
-  python src/validation/damage_sanity_check.py
+  $PY src/validation/emsr927_comparison.py
+  $PY src/validation/damage_sanity_check.py
 else
   echo "  EMSR927 folder absent, skipping validation"
 fi
 
 echo "[11/12] mask validation (must be newer than flood_mask.tif for the report)"
-python tools/signal_check.py
-python tools/unet_corridor.py
+$PY tools/signal_check.py
+$PY tools/unet_corridor.py
 if [ "$HAVE_EMSR" -eq 1 ]; then
-  python tools/null_recall_aoi.py
+  $PY tools/null_recall_aoi.py
 fi
 
 echo "[12/12] maps, dashboard, slides, situation report"
-python src/report/impact.py
-python -m src.report.dashboard_full
-python src/report/slides.py
+$PY src/report/impact.py
+$PY -m src.report.dashboard_full
+$PY src/report/slides.py
 if [ "$HAVE_EMSR" -eq 1 ]; then
-  python src/report/situation_report.py
+  $PY src/report/situation_report.py
 else
   echo "  null_recall_aoi did not run (needs EMSR927), so the report would refuse; skipping situation report"
 fi

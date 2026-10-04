@@ -1,3 +1,4 @@
+# DEPRECATED: replaced by src/analysis/detect.py
 """flood_detect_v2.py - rubric-grade flood + debris detection."""
 import os, sys
 import numpy as np

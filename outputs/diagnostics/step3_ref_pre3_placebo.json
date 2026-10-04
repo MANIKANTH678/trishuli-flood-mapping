@@ -1,0 +1,132 @@
+{
+  "tag": "ref_pre3_placebo",
+  "args": {
+    "first": "pre3",
+    "second": "placebo",
+    "res": 30,
+    "smooth": 1,
+    "floor_m": 30,
+    "ctrl_m": 100,
+    "thr": 3.5,
+    "min_patch": 8,
+    "main_names": "trishuli|trisuli|bhote\\s*koshi|bhotekoshi",
+    "main_line": null,
+    "main_buf_m": 1500,
+    "trib_min_m": 2500,
+    "tag": "ref_pre3_placebo",
+    "save_masks": false
+  },
+  "geometry": {
+    "pass": "Ascending",
+    "heading_deg": -12.57493870979403,
+    "incidence_deg": 38.76689232907187,
+    "look_azimuth_deg": 77.42506129020597,
+    "toward_sensor_azimuth_deg": 257.425061290206
+  },
+  "observability": {
+    "main_floor_px": 39663,
+    "observable_fraction": 0.9254973148778458,
+    "unobservable_by_cause": {
+      "layover": 0.007412449890325997,
+      "shadow": 0.00012606207296472782,
+      "cast_shadow": 0.003655800115977107,
+      "poor_lia": 0.06330837304288632
+    }
+  },
+  "stats": {
+    "VV": {
+      "main_floor": {
+        "n_px": 36708,
+        "median_z": 0.007610402535647154,
+        "frac_neg": 0.0,
+        "frac_pos": 0.0
+      },
+      "trib_floor": {
+        "n_px": 176218,
+        "median_z": 0.07121434807777405,
+        "frac_neg": 0.0,
+        "frac_pos": 0.0
+      },
+      "hillslope_ctrl": {
+        "n_px": 2466109,
+        "median_z": 0.0,
+        "frac_neg": 2.311333359555478e-05,
+        "frac_pos": 5.393111172296115e-05
+      }
+    },
+    "VH": {
+      "main_floor": {
+        "n_px": 36708,
+        "median_z": 0.14190781116485596,
+        "frac_neg": 0.0,
+        "frac_pos": 0.00021793614470960008
+      },
+      "trib_floor": {
+        "n_px": 176218,
+        "median_z": 0.06498542428016663,
+        "frac_neg": 4.539831345265523e-05,
+        "frac_pos": 0.0
+      },
+      "hillslope_ctrl": {
+        "n_px": 2466109,
+        "median_z": 1.0143770623471937e-06,
+        "frac_neg": 3.527824601426782e-05,
+        "frac_pos": 0.0
+      }
+    }
+  },
+  "bootstrap": {
+    "VV": {
+      "neg": {
+        "excess_ci": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ratio_ci": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "pos": {
+        "excess_ci": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ratio_ci": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "VH": {
+      "neg": {
+        "excess_ci": [
+          -0.00014611764653024075,
+          -4.5042635698740765e-05,
+          0.0
+        ],
+        "ratio_ci": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "pos": {
+        "excess_ci": [
+          0.0,
+          0.000210884264995687,
+          0.0006785477564857372
+        ],
+        "ratio_ci": [
+          0.0,
+          2.1088426499568698,
+          6.785477564857372
+        ]
+      }
+    }
+  }
+}

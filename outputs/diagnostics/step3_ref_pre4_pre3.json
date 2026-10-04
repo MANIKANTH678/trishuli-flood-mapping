@@ -1,0 +1,132 @@
+{
+  "tag": "ref_pre4_pre3",
+  "args": {
+    "first": "pre4",
+    "second": "pre3",
+    "res": 30,
+    "smooth": 1,
+    "floor_m": 30,
+    "ctrl_m": 100,
+    "thr": 3.5,
+    "min_patch": 8,
+    "main_names": "trishuli|trisuli|bhote\\s*koshi|bhotekoshi",
+    "main_line": null,
+    "main_buf_m": 1500,
+    "trib_min_m": 2500,
+    "tag": "ref_pre4_pre3",
+    "save_masks": false
+  },
+  "geometry": {
+    "pass": "Ascending",
+    "heading_deg": -12.57493870979403,
+    "incidence_deg": 38.76689232907187,
+    "look_azimuth_deg": 77.42506129020597,
+    "toward_sensor_azimuth_deg": 257.425061290206
+  },
+  "observability": {
+    "main_floor_px": 39663,
+    "observable_fraction": 0.9254973148778458,
+    "unobservable_by_cause": {
+      "layover": 0.007412449890325997,
+      "shadow": 0.00012606207296472782,
+      "cast_shadow": 0.003655800115977107,
+      "poor_lia": 0.06330837304288632
+    }
+  },
+  "stats": {
+    "VV": {
+      "main_floor": {
+        "n_px": 36708,
+        "median_z": 0.08269807696342468,
+        "frac_neg": 0.002424539609894301,
+        "frac_pos": 0.0
+      },
+      "trib_floor": {
+        "n_px": 176212,
+        "median_z": -0.03975100815296173,
+        "frac_neg": 9.647470092842713e-05,
+        "frac_pos": 6.809978889065443e-05
+      },
+      "hillslope_ctrl": {
+        "n_px": 2466065,
+        "median_z": 0.0,
+        "frac_neg": 5.1904552394198854e-05,
+        "frac_pos": 7.420728975108118e-05
+      }
+    },
+    "VH": {
+      "main_floor": {
+        "n_px": 36708,
+        "median_z": 0.13033950328826904,
+        "frac_neg": 0.0013893429225237005,
+        "frac_pos": 0.0
+      },
+      "trib_floor": {
+        "n_px": 176212,
+        "median_z": -0.0664973258972168,
+        "frac_neg": 0.0008001725194651896,
+        "frac_pos": 5.107484166799083e-05
+      },
+      "hillslope_ctrl": {
+        "n_px": 2466065,
+        "median_z": 0.0,
+        "frac_neg": 7.704581996013893e-06,
+        "frac_pos": 0.0002234328778844029
+      }
+    }
+  },
+  "bootstrap": {
+    "VV": {
+      "neg": {
+        "excess_ci": [
+          0.00037423483455815824,
+          0.0021818928746327572,
+          0.004541877270481033
+        ],
+        "ratio_ci": [
+          3.3810431396236047,
+          19.15024246346716,
+          44.63647047786208
+        ]
+      },
+      "pos": {
+        "excess_ci": [
+          -0.0002112888136880498,
+          -6.661448552511134e-05,
+          0.0
+        ],
+        "ratio_ci": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "VH": {
+      "neg": {
+        "excess_ci": [
+          -0.0009320660845012831,
+          0.0005035318810185728,
+          0.002433276676805455
+        ],
+        "ratio_ci": [
+          0.0,
+          1.676660172683715,
+          7.129484672183966
+        ]
+      },
+      "pos": {
+        "excess_ci": [
+          -0.00016433368105056017,
+          -5.0436697741672555e-05,
+          0.0
+        ],
+        "ratio_ci": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  }
+}

@@ -1,9 +1,9 @@
 {
   "total_buildings": 189503,
-  "flooded_buildings": 991,
-  "debris_buildings": 102,
+  "flooded_buildings": 3,
+  "debris_buildings": 473,
   "total_roads": 14151,
-  "flooded_roads": 83,
+  "flooded_roads": 0,
   "total_bridges": 385,
-  "flooded_bridges": 21
+  "flooded_bridges": 0
 }

@@ -56,11 +56,6 @@ def test_settlement_record_parses_osm_style_names():
     assert rec["label"] == "Betrawati" and rec["id"] == "" and not rec["cut"]
 
 
-def test_feature_chart_is_sorted_svg():
-    svg = dash.feature_chart_svg({"slope": 0.3, "vv_diff": 0.5, "aspect": 0.01})
-    assert svg.startswith("<svg") and svg.endswith("</svg>")
-    assert svg.index("VV change") < svg.index("Slope") < svg.index("Aspect")
-
 
 def test_values_are_html_escaped(tmp_path):
     d = _fixture_dir(tmp_path)

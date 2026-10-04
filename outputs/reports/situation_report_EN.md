@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-04 from commit `7f70d59 + uncommitted changes`. Numbers will change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-04 from commit `a0c2b4c + uncommitted changes`. Numbers will change if the detector or inputs change.
 
 **Event:** 2026-08-26 flash flood (suspected GLOF), Rasuwa District, Nepal
 **Status:** Post-event analysis. **On this Sentinel-1 pair, no flood signal could be detected.**
@@ -32,11 +32,11 @@ The mask below is the thresholded dark tail of the VV change. It is **not a vali
 
 | Item | Value |
 |---|---|
-| Flood mask | 5,802 px (5.22 km²) |
-| Debris mask | 652 px (0.59 km²) |
-| Buildings in mask | 991 flooded + 102 debris-affected (of 189,503) |
-| Bridges in mask | 21 (of 385) |
-| Settlements cut off | 4 of 446 (4 no path, 0 detour only; 20 hospitals) |
+| Flood mask | 340 px (0.31 km²) |
+| Debris mask | 3,151 px (2.84 km²) |
+| Buildings in mask | 3 flooded + 473 debris-affected (of 189,503) |
+| Bridges in mask | 0 (of 385) |
+| Settlements cut off | 0 of 446 (0 no path, 0 detour only; 20 hospitals) |
 
 ## 4. Comparison with EMSR927 damage points
 
@@ -46,8 +46,8 @@ Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the
 |---|---|---|---|---|---|---|---|
 | Syapru Besi | 433 | 433 | 0 | 0 | 163 | 0.000 | 0.000 ± 0.000 |
 | Timure | 431 | 431 | 0 | 0 | 282 | 0.000 | 0.000 ± 0.000 |
-| Bidur | 2,343 | 2,343 | 867 | 2,278 | 14,388 | 0.370 | 0.113 ± 0.010 |
-| Phosretar | 609 | 581 | 99 | 2,544 | 13,058 | 0.170 | 0.091 ± 0.017 |
+| Bidur | 2,343 | 2,343 | 0 | 50 | 14,388 | 0.000 | 0.002 ± 0.002 |
+| Phosretar | 609 | 581 | 0 | 282 | 13,058 | 0.000 | 0.010 ± 0.007 |
 
 Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
 
