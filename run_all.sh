@@ -24,7 +24,7 @@ echo "[4/12] fetch OSM"                          # no fallback: failure must sto
 # event = flood date; fetch_osm snapshots 30 days earlier (2026-07-27, pre-event)
 $PY -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
 
-EPSG=$($PY -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))")
+EPSG=$($PY -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))" | tr -d '\r')
 
 echo "[5/12] DEM (Copernicus GLO-30)"
 $PY -m src.fetch.fetch_dem --bbox "$BBOX"
