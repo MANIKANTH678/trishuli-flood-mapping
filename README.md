@@ -9,11 +9,13 @@ OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
 
 > **Status.** Sentinel-1 preprocessing is SNAP-based (calibrated, terrain-corrected
 > σ⁰, Copernicus GLO-30 DEM). The flood mask is a SAR change-detection product, **not a
-> validated flood extent**. Evidence is mixed (see Key results): the backscatter drop is
-> tied to the river and beats a random null at two EMSR927 sites, but absolute recall is
-> low, the mask is empty at two others, and an independent U-Net water check shows no net
-> change. An earlier README claimed the pair holds no GLOF signal; that claim is
-> withdrawn, because its diagnostic used uncalibrated, GCP-geocoded imagery.
+> validated flood extent**. Evidence is mixed (see Key results): the river itself shows no
+> median backscatter change, and the mask coincides with EMSR927 damage points at Bidur and
+> Phosretar more than a random null does, but nearly all of the mask area inside those two
+> AOIs lies on mapped landslide polygons, the mask is empty at the two Rasuwa AOIs, and a
+> U-Net water check shows no net change. An earlier README claimed the pair holds no GLOF
+> signal; that claim is withdrawn, because its diagnostic used uncalibrated, GCP-geocoded
+> imagery.
 
 ## Pipeline
 
@@ -59,6 +61,8 @@ Requirements beyond Python packages:
 - **bash** to run `run_all.sh` (Git Bash or WSL on Windows).
 - **ESA SNAP** installed, for step 6.
 - **Network access** for the OSM (ohsome) and DEM downloads.
+- **An ohsome API key** for step 4 (free, https://account.heigit.org/signup), set as the
+  environment variable `OHSOME_API_KEY` for the session. Never commit it.
 - **Copernicus Data Space credentials**, needed only if scenes are not already on disk.
   Register free at https://dataspace.copernicus.eu/ and set in `src/config.py`
   (`.gitignore`d):
@@ -101,18 +105,20 @@ final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
 
 ## Key results
 
-| Metric                                     | Value                                                                                                 |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| U-Net val IoU (best epoch, per-batch mean) | 0.523 (pooled held-out: 0.574)                                                                        |
-| U-Net proxy-Himalaya IoU                   | 0.554                                                                                                 |
-| SAR flood / debris mask                    | 5,802 px (5.22 km²) / 652 px (0.59 km²)                                                               |
-| Backscatter change inside mask             | median −3.03 dB vs ≈0 dB whole scene; river shifted ±1500 m: −0.08 dB                                 |
-| EMSR927 hit rate vs random null            | Bidur 0.370 vs 0.113 ± 0.010; Phosretar 0.170 vs 0.091 ± 0.017                                        |
-| Mask pixels in Syapru Besi / Timure        | 0 (slope filter leaves 163 / 282 flat pixels), so recall 0.0                                          |
-| U-Net corridor water check                 | 21,020 new vs 21,627 lost water px: no net change, so it does **not** independently confirm the flood |
-| Buildings in mask (not a validated flood)  | 991 flooded + 102 debris, of 189,503 (0.523 % flooded)                                                |
-| Roads / bridges in mask                    | 83 of 14,151 roads (0.587 %); 21 of 385 bridges                                                       |
-| Settlements cut off from all 20 hospitals  | 4 of 446 (no remaining road path); derived from the mask                                              |
+| Metric                                     | Value                                                                                                                                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U-Net val IoU (best epoch, per-batch mean) | 0.523 (pooled held-out: 0.574)                                                                                                                                                                                             |
+| U-Net proxy-Himalaya IoU                   | 0.554                                                                                                                                                                                                                      |
+| SAR flood / debris mask                    | 5,802 px (5.22 km²) / 652 px (0.59 km²)                                                                                                                                                                                    |
+| Backscatter change (post − pre)            | river, 60 m buffer: median +0.02 dB, p1 −6.22 dB; river shifted ±1500 m: −0.08 dB, p1 −4.74 / −4.46 dB; whole scene: +0.00 dB. Mask pixels: −3.03 dB (the mask is selected on change, so this is not independent evidence) |
+| EMSR927 damage points inside mask          | 966 of 3,816 (25.3%): Bidur 867 of 2,343, Phosretar 99 of 609, Syapru Besi 0, Timure 0                                                                                                                                     |
+| EMSR927 hit rate vs random null            | Bidur 0.370 vs 0.113 ± 0.010; Phosretar 0.170 vs 0.091 ± 0.017 (the null test uses 581 of Phosretar's 609 points)                                                                                                          |
+| Mask area on mapped landslide polygons     | Bidur 1.73 of 1.77 km² (98%); Phosretar 1.62 of 1.67 km² (97%), so recall there cannot be read as flood detection                                                                                                          |
+| Mask pixels in Syapru Besi / Timure        | 0 (slope filter leaves 163 / 282 flat pixels), so recall 0.0                                                                                                                                                               |
+| U-Net corridor water check                 | 21,020 new vs 21,627 lost water px: no net change, so it does **not** independently confirm the flood                                                                                                                      |
+| Buildings in mask (not a validated flood)  | 991 flooded + 102 debris, of 189,503 (0.523 % flooded)                                                                                                                                                                     |
+| Roads / bridges in mask                    | 83 of 14,151 roads (0.587 %); 21 of 385 bridges                                                                                                                                                                            |
+| Settlements cut off from all 20 hospitals  | 4 of 446 (no remaining road path); derived from an unvalidated mask. All four lie in the far north near the border crossing and appear to be Tibetan-side villages (to be verified)                                        |
 
 Hit rates are "better than chance", not accuracy. No locality or district breakdown is
 reported: none of the flooded buildings carries an OSM `addr:city` tag and no administrative
