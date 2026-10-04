@@ -126,7 +126,7 @@ for i, k, t in ((1, "neg", "darkening"), (2, "pos", "brightening")):
 ax[2].set_xlabel("latitude (dashed = tributary-floor baseline)"); fig.tight_layout()
 fig.savefig(f"outputs/figures/step3_profile_{a.tag}.png", dpi=150)
 
-# --- map: z on valley floors over hillshade; unobservable main floor in magenta ---
+# --- map: z on valley floors over hillshade; unobservable main floor in yellow ---
 rs, cs = np.nonzero(main_all | classes["trib_floor"]); k = 50
 sl = (slice(max(rs.min() - k, 0), rs.max() + k), slice(max(cs.min() - k, 0), cs.max() + k))
 hs = LightSource(315, 45).hillshade(np.nan_to_num(dem[sl], nan=float(np.nanmean(dem))), dx=res, dy=res)
@@ -134,7 +134,7 @@ zz = np.where((classes["main_floor"] | classes["trib_floor"])[sl], np.clip(z["VV
 fig, ax = plt.subplots(figsize=(8, 10)); ax.imshow(hs, cmap="gray")
 ax.imshow(np.where((main_all & ~valid)[sl], 1.0, np.nan), cmap="spring", vmin=0, vmax=1)
 im = ax.imshow(zz, cmap="RdBu_r", vmin=-6, vmax=6); ax.axis("off")
-fig.colorbar(im, shrink=.5, label=f"z of VV change ({a.second} vs {a.first}); magenta = unobservable")
+fig.colorbar(im, shrink=.5, label=f"z of VV change ({a.second} vs {a.first}); yellow = unobservable")
 fig.text(.01, .005, "Contains modified Copernicus Sentinel data 2026 | Copernicus WorldDEM-30 (c) DLR/Airbus | (c) OpenStreetMap contributors", fontsize=6)
 fig.savefig(f"outputs/figures/step3_map_{a.tag}.png", dpi=200, bbox_inches="tight")
 
