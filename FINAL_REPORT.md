@@ -357,7 +357,7 @@ mask and the OSM main-stem line are defined on the DEM grid. In steep terrain a
 SAR pixel can be displaced relative to the DEM by relief (about 1.25 m per metre
 of height above the reference surface at the 38.77° incidence angle), so the
 main-stem floor class may not coincide with the channel in the SAR image. The
-two image-based checks of this offset (east-slope correlation and radar-shadow minimum; `src/analysis/coreg_check.py`, `coreg_shadow.py`) gave no consistent peak across tiles, so the offset is neither confirmed nor excluded and remains unquantified. The z-score result (§4.1b), especially the main-stem floor class, should be read with that caveat.
+Two image-based checks of this offset (east-slope correlation and radar-shadow minimum; `src/analysis/coreg_check.py`, `coreg_shadow.py`) gave no consistent peak across tiles, so the offset is neither confirmed nor excluded and remains unquantified. The z-score result (§4.1b), especially the main-stem floor class, should be read with that caveat.
 
 ---
 

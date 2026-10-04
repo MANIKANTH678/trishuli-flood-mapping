@@ -42,7 +42,7 @@ def db(lin):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bbox", required=True); ap.add_argument("--epsg", required=True)
-    ap.add_argument("--dem", default="data/raw/dem/dem_glo30_wgs84.tif")
+    ap.add_argument("--dem", default="data/raw/dem/dem_glo30_wgs84.tif"); ap.add_argument("--splits", default="pre,post")
     a = ap.parse_args()
     bbox = tuple(map(float, a.bbox.split(","))); g = make_grids(bbox, a.epsg)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -54,7 +54,7 @@ def main():
                       dst_transform=t, dst_crs=f"EPSG:{a.epsg}", resampling=Resampling.bilinear)
         write(OUT / f"dem_{res}m.tif", dem, t, a.epsg)
 
-    for split in ("pre", "post"):
+    for split in a.splits.split(","):
         for pol in ("VV", "VH"):
             files = sorted((TC / split).glob(f"*.data/Sigma0_{pol}.img"))
             if not files: raise SystemExit(f"missing Sigma0_{pol} for {split}")
