@@ -36,6 +36,7 @@ FOOTPRINT_WKT = (
 DATE_RANGES = [
     ("pre",  "2026-08-13T00:00:00.000Z", "2026-08-19T23:59:59.999Z"),
     ("post", "2026-08-25T00:00:00.000Z", "2026-08-31T23:59:59.999Z"),
+    ("placebo", "2026-08-01T00:00:00.000Z", "2026-08-07T23:59:59.999Z"),
 ]
 TARGET_REL_ORBIT  = 85
 TARGET_PASS_DIR   = "ASCENDING"
@@ -126,21 +127,39 @@ def download(product_id: str, name: str, token: str, out_dir: Path) -> Path:
             print(f"   already exists: {c.name} ({c.stat().st_size/1e6:.0f} MB)")
             return c
     dest = out_dir / f"{name}.zip"   # write without double suffix
+    part = out_dir / f"{name}.zip.part"
     url = f"{ZIPPER}({product_id})/$value"
-    headers = {"Authorization": f"Bearer {token}"}
-    with requests.get(url, headers=headers, stream=True, timeout=600, allow_redirects=True) as r:
-        r.raise_for_status()
-        total = int(r.headers.get("content-length", 0))
-        done = 0
-        with open(dest, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1 << 20):
-                f.write(chunk)
-                done += len(chunk)
-                if total:
-                    print(f"\r   {done/total*100:5.1f}%  {done/1e6:.0f}/{total/1e6:.0f} MB",
-                          end="", flush=True)
-        print()
-    return dest
+    for attempt in range(1, 6):
+        have = part.stat().st_size if part.exists() else 0
+        headers = {"Authorization": f"Bearer {token}"}
+        if have:
+            headers["Range"] = f"bytes={have}-"
+        try:
+            with requests.get(url, headers=headers, stream=True, timeout=600, allow_redirects=True) as r:
+                r.raise_for_status()
+                resumed = have > 0 and r.status_code == 206
+                start = have if resumed else 0
+                total = int(r.headers.get("content-length", 0)) + start
+                done = start
+                with open(part, "ab" if resumed else "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1 << 20):
+                        f.write(chunk)
+                        done += len(chunk)
+                        if total:
+                            print(f"\r   {done/total*100:5.1f}%  {done/1e6:.0f}/{total/1e6:.0f} MB",
+                                  end="", flush=True)
+            print()
+            if total and done < total:
+                raise IOError(f"short download {done} of {total}")
+            part.replace(dest)
+            return dest
+        except (requests.RequestException, OSError) as e:
+            print(f"\n   attempt {attempt} failed: {e}")
+            resp = getattr(e, "response", None)
+            if resp is not None and resp.status_code == 416 and part.exists():
+                print("   server rejected resume; restarting this file from zero")
+                part.unlink()
+    raise RuntimeError(f"download failed after retries: {name}")
 
 
 # ---------- main -------------------------------------------------------------

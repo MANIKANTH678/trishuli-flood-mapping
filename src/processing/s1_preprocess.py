@@ -15,12 +15,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bbox", required=True); ap.add_argument("--epsg", required=True)
     ap.add_argument("--dem", default="data/raw/dem/dem_glo30_wgs84.tif")
-    ap.add_argument("--spacing", default="10"); ap.add_argument("--margin", type=float, default=0.05)
+    ap.add_argument("--spacing", default="10"); ap.add_argument("--margin", type=float, default=0.05); ap.add_argument("--splits", default="pre,post")
     a = ap.parse_args()
     w, s, e, n = map(float, a.bbox.split(","))
     m = a.margin
     wkt = f"POLYGON(({w-m} {s-m}, {e+m} {s-m}, {e+m} {n+m}, {w-m} {n+m}, {w-m} {s-m}))"
-    done = {"pre": 0, "post": 0}
+    done = {k: 0 for k in a.splits.split(",")}
     for split in done:
         for safe in sorted((S1 / split).glob("*.SAFE")):
             out = OUT / split / f"{safe.stem}.dim"
