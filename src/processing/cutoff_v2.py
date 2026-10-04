@@ -194,6 +194,8 @@ def main():
     results = []
     n_cut = n_no_path = n_detour = 0
     import pandas as pd
+    from pyproj import Transformer
+    _to_wgs84 = Transformer.from_crs(mask_crs, "EPSG:4326", always_xy=True)
     for i, row in setl.iterrows():
         nm = row.get("name")
         di = row.get("district")
@@ -202,7 +204,7 @@ def main():
         if not pd.notna(nm):
             nm = f"settlement_{row.get('id', i)}"
         name = str(nm)
-        lon, lat = row.geometry.x, row.geometry.y
+        lon, lat = _to_wgs84.transform(row.geometry.x, row.geometry.y)
         district = str(di) if pd.notna(di) else None
 
         # pre-flood
