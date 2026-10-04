@@ -9,8 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.report import dashboard_full as dash  # noqa: E402
 
-SMALL_FILES = ["impact_stats.json", "model_meta.json", "feature_importance.json",
-               "cutoff_settlements.json", "impact_by_district.csv"]
+SMALL_FILES = ["impact_summary.json", "cutoff_settlements.json"]
 
 
 def _fixture_dir(tmp_path: Path) -> Path:
@@ -18,26 +17,30 @@ def _fixture_dir(tmp_path: Path) -> Path:
         shutil.copy(ROOT / "outputs" / name, tmp_path / name)
     return tmp_path
 
+def _load_settlements(path):
+    src = json.loads(path.read_text())
+    return src["settlements"] if isinstance(src, dict) else src
+
 
 def test_build_without_images_still_produces_page(tmp_path):
     out = dash.build(_fixture_dir(tmp_path))
     html = out.read_text(encoding="utf-8")
-    stats = json.loads((tmp_path / "impact_stats.json").read_text())
+    impact = json.loads((tmp_path / "impact_summary.json").read_text())
+    summary = json.loads((tmp_path / "cutoff_settlements.json").read_text())["summary"]
 
     assert html.startswith("<!doctype html>")
-    assert f"{stats['flooded_buildings']:,}" in html
-    assert f"{stats['cutoff_settlements']}" in html
+    assert f"{impact['flooded_buildings']:,}" in html
+    assert f"{summary['total_settlements']:,}" in html
     assert "not found" in html                 # missing figures are reported, not fatal
     assert "<script id=\"dash-data\"" in html
     assert "</script>" not in html.split('id="dash-data"')[1].split("</script>")[0]
-
 
 def test_embedded_settlement_data_matches_source(tmp_path):
     out = dash.build(_fixture_dir(tmp_path))
     html = out.read_text(encoding="utf-8")
     blob = html.split('<script id="dash-data" type="application/json">')[1].split("</script>")[0]
     data = json.loads(blob.replace("<\\/", "</"))
-    source = json.loads((tmp_path / "cutoff_settlements.json").read_text())
+    source = _load_settlements(tmp_path / "cutoff_settlements.json")
 
     assert len(data["settlements"]) == len(source)
     assert sum(s["cut"] for s in data["settlements"]) == sum(x["cut_off"] for x in source)
@@ -61,8 +64,8 @@ def test_feature_chart_is_sorted_svg():
 
 def test_values_are_html_escaped(tmp_path):
     d = _fixture_dir(tmp_path)
-    settlements = json.loads((d / "cutoff_settlements.json").read_text())
-    settlements.append({"name": "<img src=x onerror=alert(1)>", "lat": 28.0, "lon": 85.0, "cut_off": True})
-    (d / "cutoff_settlements.json").write_text(json.dumps(settlements))
+    src = json.loads((d / "cutoff_settlements.json").read_text())
+    src["settlements"].append({"name": "<img src=x onerror=alert(1)>", "lat": 28.0, "lon": 85.0, "cut_off": True})
+    (d / "cutoff_settlements.json").write_text(json.dumps(src))
     html = dash.build(d).read_text(encoding="utf-8")
     assert "<img src=x onerror" not in html
