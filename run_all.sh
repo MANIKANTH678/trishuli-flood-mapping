@@ -15,12 +15,8 @@ echo "[3/12] orbit / pass / 12-day gate"        # exits 1 and stops the pipeline
 python src/processing/align_v2_checks.py
 
 echo "[4/12] fetch OSM"                          # no fallback: failure must stop the run
-if [ "${SKIP_OSM:-0}" = "1" ]; then
-  echo "  SKIP_OSM=1: using existing data/raw/osm"
-else
-  # event = flood date; fetch_osm snapshots 30 days earlier (2026-07-27, pre-event)
-  python -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
-fi
+# event = flood date; fetch_osm snapshots 30 days earlier (2026-07-27, pre-event)
+python -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
 
 EPSG=$(python -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))")
 

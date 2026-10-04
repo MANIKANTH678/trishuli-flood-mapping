@@ -78,13 +78,12 @@ The Sentinel-1 date windows (pre 13–19 Aug, post 25–31 Aug 2026, relative or
 ascending) and the event date are fixed for this flood. The pair used is 2026-08-16
 and 2026-08-28, 12 days apart; each date is two consecutive frames of one pass.
 
-**ohsome quota.** Step 4 can fail with `403 Quota exceeded`. Restore a complete earlier
-snapshot into `data/raw/osm/` (its `manifest.json` must say `snapshot: 2026-07-27`) and
-skip the download:
+**Verified.** With `data/interim/s1_tc/` deleted, `run_all.sh` regenerated the SNAP outputs
+and reproduced every figure in Key results. The OSM inputs for that run were restored from a
+saved 2026-07-27 snapshot, because the ohsome quota was exhausted.
 
-```
-SKIP_OSM=1 bash run_all.sh          # cmd: set SKIP_OSM=1, then run bash run_all.sh
-```
+**ohsome quota.** Step 4 queries the ohsome API and can fail with `403 Quota exceeded`.
+Wait for the quota to reset and rerun.
 
 **Freshness guards.** The situation report refuses to run if the OSM manifest snapshot
 differs from `config.OSM_SNAPSHOT_DATE`, or if `cutoff_settlements.json` and the three
@@ -123,8 +122,9 @@ Full discussion: `FINAL_REPORT.md`.
 
 ## Known issues
 
-- Step 6 prints no console output. Check timestamps in `data/interim/s1_tc/` to confirm
-  whether SNAP re-ran.
+- Step 6 skips any scene whose output already exists in `data/interim/s1_tc/` (it checks the
+  filename only, not the parameters). Delete that folder after changing the bbox, EPSG or
+  spacing, or to force a rerun. Set `GPT=<path to gpt.exe>` if SNAP is not on PATH.
 - `flood_detect_v2.py` prints `Error in sys.excepthook` three times at exit; the masks are
   written and the pipeline continues.
 - `fetch_sentinel1.py` shows `pol=?` because it reads the wrong attribute name (cosmetic).
