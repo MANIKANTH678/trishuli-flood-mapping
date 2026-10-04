@@ -97,7 +97,7 @@ def snap(points: gpd.GeoSeries, tree: cKDTree, nodes: np.ndarray,
     """Return (node_idx per point, node_xy per point, distance per point).
     -1 means no node within radius.
     """
-    idxs, dists = tree.query(list(zip(points.x.values, points.y.values)),
+    dists, idxs = tree.query(list(zip(points.x.values, points.y.values)),
                              k=1, distance_upper_bound=radius)
     n = len(idxs)
     ok = np.isfinite(dists) & (idxs < len(nodes))
@@ -194,6 +194,8 @@ def main():
     results = []
     n_cut = n_no_path = n_detour = 0
     import pandas as pd
+    from pyproj import Transformer
+    _to_wgs84 = Transformer.from_crs(mask_crs, "EPSG:4326", always_xy=True)
     for i, row in setl.iterrows():
         nm = row.get("name")
         di = row.get("district")
@@ -202,7 +204,7 @@ def main():
         if not pd.notna(nm):
             nm = f"settlement_{row.get('id', i)}"
         name = str(nm)
-        lon, lat = row.geometry.x, row.geometry.y
+        lon, lat = _to_wgs84.transform(row.geometry.x, row.geometry.y)
         district = str(di) if pd.notna(di) else None
 
         # pre-flood
@@ -257,11 +259,10 @@ def main():
             "snap_radius_m": SNAP_RADIUS_M,
             "detour_max": DETOUR_MAX,
             "note": ("Pre-flood graph uses all OSM roads; post-flood graph removes "
-                     "roads whose midpoint lies inside flood_mask.tif. Because the "
-                     "SAR flood mask was shown not to contain the GLOF signal "
-                     "(see outputs/diagnostics/aoi_backscatter_diagnostics.json), "
-                     "the 'cut_off' flags here reflect the preliminary, under rebuild, not the "
-                     "real event. The machinery is correct; the input is not."),
+                     "roads whose midpoint lies inside flood_mask.tif. The flood mask "
+                     "is unvalidated (damage-point recall against EMSR927 is near zero; "
+                     "see data/processed/emsr927_comparison.json), so the cut_off flags "
+                     "are provisional and should not be read as the real event."),
         },
         "summary": {
             "total_settlements": len(results),

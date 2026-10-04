@@ -747,17 +747,21 @@ $limitations
 # --------------------------------------------------------------------------- #
 
 def build(out_dir: Path) -> Path:
-    stats = load_json(out_dir / "impact_stats.json", {})
+    stats = load_json(out_dir / "impact_summary.json", {})
     meta = load_json(out_dir / "model_meta.json", {})
     importance = load_json(out_dir / "feature_importance.json", {})
     raw_settlements = load_json(out_dir / "cutoff_settlements.json", [])
+    cut_summary = {}
+    if isinstance(raw_settlements, dict):
+        cut_summary = raw_settlements.get("summary", {})
+        raw_settlements = raw_settlements.get("settlements", [])
     if not isinstance(importance, dict):
         importance = {}
 
     settlements = [settlement_record(x) for x in raw_settlements if isinstance(x, dict)]
     cut = [s for s in settlements if s["cut"]]
-    total_settlements = stats.get("total_settlements", len(settlements))
-    cutoff_settlements = stats.get("cutoff_settlements", len(cut))
+    total_settlements = cut_summary.get("total_settlements", len(settlements))
+    cutoff_settlements = cut_summary.get("cut_off", len(cut))
 
     total_b, flooded_b = stats.get("total_buildings"), stats.get("flooded_buildings")
     total_r, flooded_r = stats.get("total_roads"), stats.get("flooded_roads")

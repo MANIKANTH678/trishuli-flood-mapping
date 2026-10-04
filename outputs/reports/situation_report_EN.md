@@ -24,7 +24,7 @@ Possibly damaged).
 
 ## 2. Key finding
 
-**The available Sentinel-1 SAR imagery preliminary, under rebuild the flood signal.**
+**No flood signal was detectable in the available Sentinel-1 pair with this method; the rebuilt flood mask is unvalidated.**
 
 - Pre-event: 2026-08-16, post-event: 2026-08-28 (relOrbit 85, ascending).
 - Median VV backscatter change across all four AOIs: **−0.31 to +0.41 dB**.
@@ -37,13 +37,13 @@ correct; the data does not resolve the event.
 
 ## 3. What we produced
 
-| Deliverable        | Content                                 | Confidence                      |
-| ------------------ | --------------------------------------- | ------------------------------- |
-| Flood mask         | 47 km² scattered wet terrain            | ⚠️ **not the GLOF**             |
-| Affected bridges   | 98 bridge features                      | ⚠️ mask-driven                  |
-| Affected buildings | 154,022 features                        | ❌ **16× overcount** vs EMSR927 |
-| Hospital cut-off   | 13 settlements with >3× detour          | ⚠️ mostly sub-km artifacts      |
-| U-Net              | IoU 0.523 (val), 0.554 (proxy-Himalaya) | ✅ model is real                |
+| Deliverable        | Content                                          | Confidence                                                      |
+| ------------------ | ------------------------------------------------ | --------------------------------------------------------------- |
+| Flood mask         | 47 km² scattered wet terrain                     | ⚠️ **not the GLOF**                                             |
+| Affected bridges   | 98 bridge features                               | ⚠️ mask-driven                                                  |
+| Affected buildings | 423 flooded + 432 debris-affected (855 features) | Mask does not locate EMSR927 damage (26 of 3,816 points inside) |
+| Hospital cut-off   | 13 settlements with >3× detour                   | ⚠️ mostly sub-km artifacts                                      |
+| U-Net              | IoU 0.523 (val), 0.554 (proxy-Himalaya)          | ✅ model is real                                                |
 
 ## 4. Limitations
 
