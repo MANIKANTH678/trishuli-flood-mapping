@@ -16,7 +16,7 @@
   "min_ref": 2,
   "t_hi": 6.0,
   "t_lo": 2.5,
-  "calibrated": true,
+  "calibrated": false,
   "null": {
     "t_hi": 6.0,
     "far_max": {

@@ -90,7 +90,7 @@ if status == "change_detected": cls[scar] = 2; cls[water] = 1
 write(Path(a.out_dir) / "s2_post_age_days_30m.tif", age, T, EPSG)
 pk = 900 / 1e6
 finish(status, {"pre_dates": [str(d) for d in pre], "post_dates": [str(d) for d in post], "min_ref": min_ref,
-    "t_hi": t_hi, "t_lo": a.t_lo, "calibrated": cal is not None, "null": cal, "seed_fraction": seed_frac, "gate_threshold": gate_thr,
+    "t_hi": t_hi, "t_lo": a.t_lo, "calibrated": cal is not None and null_ok, "null": cal, "seed_fraction": seed_frac, "gate_threshold": gate_thr,
     "floor_clear_post_fraction": float(valid[floor].mean()) if floor.any() else None,
     "valid_post_fraction_all": float(valid[np.isfinite(dem)].mean()),
     "area_km2": {"water": float((cls == 1).sum() * pk), "scar_total": float((cls == 2).sum() * pk),
