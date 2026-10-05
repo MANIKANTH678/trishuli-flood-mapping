@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 BBOX="${1:-84.95,27.80,85.55,28.35}"
 SPLITS="pre,placebo,pre3,pre4,post"
+EVENT_DATE="2026-08-26"
 
 if [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe
 elif [ -x .venv/bin/python ]; then PY=.venv/bin/python
@@ -22,7 +23,7 @@ $PY -m src.processing.check_stack "$SPLITS"
 
 echo "[4/12] fetch OSM"                          # no fallback: failure must stop the run
 # event = flood date; fetch_osm snapshots 30 days earlier (2026-07-27, pre-event)
-$PY -m src.download.fetch_osm --bbox "$BBOX" --event-date "2026-08-26" --out data/raw/osm
+$PY -m src.download.fetch_osm --bbox "$BBOX" --event-date "$EVENT_DATE" --out data/raw/osm
 
 EPSG=$($PY -c "from src.processing.grid import utm_epsg as u; w,s,e,n=map(float,'$BBOX'.split(',')); print(u((w+e)/2,(s+n)/2))" | tr -d '\r')
 
@@ -41,6 +42,12 @@ $PY -m src.analysis.hand
 $PY -m src.analysis.radar_mask
 $PY -m src.analysis.calibrate_null
 $PY -m src.analysis.detect
+
+echo "[8b/12] Sentinel-2 branch + fusion (must run before damage and cutoff)"
+$PY -m src.fetch.s2_search --bbox "$BBOX" --event-date "$EVENT_DATE"
+$PY -m src.processing.s2_ingest --bbox "$BBOX" --epsg "$EPSG" --dates "$(cat data/raw/s2/dates.txt)"
+$PY -m src.analysis.s2_detect --event "$EVENT_DATE"
+$PY -m src.analysis.fuse
 
 echo "[9/12] damage"
 $PY src/processing/damage_v2.py
@@ -76,9 +83,3 @@ else
 fi
 
 echo "=== DONE ==="
-
-# Step 5: Sentinel-2 branch and fusion (order: detect, s2_detect, fuse, damage)
-python -m src.fetch.s2_search --bbox "$BBOX" --event-date "$EVENT_DATE"
-python -m src.processing.s2_ingest --bbox "$BBOX" --epsg "$EPSG" --dates 2026-06-18,2026-07-05,2026-08-11,2026-08-12,2026-08-27,2026-09-08,2026-09-13,2026-09-20,2026-09-21
-python -m src.analysis.s2_detect --event "$EVENT_DATE"
-python -m src.analysis.fuse

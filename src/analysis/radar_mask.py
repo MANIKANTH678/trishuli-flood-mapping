@@ -1,4 +1,4 @@
-import argparse, json, numpy as np, rasterio
+import argparse,, numpy as np, rasterio
 from scipy.ndimage import map_coordinates
 
 ap = argparse.ArgumentParser()

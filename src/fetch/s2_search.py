@@ -9,6 +9,7 @@ KEYS = {"B02": "blue", "B03": "green", "B04": "red", "B08": "nir", "B11": "swir1
 ap = argparse.ArgumentParser()
 ap.add_argument("--bbox", required=True); ap.add_argument("--event-date", required=True)
 ap.add_argument("--pre-days", type=int, default=70); ap.add_argument("--post-days", type=int, default=35)
+ap.add_argument("--n-pre", type=int, default=6)
 ap.add_argument("--max-cloud", type=float, default=90); ap.add_argument("--out", default="data/raw/s2/scenes.json")
 a = ap.parse_args(); ev = date.fromisoformat(a.event_date)
 body = {"collections": ["sentinel-2-l2a"], "bbox": [float(v) for v in a.bbox.split(",")], "limit": 200,
@@ -31,3 +32,7 @@ for s in scenes: by[s["date"]].append(s)
 for d, ss in sorted(by.items()):
     print(f"{d} {'PRE ' if d < a.event_date else 'POST'} tiles={len(ss)} cloud%={[round(s['cloud']) for s in ss]}")
 print(f"{len(by)} dates, {len(scenes)} scenes")
+cloud = {d: min(s["cloud"] for s in ss) for d, ss in by.items()}
+pre = sorted((d for d in by if d < a.event_date), key=lambda d: cloud[d])[:a.n_pre]
+post = sorted(d for d in by if d > a.event_date)
+Path(a.out).with_name("dates.txt").write_text(",".join(sorted(pre) + post))

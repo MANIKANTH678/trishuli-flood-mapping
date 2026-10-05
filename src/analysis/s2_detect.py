@@ -14,6 +14,8 @@ ap.add_argument("--floor-m", type=float, default=30); ap.add_argument("--ctrl-m"
 ap.add_argument("--t-hi", type=float); ap.add_argument("--t-lo", type=float, default=2.5)
 ap.add_argument("--min-patch", type=int, default=8); ap.add_argument("--alpha", type=float, default=1e-3)
 ap.add_argument("--post-window", type=int, default=30); ap.add_argument("--min-ref", type=int, default=2)
+ap.add_argument("--max-elev", type=float, default=None)
+ap.add_argument("--diag", action="store_true")
 ap.add_argument("--mndwi-post", type=float, default=0.1); ap.add_argument("--mndwi-ref", type=float, default=-0.05)
 a = ap.parse_args(); ev = date.fromisoformat(a.event); S2, MINPX = Path(a.s2_dir), a.min_patch
 
@@ -48,7 +50,7 @@ def deltas(px, ref_ds, mr):
     for k in K:
         ref[k], n = nanmed(np.stack([dates[d][0][k] for d in ref_ds])); nref = n if nref is None else np.minimum(nref, n)
     d = {k: px[k] - ref[k] for k in K}
-    valid = np.isfinite(hand) & np.isfinite(dem) & (nref >= mr) & np.all([np.isfinite(d[k]) for k in K], axis=0)
+    valid = np.isfinite(hand) & np.isfinite(dem) & ((dem <= a.max_elev) if a.max_elev is not None else True) & (nref >= mr) & np.all([np.isfinite(d[k]) for k in K], axis=0)
     return ref, d, valid
 def zs(d, valid):
     ctrl = control(valid, hand, a.ctrl_m); return {k: robust_z(d[k], dem, ctrl) for k in K}
@@ -61,6 +63,12 @@ if len(pre) >= 3:                                              # leave-one-out n
         _, d, valid = deltas(dates[j][0], [x for x in pre if x != j], min(a.min_ref, len(pre) - 1))
         if valid.sum() < 20000: continue
         z = zs(d, valid)
+        if a.diag:
+            t = 6.0
+            for name, s_ in (("mndwi", z["mndwi"] > t), ("scar", (z["ndvi"] < -t) & (z["bsi"] > t))):
+                for lo, hi in ((0, 2000), (2000, 3500), (3500, 9000)):
+                    m = valid & (dem >= lo) & (dem < hi)
+                    print(f"null {j} {name:5s} {lo}-{hi} m: {patch_filter(s_ & m, MINPX)[m].mean() if m.any() else float('nan'):.4f}")
         for t in GRID: far[t].append(float(patch_filter(seeds(z, t) & valid, MINPX)[valid].mean()))
     if far[GRID[0]]:
         worst = {t: max(v) for t, v in far.items()}; ok = [t for t in GRID if worst[t] <= a.alpha]; th = ok[0] if ok else GRID[-1]
