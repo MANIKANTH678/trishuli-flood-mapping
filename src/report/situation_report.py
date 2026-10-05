@@ -22,8 +22,12 @@ if snap >= config.FLOOD_DATE:
 # refuse stale inputs
 mask_p = ROOT / "data/processed/flood_mask.tif"
 files = ["outputs/impact_summary.json", "outputs/cutoff_settlements.json",
-         "data/processed/emsr927_comparison.json", "outputs/validation/signal_check.json",
-         "outputs/validation/null_recall_aoi.json", "outputs/validation/unet_corridor.json"]
+         "outputs/validation/signal_check.json", "outputs/validation/unet_corridor.json"]
+have_ems = ((ROOT / "data/external/EMSR927").is_dir()
+            and (ROOT / "data/processed/emsr927_comparison.json").exists()
+            and (ROOT / "outputs/validation/null_recall_aoi.json").exists())
+if have_ems:
+    files += ["data/processed/emsr927_comparison.json", "outputs/validation/null_recall_aoi.json"]
 for f in files:
     if (ROOT / f).stat().st_mtime < mask_p.stat().st_mtime:
         die(f"{f} is older than flood_mask.tif; rerun that step")
@@ -31,9 +35,9 @@ for f in files:
 try:
     imp = J("outputs/impact_summary.json")
     cut = J("outputs/cutoff_settlements.json")["summary"]
-    emsr = J("data/processed/emsr927_comparison.json")["aois"]
+    emsr = J("data/processed/emsr927_comparison.json")["aois"] if have_ems else {}
     sig = J("outputs/validation/signal_check.json")
-    nul = J("outputs/validation/null_recall_aoi.json")
+    nul = J("outputs/validation/null_recall_aoi.json") if have_ems else {}
     un = J("outputs/validation/unet_corridor.json")
 
     with rasterio.open(mask_p) as s:
@@ -43,7 +47,7 @@ try:
 
     rows, tot = [], 0
     grades = {"Destroyed": 0, "Damaged": 0, "Possibly damaged": 0}
-    for k, a in emsr.items():
+    for k, a in (emsr.items() if have_ems else []):
         dp = a["damage_points"]; n = nul[k.split("_")[0]]
         tot += dp["total"]
         for g in grades: grades[g] += dp["by_grade"][g]["total"]
@@ -52,6 +56,21 @@ try:
                     f"{n['null_mean']:.3f} ± {n['null_sd']:.3f} |")
     pct = lambda d: 100 * d["flood_px"] / d["covered_px"]
     commit = git("rev-parse", "--short", "HEAD") + (" + uncommitted changes" if git("status", "--porcelain") else "")
+
+    ems_block = ""
+    if have_ems:
+        ems_block = f"""## 4. Validation against Copernicus EMS (EMSR927, check-only)
+
+> Validation only. EMS data is not an input to any map or number above.
+
+EMSR927 mapped {tot:,} damaged structures in four Areas of Interest ({grades['Destroyed']:,} Destroyed, {grades['Damaged']:,} Damaged, {grades['Possibly damaged']:,} Possibly damaged). Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the same size placed on flat pixels inside the AOI:
+
+| AOI | Damage points | Points in raster | Inside mask | Mask px in AOI | Flat px in AOI | Observed hit | Null (mean ± sd) |
+|---|---|---|---|---|---|---|---|
+""" + "\n".join(rows) + """
+
+Where the mask has no or almost no pixels, the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
+"""
 
     md = f"""# Situation Report — Trishuli / Bhote Koshi GLOF
 
@@ -62,7 +81,7 @@ try:
 
 ## 1. Situation
 
-Copernicus EMS Rapid Mapping (EMSR927) mapped {tot:,} damaged structures in four Areas of Interest ({grades['Destroyed']:,} Destroyed, {grades['Damaged']:,} Damaged, {grades['Possibly damaged']:,} Possibly damaged).
+Post-event analysis of the flash flood on the Trishuli / Bhote Koshi, built from system-derived maps only (Sentinel-1 and, where available, Sentinel-2). Copernicus EMS products are used for checking only and appear only in the labelled validation section, when present.
 
 ## 2. Key finding
 
@@ -93,21 +112,13 @@ The mask below is the thresholded dark tail of the VV change. It is **not a vali
 | Bridges in mask | {imp['flooded_bridges']:,} (of {imp['total_bridges']:,}) |
 | Settlements cut off | {cut['cut_off']} of {cut['total_settlements']} ({cut['cut_off_no_path']} no path, {cut['cut_off_detour_only']} detour only; {cut['hospitals_total']} hospitals) |
 
-## 4. Comparison with EMSR927 damage points
-
-Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the same size placed on flat pixels inside the AOI:
-
-| AOI | Damage points | Points in raster | Inside mask | Mask px in AOI | Flat px in AOI | Observed hit | Null (mean ± sd) |
-|---|---|---|---|---|---|---|---|
-""" + "\n".join(rows) + f"""
-
-Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
+{ems_block}
 
 ## 5. Limitations
 
 - The post scene is two days after the event; a flash flood in a narrow gorge may already have drained.
 - 30 m pixels mix narrow channels; the slope filter removes almost all steep terrain.
-- EMSR927 GRA products contain no flood-extent layer; validation is proxy only.
+{'- EMSR927 GRA products contain no flood-extent layer; validation is proxy only.' if have_ems else ''}
 - The detector's threshold sits at its lower clip limit, so the mask is selected from noise-level change.
 - Held-out U-Net IoU values come from an earlier run (Sen1Floods11 is not on disk).
 - **OSM currency and completeness.** Infrastructure comes from the ohsome snapshot of {snap}, the latest pre-event snapshot available (see `data/raw/osm/manifest.json`). Edits between {snap} and {config.FLOOD_DATE} are not reflected, and OSM coverage of rural Rasuwa is incomplete: missing buildings undercount damage, and missing tracks can overstate cut-off.
@@ -121,7 +132,7 @@ Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage
 ## 7. Data sources
 
 - Sentinel-1 GRD (Copernicus Data Space Ecosystem), calibrated σ⁰, terrain-corrected with Copernicus GLO-30
-- Copernicus EMS Rapid Mapping, EMSR927
+{'- Copernicus EMS Rapid Mapping, EMSR927 (validation only)' if have_ems else ''}
 - OpenStreetMap, ohsome snapshot {snap} (pre-event), ODbL
 - Sen1Floods11 v1.1 (CC BY 4.0)
 

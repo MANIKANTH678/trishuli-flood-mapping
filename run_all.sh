@@ -76,10 +76,6 @@ echo "[12/12] maps, dashboard, slides, situation report"
 $PY src/report/impact.py
 $PY -m src.report.dashboard_full
 $PY src/report/slides.py
-if [ "$HAVE_EMSR" -eq 1 ]; then
-  $PY src/report/situation_report.py
-else
-  echo "  null_recall_aoi did not run (needs EMSR927), so the report would refuse; skipping situation report"
-fi
+$PY src/report/situation_report.py
 
 echo "=== DONE ==="

@@ -1,13 +1,13 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-04 from commit `a0c2b4c + uncommitted changes`. Numbers will change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-05 from commit `de1086b + uncommitted changes`. Numbers will change if the detector or inputs change.
 
 **Event:** 2026-08-26 flash flood (suspected GLOF), Rasuwa District, Nepal
 **Status:** Post-event analysis. **On this Sentinel-1 pair, no flood signal could be detected.**
 
 ## 1. Situation
 
-Copernicus EMS Rapid Mapping (EMSR927) mapped 3,816 damaged structures in four Areas of Interest (2,813 Destroyed, 354 Damaged, 649 Possibly damaged).
+Post-event analysis of the flash flood on the Trishuli / Bhote Koshi, built from system-derived maps only (Sentinel-1 and, where available, Sentinel-2). Copernicus EMS products are used for checking only and appear only in the labelled validation section, when present.
 
 ## 2. Key finding
 
@@ -38,9 +38,11 @@ The mask below is the thresholded dark tail of the VV change. It is **not a vali
 | Bridges in mask | 0 (of 385) |
 | Settlements cut off | 0 of 446 (0 no path, 0 detour only; 20 hospitals) |
 
-## 4. Comparison with EMSR927 damage points
+## 4. Validation against Copernicus EMS (EMSR927, check-only)
 
-Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the same size placed on flat pixels inside the AOI:
+> Validation only. EMS data is not an input to any map or number above.
+
+EMSR927 mapped 3,816 damaged structures in four Areas of Interest (2,813 Destroyed, 354 Damaged, 649 Possibly damaged). Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the same size placed on flat pixels inside the AOI:
 
 | AOI | Damage points | Points in raster | Inside mask | Mask px in AOI | Flat px in AOI | Observed hit | Null (mean ± sd) |
 |---|---|---|---|---|---|---|---|
@@ -49,7 +51,8 @@ Per AOI, the mask hit rate on EMSR927 damage points against a random mask of the
 | Bidur | 2,343 | 2,343 | 0 | 50 | 14,388 | 0.000 | 0.002 ± 0.002 |
 | Phosretar | 609 | 581 | 0 | 282 | 13,058 | 0.000 | 0.010 ± 0.007 |
 
-Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
+Where the mask has no or almost no pixels, the miss is a coverage limit of the method, not a measured detection error. Where hit rates exceed the null, the mask is associated with damage in built-up lowlands; this does not distinguish flooding from other change.
+
 
 ## 5. Limitations
 
@@ -69,7 +72,7 @@ Where the mask has no or almost no pixels (see AOI rows), the miss is a coverage
 ## 7. Data sources
 
 - Sentinel-1 GRD (Copernicus Data Space Ecosystem), calibrated σ⁰, terrain-corrected with Copernicus GLO-30
-- Copernicus EMS Rapid Mapping, EMSR927
+- Copernicus EMS Rapid Mapping, EMSR927 (validation only)
 - OpenStreetMap, ohsome snapshot 2026-07-27 (pre-event), ODbL
 - Sen1Floods11 v1.1 (CC BY 4.0)
 
