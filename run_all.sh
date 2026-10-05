@@ -76,3 +76,9 @@ else
 fi
 
 echo "=== DONE ==="
+
+# Step 5: Sentinel-2 branch and fusion (order: detect, s2_detect, fuse, damage)
+python -m src.fetch.s2_search --bbox "$BBOX" --event-date "$EVENT_DATE"
+python -m src.processing.s2_ingest --bbox "$BBOX" --epsg "$EPSG" --dates 2026-06-18,2026-07-05,2026-08-11,2026-08-12,2026-08-27,2026-09-08,2026-09-13,2026-09-20,2026-09-21
+python -m src.analysis.s2_detect --event "$EVENT_DATE"
+python -m src.analysis.fuse

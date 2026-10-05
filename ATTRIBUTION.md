@@ -73,3 +73,6 @@ its own license (BSD / MIT / Apache 2.0 / PSF).
   IEEE SMC. (Adaptive thresholding.)
 - Ronneberger, O., Fischer, P., Brox, T. (2015). _U-Net: Convolutional Networks
   for Biomedical Image Segmentation_, MICCAI. (Model architecture.)
+
+## Sentinel-2 access (Step 5)
+Sentinel-2 L2A scenes were found and read through the Earth Search STAC API (Element 84), a mirror of Copernicus Sentinel-2 L2A data. The data are the same Copernicus Sentinel-2 products, so the Sentinel attribution above is unchanged.
