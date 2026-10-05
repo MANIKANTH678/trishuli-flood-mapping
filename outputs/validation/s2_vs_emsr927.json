@@ -1,0 +1,62 @@
+{
+  "AOI01": {
+    "holdout": false,
+    "damage_points": 433,
+    "points_in_assessed_domain": 0.0,
+    "damage_point_recall_within_m": {
+      "0": 0.0,
+      "30": 0.0,
+      "60": 0.0,
+      "100": 0.0
+    },
+    "landslide_in_assessed_fraction": 0.0,
+    "landslide_precision": 0.0,
+    "landslide_recall": 0.0,
+    "landslide_iou": 0.0
+  },
+  "AOI02": {
+    "holdout": false,
+    "damage_points": 431,
+    "points_in_assessed_domain": 0.0,
+    "damage_point_recall_within_m": {
+      "0": 0.0,
+      "30": 0.0,
+      "60": 0.0,
+      "100": 0.0
+    },
+    "landslide_in_assessed_fraction": 0.0,
+    "landslide_precision": 0.0,
+    "landslide_recall": 0.0,
+    "landslide_iou": 0.0
+  },
+  "AOI03": {
+    "holdout": true,
+    "damage_points": 2343,
+    "points_in_assessed_domain": 0.0,
+    "damage_point_recall_within_m": {
+      "0": 0.0,
+      "30": 0.0,
+      "60": 0.0,
+      "100": 0.0
+    },
+    "landslide_in_assessed_fraction": 0.0,
+    "landslide_precision": 0.0,
+    "landslide_recall": 0.0,
+    "landslide_iou": 0.0
+  },
+  "AOI05": {
+    "holdout": false,
+    "damage_points": 581,
+    "points_in_assessed_domain": 0.0,
+    "damage_point_recall_within_m": {
+      "0": 0.0,
+      "30": 0.0,
+      "60": 0.0,
+      "100": 0.0
+    },
+    "landslide_in_assessed_fraction": 0.0,
+    "landslide_precision": 0.0,
+    "landslide_recall": 0.0,
+    "landslide_iou": 0.0
+  }
+}
