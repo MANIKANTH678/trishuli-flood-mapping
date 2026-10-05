@@ -2,14 +2,14 @@
   "AOI01": {
     "holdout": false,
     "damage_points": 433,
-    "points_in_assessed_domain": 0.40415704387990764,
+    "points_in_assessed_domain": 0.7621247113163973,
     "damage_point_recall_within_m": {
       "0": 0.0,
       "30": 0.0,
       "60": 0.0,
       "100": 0.0
     },
-    "landslide_in_assessed_fraction": 0.5633116883116883,
+    "landslide_in_assessed_fraction": 0.6761363636363636,
     "landslide_precision": 0.0,
     "landslide_recall": 0.0,
     "landslide_iou": 0.0
@@ -17,14 +17,14 @@
   "AOI02": {
     "holdout": false,
     "damage_points": 431,
-    "points_in_assessed_domain": 0.2900232018561485,
+    "points_in_assessed_domain": 0.9373549883990719,
     "damage_point_recall_within_m": {
       "0": 0.0,
       "30": 0.0,
       "60": 0.004640371229698376,
       "100": 0.02088167053364269
     },
-    "landslide_in_assessed_fraction": 0.5901525658807212,
+    "landslide_in_assessed_fraction": 0.7350901525658807,
     "landslide_precision": 0.0,
     "landslide_recall": 0.0,
     "landslide_iou": 0.0
@@ -32,31 +32,31 @@
   "AOI03": {
     "holdout": true,
     "damage_points": 2343,
-    "points_in_assessed_domain": 0.910371318822023,
+    "points_in_assessed_domain": 0.9500640204865557,
     "damage_point_recall_within_m": {
       "0": 0.20614596670934698,
       "30": 0.32565087494664957,
       "60": 0.4033290653008963,
       "100": 0.5228339735381989
     },
-    "landslide_in_assessed_fraction": 0.9493806392414742,
+    "landslide_in_assessed_fraction": 0.962991283070806,
     "landslide_precision": 0.9279588336192109,
-    "landslide_recall": 0.17429123711340205,
-    "landslide_iou": 0.1719643992371265
+    "landslide_recall": 0.17182785453390503,
+    "landslide_iou": 0.16956589876194952
   },
   "AOI05": {
     "holdout": false,
     "damage_points": 581,
-    "points_in_assessed_domain": 0.8485370051635112,
+    "points_in_assessed_domain": 0.9294320137693631,
     "damage_point_recall_within_m": {
       "0": 0.06712564543889846,
       "30": 0.10499139414802065,
       "60": 0.14457831325301204,
       "100": 0.23580034423407917
     },
-    "landslide_in_assessed_fraction": 0.9609717244125846,
+    "landslide_in_assessed_fraction": 0.9786937475109518,
     "landslide_precision": 0.9899413243922883,
-    "landslide_recall": 0.2447161210111894,
-    "landslide_iou": 0.2441091360066143
+    "landslide_recall": 0.24028484231943031,
+    "landslide_iou": 0.23969961436979906
   }
 }

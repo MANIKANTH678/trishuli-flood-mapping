@@ -81,8 +81,11 @@ scar = hysteresis(rest & (z["ndvi"] < -t_hi) & (z["bsi"] > t_hi), rest & (z["ndv
 seed_frac = float(patch_filter(seeds(z, t_hi) & valid, MINPX)[valid].mean()) if valid.any() else 0.0
 gate_thr = max(3 * cal["null_far_max_at_t_hi"], 5e-4) if cal else None
 status = "change_detected" if ((gate_thr is None or seed_frac >= gate_thr) and (water | scar).any()) else "no_significant_change"
+null_ok = cal is None or cal["null_far_max_at_t_hi"] <= a.alpha
+if not null_ok: status = "null_not_calibrated"   # no grid threshold met alpha: S2 is uninformative either way
 
-cls = blank.copy(); cls[valid] = 0
+cls = blank.copy()
+if null_ok: cls[valid] = 0
 if status == "change_detected": cls[scar] = 2; cls[water] = 1
 write(Path(a.out_dir) / "s2_post_age_days_30m.tif", age, T, EPSG)
 pk = 900 / 1e6
