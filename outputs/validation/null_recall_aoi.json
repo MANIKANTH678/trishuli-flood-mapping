@@ -1,34 +1,42 @@
 {
   "AOI01": {
     "points": 433,
+    "assessed_points": 175,
     "mask_px": 0,
-    "flat_px": 163,
+    "assessed_px": 744,
     "observed": 0.0,
     "null_mean": 0.0,
-    "null_sd": 0.0
+    "null_sd": 0.0,
+    "holdout": false
   },
   "AOI02": {
     "points": 431,
+    "assessed_points": 125,
     "mask_px": 0,
-    "flat_px": 282,
+    "assessed_px": 886,
     "observed": 0.0,
     "null_mean": 0.0,
-    "null_sd": 0.0
+    "null_sd": 0.0,
+    "holdout": false
   },
   "AOI03": {
     "points": 2343,
-    "mask_px": 50,
-    "flat_px": 14388,
-    "observed": 0.0,
-    "null_mean": 0.0024327784891165173,
-    "null_sd": 0.0016650797441853317
+    "assessed_points": 2133,
+    "mask_px": 1251,
+    "assessed_px": 11694,
+    "observed": 0.20614596670934698,
+    "null_mean": 0.09749893299189073,
+    "null_sd": 0.010370408971083735,
+    "holdout": true
   },
   "AOI05": {
     "points": 581,
-    "mask_px": 282,
-    "flat_px": 13058,
-    "observed": 0.0,
-    "null_mean": 0.010223752151462998,
-    "null_sd": 0.0070686270038287265
+    "assessed_points": 493,
+    "mask_px": 1601,
+    "assessed_px": 10688,
+    "observed": 0.06712564543889846,
+    "null_mean": 0.12628227194492253,
+    "null_sd": 0.020390102091760322,
+    "holdout": false
   }
 }
