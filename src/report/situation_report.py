@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from src import config
 
-REF_DATES = {"pre": config.PRE_DATE, "post": config.POST_DATE}   # add "placebo": "...", "pre3": "...", "pre4": "..."
+REF_DATES = {"pre": config.PRE_DATE, "post": config.POST_DATE, "placebo": "2026-08-04", "pre3": "2026-07-23", "pre4": "2026-07-11"}
 def rd(n): return f"{n} ({REF_DATES[n]})" if n in REF_DATES else n
 TRACK = "asc85"
 FUSED = "data/processed/fused_class_30m.tif"
@@ -171,8 +171,8 @@ try:
                 "The main floor does not show a clear decrease excess over the tributary floors in both bands") +
                (", and the placebo pair shows none. " if pl_none else ", but the placebo pair also shows an excess, so this is not clean evidence. ") +
                "This is evidence of surface change along the main reach, not by itself of flooding. ")
-    a3 = s3e["args"]
-    sec.append(("Detection signal", f"""Step 3 test ({a3['first']} → {a3['second']}; pixels flagged as decreases by robust z at threshold {a3['thr']:g}): the main Trishuli / Bhote Koshi floor ({s3e['stats']['VV']['main_floor']['n_px']:,} px, {s3e['observability']['observable_fraction']:.0%} radar-observable) against tributary floors ({s3e['stats']['VV']['trib_floor']['n_px']:,} px) and hillslope controls. Placebo: {s3p['args']['first']} → {s3p['args']['second']} on the same geometry.
+    s3a = s3e["args"]
+    sec.append(("Detection signal", f"""Step 3 test ({s3a['first']} → {s3a['second']}; pixels flagged as decreases by robust z at threshold {s3a['thr']:g}): the main Trishuli / Bhote Koshi floor ({s3e['stats']['VV']['main_floor']['n_px']:,} px, {s3e['observability']['observable_fraction']:.0%} radar-observable) against tributary floors ({s3e['stats']['VV']['trib_floor']['n_px']:,} px) and hillslope controls. Placebo: {s3p['args']['first']} → {s3p['args']['second']} on the same geometry.
 
 | Band | Main floor decrease px | Tributary floor | Hillslope | Event excess, main − tributary [95% CI] | Placebo main floor; excess [95% CI] |
 |---|---|---|---|---|---|
