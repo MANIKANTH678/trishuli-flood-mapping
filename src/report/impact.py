@@ -53,7 +53,7 @@ flooded_r = summary.get("flooded_roads", 0) or 0
 stats = {
     **summary,
     "total_settlements":  len(s),
-    "cutoff_settlements": sum(1 for x in s if x.get("cut_off", False)),
+    "cutoff_settlements": sum(1 for x in s if (x.get("hospital") or {}).get("status") == "cut_off" or x.get("cut_off", False)),
     "pct_buildings_flooded": round(100 * flooded_b / total_b, 3) if total_b > 0 else 0.0,
     "pct_roads_flooded":     round(100 * flooded_r / total_r, 3) if total_r > 0 else 0.0,
 }

@@ -1,9 +1,97 @@
 {
   "total_buildings": 189503,
-  "flooded_buildings": 3,
-  "debris_buildings": 473,
-  "total_roads": 14151,
-  "flooded_roads": 0,
+  "flooded_buildings": 6,
+  "debris_buildings": 550,
+  "total_roads": 14146,
+  "flooded_roads": 118,
   "total_bridges": 385,
-  "flooded_bridges": 0
+  "flooded_bridges": 20,
+  "buildings": {
+    "total": 189503,
+    "assessed": 15371,
+    "not_assessed": 160971,
+    "unobservable": 13161,
+    "overlap": 556,
+    "overlap_strong": 480,
+    "overlap_flood": 6,
+    "overlap_debris": 550,
+    "within_30m": 881,
+    "within_60m": 1329
+  },
+  "roads_bridges": {
+    "exposure_by_tolerance": {
+      "0m": {
+        "roads": 118,
+        "road_km": 13.522917349986107,
+        "motorable_road_km": 11.817748652380518,
+        "bridges": 20
+      },
+      "30m": {
+        "roads": 164,
+        "road_km": 28.02681421706653,
+        "motorable_road_km": 24.358533245039492,
+        "bridges": 23
+      },
+      "60m": {
+        "roads": 222,
+        "road_km": 40.84365378782549,
+        "motorable_road_km": 34.61131934283793,
+        "bridges": 27
+      }
+    },
+    "roads_total": 14146,
+    "bridges_total": 385,
+    "road_km_total": 7568.292750128923
+  },
+  "sensitivity": {
+    "scenarios": {
+      "low": {
+        "buildings_overlap": 1078,
+        "buildings_within_30m": 1775,
+        "buildings_within_60m": 2405,
+        "motorable_road_km": 21.97,
+        "bridges_exposed": 30
+      },
+      "base": {
+        "buildings_overlap": 556,
+        "buildings_within_30m": 881,
+        "buildings_within_60m": 1329,
+        "motorable_road_km": 11.82,
+        "bridges_exposed": 20
+      },
+      "high": {
+        "buildings_overlap": 244,
+        "buildings_within_30m": 407,
+        "buildings_within_60m": 629,
+        "motorable_road_km": 6.41,
+        "bridges_exposed": 12
+      }
+    },
+    "range": {
+      "buildings_overlap": [
+        244,
+        1078
+      ],
+      "buildings_within_30m": [
+        407,
+        1775
+      ],
+      "buildings_within_60m": [
+        629,
+        2405
+      ],
+      "motorable_road_km": [
+        6.41,
+        21.97
+      ],
+      "bridges_exposed": [
+        12,
+        30
+      ]
+    }
+  },
+  "class_raster": "data/processed/fused_class_30m.tif",
+  "morph_px": 0,
+  "osm_snapshot": "2026-07-27",
+  "note": "Exposure = footprint/segment overlaps the detected mask. Bridges are exposed, not failed. Only classes 0-3 are assessed; not_assessed / unobservable are UNKNOWN, not clear."
 }
