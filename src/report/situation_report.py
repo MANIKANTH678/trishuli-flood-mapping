@@ -129,7 +129,7 @@ try:
 |---|---|---|---|---|---|---|
 """ + "\n".join(ems_rows) + """
 
-""" + ems_read + " AOI03 was not used to tune the detector.") if have_ems else None
+""" + ems_read + " AOI03 was scored 4 times (docs/validation_log.md); S1 parameters unchanged since tag detector-frozen.") if have_ems else None
 
     days = (datetime.date.fromisoformat(config.POST_DATE) - datetime.date.fromisoformat(config.FLOOD_DATE)).days
     lims = [f"Single Sentinel-1 track ({det['track']}), one pre/post pair; the post scene is {days} days after the event, so a flash flood in a narrow gorge may already have drained.",
