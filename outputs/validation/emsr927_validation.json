@@ -1,0 +1,846 @@
+{
+  "aois": {
+    "AOI01": {
+      "layers": [
+        "areaOfInterestA: EMSR927_AOI01_GRA_PRODUCT_areaOfInterestA_v1 [EMSR927_AOI01_GRA_PRODUCT_areaOfInterestA_v1.shp] (other versions: ['areaOfInterestA_v1'])",
+        "missing layer notAnalysedA",
+        "observedEventA: EMSR927_AOI01_GRA_PRODUCT_observedEventA_v1 [EMSR927_AOI01_GRA_PRODUCT_observedEventA_v1.shp] (other versions: ['observedEventA_v1'])",
+        "builtUpP: EMSR927_AOI01_GRA_PRODUCT_builtUpP_v1 [EMSR927_AOI01_GRA_PRODUCT_builtUpP_v1.shp] (other versions: ['builtUpP_v1'])"
+      ],
+      "holdout": false,
+      "event_area": {
+        "ref_px_all": 1232,
+        "ref_px_assessed": 694,
+        "debris": {
+          "all": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1232,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.0
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 694,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.0
+              }
+            }
+          }
+        },
+        "flood_or_debris": {
+          "all": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1232,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.0
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 694,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.0
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      "damage_points": {
+        "n": 433,
+        "n_assessed": 175,
+        "recall_all": {
+          "0": 0.0,
+          "30": 0.0,
+          "60": 0.0,
+          "100": 0.0
+        },
+        "recall_assessed": {
+          "0": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "30": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "60": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "100": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          }
+        },
+        "by_grade_assessed_30m": {
+          "Destroyed": {
+            "n": 175,
+            "rate": 0.0
+          },
+          "Damaged": {
+            "n": 0,
+            "rate": null
+          },
+          "Possibly damaged": {
+            "n": 0,
+            "rate": null
+          }
+        }
+      },
+      "building_precision_proxy": {
+        "baseline_all_assessed_buildings": {
+          "n": 89,
+          "30": 0.9325842696629213,
+          "60": 1.0,
+          "100": 1.0
+        },
+        "flagged_overlap": null,
+        "flagged_within_30m": null,
+        "note": "lower bound: EMS marks only what analysts graded; compare with the baseline, not with 100%"
+      }
+    },
+    "AOI02": {
+      "layers": [
+        "areaOfInterestA: EMSR927_AOI02_GRA_PRODUCT_areaOfInterestA_v2 [EMSR927_AOI02_GRA_PRODUCT_areaOfInterestA_v2.shp] (other versions: ['areaOfInterestA_v2'])",
+        "missing layer notAnalysedA",
+        "observedEventA: EMSR927_AOI02_GRA_PRODUCT_observedEventA_v2 [EMSR927_AOI02_GRA_PRODUCT_observedEventA_v2.shp] (other versions: ['observedEventA_v2'])",
+        "builtUpP: EMSR927_AOI02_GRA_PRODUCT_builtUpP_v2 [EMSR927_AOI02_GRA_PRODUCT_builtUpP_v2.shp] (other versions: ['builtUpP_v2'])"
+      ],
+      "holdout": false,
+      "event_area": {
+        "ref_px_all": 1442,
+        "ref_px_assessed": 851,
+        "debris": {
+          "all": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1442,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0020804438280166435
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.008321775312066574
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.023578363384188627
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 851,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0035252643948296123
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.012925969447708578
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.02937720329024677
+              }
+            }
+          }
+        },
+        "flood_or_debris": {
+          "all": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1442,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0020804438280166435
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.008321775312066574
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.023578363384188627
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 851,
+              "precision": null,
+              "recall": 0.0,
+              "iou": 0.0,
+              "f1": 0.0
+            },
+            "tolerance": {
+              "30": {
+                "precision": null,
+                "recall": 0.0035252643948296123
+              },
+              "60": {
+                "precision": null,
+                "recall": 0.012925969447708578
+              },
+              "100": {
+                "precision": null,
+                "recall": 0.02937720329024677
+              }
+            }
+          }
+        }
+      },
+      "damage_points": {
+        "n": 431,
+        "n_assessed": 125,
+        "recall_all": {
+          "0": 0.0,
+          "30": 0.0,
+          "60": 0.004640371229698376,
+          "100": 0.02088167053364269
+        },
+        "recall_assessed": {
+          "0": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "30": {
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "60": {
+            "rate": 0.008,
+            "ci95": [
+              0.0,
+              0.05
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          },
+          "100": {
+            "rate": 0.024,
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "chance_mean_sd": null,
+            "verdict": "n/a"
+          }
+        },
+        "by_grade_assessed_30m": {
+          "Destroyed": {
+            "n": 125,
+            "rate": 0.0
+          },
+          "Damaged": {
+            "n": 0,
+            "rate": null
+          },
+          "Possibly damaged": {
+            "n": 0,
+            "rate": null
+          }
+        }
+      },
+      "building_precision_proxy": {
+        "baseline_all_assessed_buildings": {
+          "n": 125,
+          "30": 0.84,
+          "60": 0.912,
+          "100": 0.992
+        },
+        "flagged_overlap": null,
+        "flagged_within_30m": null,
+        "note": "lower bound: EMS marks only what analysts graded; compare with the baseline, not with 100%"
+      }
+    },
+    "AOI03": {
+      "layers": [
+        "areaOfInterestA: EMSR927_AOI03_GRA_PRODUCT_areaOfInterestA_v1 [EMSR927_AOI03_GRA_PRODUCT_areaOfInterestA_v1.shp] (other versions: ['areaOfInterestA_v1'])",
+        "notAnalysedA: EMSR927_AOI03_GRA_PRODUCT_notAnalysedA_v1 [EMSR927_AOI03_GRA_PRODUCT_notAnalysedA_v1.shp] (other versions: ['notAnalysedA_v1'])",
+        "observedEventA: EMSR927_AOI03_GRA_PRODUCT_observedEventA_v1 [EMSR927_AOI03_GRA_PRODUCT_observedEventA_v1.shp] (other versions: ['observedEventA_v1'])",
+        "builtUpP: EMSR927_AOI03_GRA_PRODUCT_builtUpP_v1 [EMSR927_AOI03_GRA_PRODUCT_builtUpP_v1.shp] (other versions: ['builtUpP_v1'])"
+      ],
+      "holdout": true,
+      "event_area": {
+        "ref_px_all": 6539,
+        "ref_px_assessed": 6208,
+        "debris": {
+          "all": {
+            "strict": {
+              "tp": 1032,
+              "fp": 84,
+              "fn": 5507,
+              "precision": 0.9247311827956989,
+              "recall": 0.15782229698730693,
+              "iou": 0.15582062509436811,
+              "f1": 0.2696276943174396
+            },
+            "tolerance": {
+              "30": {
+                "precision": 0.956989247311828,
+                "recall": 0.2705306621807616
+              },
+              "60": {
+                "precision": 0.9632616487455197,
+                "recall": 0.35020645358617525
+              },
+              "100": {
+                "precision": 0.9695340501792115,
+                "recall": 0.4517510322679309
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 1032,
+              "fp": 84,
+              "fn": 5176,
+              "precision": 0.9247311827956989,
+              "recall": 0.16623711340206185,
+              "iou": 0.16401780038143673,
+              "f1": 0.2818132168214091
+            },
+            "tolerance": {
+              "30": {
+                "precision": 0.956989247311828,
+                "recall": 0.27899484536082475
+              },
+              "60": {
+                "precision": 0.9632616487455197,
+                "recall": 0.3587306701030928
+              },
+              "100": {
+                "precision": 0.9695340501792115,
+                "recall": 0.4587628865979381
+              }
+            }
+          }
+        },
+        "flood_or_debris": {
+          "all": {
+            "strict": {
+              "tp": 1082,
+              "fp": 84,
+              "fn": 5457,
+              "precision": 0.9279588336192109,
+              "recall": 0.165468726104909,
+              "iou": 0.16337007398459913,
+              "f1": 0.2808565866320571
+            },
+            "tolerance": {
+              "30": {
+                "precision": 0.9588336192109777,
+                "recall": 0.28001223428658817
+              },
+              "60": {
+                "precision": 0.9648370497427101,
+                "recall": 0.36182902584493043
+              },
+              "100": {
+                "precision": 0.9708404802744426,
+                "recall": 0.4673497476678391
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 1082,
+              "fp": 84,
+              "fn": 5126,
+              "precision": 0.9279588336192109,
+              "recall": 0.17429123711340205,
+              "iou": 0.1719643992371265,
+              "f1": 0.29346352047735286
+            },
+            "tolerance": {
+              "30": {
+                "precision": 0.9588336192109777,
+                "recall": 0.28898195876288657
+              },
+              "60": {
+                "precision": 0.9648370497427101,
+                "recall": 0.3709729381443299
+              },
+              "100": {
+                "precision": 0.9708404802744426,
+                "recall": 0.47519329896907214
+              }
+            }
+          }
+        }
+      },
+      "damage_points": {
+        "n": 2343,
+        "n_assessed": 2133,
+        "recall_all": {
+          "0": 0.20614596670934698,
+          "30": 0.32565087494664957,
+          "60": 0.4033290653008963,
+          "100": 0.5228339735381989
+        },
+        "recall_assessed": {
+          "0": {
+            "rate": 0.22644163150492264,
+            "ci95": [
+              0.1082,
+              0.3268
+            ],
+            "chance_mean_sd": [
+              0.09069854664791371,
+              0.037813577096868146
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "30": {
+            "rate": 0.34505391467416785,
+            "ci95": [
+              0.1726,
+              0.4861
+            ],
+            "chance_mean_sd": [
+              0.1511673699015471,
+              0.05676488722871411
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "60": {
+            "rate": 0.4172526957337084,
+            "ci95": [
+              0.2278,
+              0.5758
+            ],
+            "chance_mean_sd": [
+              0.19969057665260193,
+              0.06946064884399421
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "100": {
+            "rate": 0.5377402719174871,
+            "ci95": [
+              0.3328,
+              0.6999
+            ],
+            "chance_mean_sd": [
+              0.2730801687763713,
+              0.08425773842307112
+            ],
+            "verdict": "indistinguishable from chance"
+          }
+        },
+        "by_grade_assessed_30m": {
+          "Destroyed": {
+            "n": 1744,
+            "rate": 0.38188073394495414
+          },
+          "Damaged": {
+            "n": 195,
+            "rate": 0.2153846153846154
+          },
+          "Possibly damaged": {
+            "n": 194,
+            "rate": 0.14432989690721648
+          }
+        }
+      },
+      "building_precision_proxy": {
+        "baseline_all_assessed_buildings": {
+          "n": 2669,
+          "30": 0.538029224428625,
+          "60": 0.5803671787186212,
+          "100": 0.6140876732858749
+        },
+        "flagged_overlap": {
+          "n": 329,
+          "30": 0.9696048632218845,
+          "60": 0.9787234042553191,
+          "100": 0.993920972644377
+        },
+        "flagged_within_30m": {
+          "n": 546,
+          "30": 0.9578754578754579,
+          "60": 0.978021978021978,
+          "100": 0.9945054945054945
+        },
+        "note": "lower bound: EMS marks only what analysts graded; compare with the baseline, not with 100%"
+      }
+    },
+    "AOI05": {
+      "layers": [
+        "areaOfInterestA: EMSR927_AOI05_GRA_PRODUCT_areaOfInterestA_v2 [EMSR927_AOI05_GRA_PRODUCT_areaOfInterestA_v2.shp] (other versions: ['areaOfInterestA_v2'])",
+        "notAnalysedA: EMSR927_AOI05_GRA_PRODUCT_notAnalysedA_v2 [EMSR927_AOI05_GRA_PRODUCT_notAnalysedA_v2.shp] (other versions: ['notAnalysedA_v2'])",
+        "observedEventA: EMSR927_AOI05_GRA_PRODUCT_observedEventA_v2 [EMSR927_AOI05_GRA_PRODUCT_observedEventA_v2.shp] (other versions: ['observedEventA_v2'])",
+        "builtUpP: EMSR927_AOI05_GRA_PRODUCT_builtUpP_v2 [EMSR927_AOI05_GRA_PRODUCT_builtUpP_v2.shp] (other versions: ['builtUpP_v2'])"
+      ],
+      "holdout": false,
+      "event_area": {
+        "ref_px_all": 5022,
+        "ref_px_assessed": 4826,
+        "debris": {
+          "all": {
+            "strict": {
+              "tp": 967,
+              "fp": 12,
+              "fn": 4055,
+              "precision": 0.9877425944841676,
+              "recall": 0.19255276782158504,
+              "iou": 0.1920937624155741,
+              "f1": 0.3222796200633228
+            },
+            "tolerance": {
+              "30": {
+                "precision": 1.0,
+                "recall": 0.3199920350457985
+              },
+              "60": {
+                "precision": 1.0,
+                "recall": 0.40780565511748307
+              },
+              "100": {
+                "precision": 1.0,
+                "recall": 0.5133412982875348
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 967,
+              "fp": 12,
+              "fn": 3859,
+              "precision": 0.9877425944841676,
+              "recall": 0.20037297969332782,
+              "iou": 0.19987598181066557,
+              "f1": 0.33316106804478895
+            },
+            "tolerance": {
+              "30": {
+                "precision": 1.0,
+                "recall": 0.3309158723580605
+              },
+              "60": {
+                "precision": 1.0,
+                "recall": 0.42208868628263574
+              },
+              "100": {
+                "precision": 1.0,
+                "recall": 0.5281806879403232
+              }
+            }
+          }
+        },
+        "flood_or_debris": {
+          "all": {
+            "strict": {
+              "tp": 1181,
+              "fp": 12,
+              "fn": 3841,
+              "precision": 0.9899413243922883,
+              "recall": 0.2351652727996814,
+              "iou": 0.2346046881207787,
+              "f1": 0.38004827031375704
+            },
+            "tolerance": {
+              "30": {
+                "precision": 1.0,
+                "recall": 0.3769414575866189
+              },
+              "60": {
+                "precision": 1.0,
+                "recall": 0.46993229788928714
+              },
+              "100": {
+                "precision": 1.0,
+                "recall": 0.575467941059339
+              }
+            }
+          },
+          "assessed": {
+            "strict": {
+              "tp": 1181,
+              "fp": 12,
+              "fn": 3645,
+              "precision": 0.9899413243922883,
+              "recall": 0.2447161210111894,
+              "iou": 0.2441091360066143,
+              "f1": 0.39242399069612893
+            },
+            "tolerance": {
+              "30": {
+                "precision": 1.0,
+                "recall": 0.3901782014090344
+              },
+              "60": {
+                "precision": 1.0,
+                "recall": 0.48673849979278905
+              },
+              "100": {
+                "precision": 1.0,
+                "recall": 0.5928305014504766
+              }
+            }
+          }
+        }
+      },
+      "damage_points": {
+        "n": 581,
+        "n_assessed": 493,
+        "recall_all": {
+          "0": 0.06712564543889846,
+          "30": 0.10499139414802065,
+          "60": 0.14457831325301204,
+          "100": 0.23580034423407917
+        },
+        "recall_assessed": {
+          "0": {
+            "rate": 0.07910750507099391,
+            "ci95": [
+              0.0194,
+              0.1788
+            ],
+            "chance_mean_sd": [
+              0.0795131845841785,
+              0.03579302781147384
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "30": {
+            "rate": 0.11764705882352941,
+            "ci95": [
+              0.0354,
+              0.2622
+            ],
+            "chance_mean_sd": [
+              0.13198782961460442,
+              0.05043597801336349
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "60": {
+            "rate": 0.1643002028397566,
+            "ci95": [
+              0.0616,
+              0.3253
+            ],
+            "chance_mean_sd": [
+              0.18028397565922924,
+              0.0584778821586395
+            ],
+            "verdict": "indistinguishable from chance"
+          },
+          "100": {
+            "rate": 0.2718052738336714,
+            "ci95": [
+              0.1238,
+              0.4851
+            ],
+            "chance_mean_sd": [
+              0.25862068965517243,
+              0.07285449501612437
+            ],
+            "verdict": "indistinguishable from chance"
+          }
+        },
+        "by_grade_assessed_30m": {
+          "Destroyed": {
+            "n": 240,
+            "rate": 0.2125
+          },
+          "Damaged": {
+            "n": 61,
+            "rate": 0.01639344262295082
+          },
+          "Possibly damaged": {
+            "n": 192,
+            "rate": 0.03125
+          }
+        }
+      },
+      "building_precision_proxy": {
+        "baseline_all_assessed_buildings": {
+          "n": 875,
+          "30": 0.44114285714285717,
+          "60": 0.5268571428571428,
+          "100": 0.5885714285714285
+        },
+        "flagged_overlap": {
+          "n": 36,
+          "30": 0.7777777777777778,
+          "60": 0.8611111111111112,
+          "100": 0.8611111111111112
+        },
+        "flagged_within_30m": {
+          "n": 87,
+          "30": 0.632183908045977,
+          "60": 0.735632183908046,
+          "100": 0.8160919540229885
+        },
+        "note": "lower bound: EMS marks only what analysts graded; compare with the baseline, not with 100%"
+      }
+    }
+  },
+  "pooled_assessed_domain": {
+    "non_holdout": {
+      "debris": {
+        "tp": 967,
+        "fp": 12,
+        "fn": 5404,
+        "precision": 0.9877425944841676,
+        "recall": 0.15178150996703815,
+        "iou": 0.15149616167946106
+      },
+      "flood_or_debris": {
+        "tp": 1181,
+        "fp": 12,
+        "fn": 5190,
+        "precision": 0.9899413243922883,
+        "recall": 0.18537121331031237,
+        "iou": 0.18502271659094469
+      }
+    },
+    "holdout": {
+      "debris": {
+        "tp": 1032,
+        "fp": 84,
+        "fn": 5176,
+        "precision": 0.9247311827956989,
+        "recall": 0.16623711340206185,
+        "iou": 0.16401780038143673
+      },
+      "flood_or_debris": {
+        "tp": 1082,
+        "fp": 84,
+        "fn": 5126,
+        "precision": 0.9279588336192109,
+        "recall": 0.17429123711340205,
+        "iou": 0.1719643992371265
+      }
+    }
+  }
+}

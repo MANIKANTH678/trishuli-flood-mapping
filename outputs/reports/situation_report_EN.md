@@ -1,30 +1,28 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-06 from commit `7f591ed`. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-06 from commit `58d3b9f`. Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
-2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre, placebo, pre3, pre4 against post, thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.
+2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.
 
 ## 2. Detection signal
 
-| VV change (post − pre), dB | n | p5 | p1 |
-|---|---|---|---|
-| all pixels | 4,113,397 | -2.91 | -4.30 |
-| river, 60 m buffer | 61,080 | -3.64 | -6.22 |
-| river, north (Rasuwa) half | 21,498 | -3.04 | -4.71 |
-| river, south half | 39,582 | -3.95 | -6.91 |
-| river shifted +1.5 km (control) | 61,084 | -3.24 | -4.74 |
-| river shifted −1.5 km (control) | 61,079 | -3.03 | -4.46 |
+Step 3 test (pre → post; pixels flagged as decreases by robust z at threshold 3.5): the main Trishuli / Bhote Koshi floor (36,708 px, 93% radar-observable) against tributary floors (176,217 px) and hillslope controls. Placebo: placebo → pre on the same geometry.
 
-River p1 -6.22 dB vs -4.60 dB for the controls (-1.62); p5 -3.64 vs -3.13. By reach: south half p1 -6.91 (-2.31), north half -4.71 (-0.11). The river reach has a lower-tail excess over the shifted controls: it is evidence of surface change along the reach, not by itself of flooding. The U-Net (Sen1Floods11) flags 5.03% of the corridor post and 5.05% pre: it does not separate the scenes and is not independent evidence.
+| Band | Main floor decrease px | Tributary floor | Hillslope | Event excess, main − tributary [95% CI] | Placebo main floor; excess [95% CI] |
+|---|---|---|---|---|---|
+| VV | 1.87% | 0.05% | 0.01% | 1.79% [0.86%, 2.88%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
+| VH | 4.53% | 0.06% | 0.01% | 4.44% [2.67%, 6.46%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
+
+The main floor has more decrease pixels than the tributary floors in both bands, with 95% CIs above zero, and the placebo pair shows none. This is evidence of surface change along the main reach, not by itself of flooding. The U-Net (Sen1Floods11) flags 5.03% of the corridor post and 5.05% pre: it does not separate the scenes and is not independent evidence.
 
 ## 3. Exposure to the mask
 
 | Item | Headline (base mask) | Scenario range |
 |---|---|---|
 | Flagged area | 3.14 km² (0.31 flood-like, 2.29 dark, 0.54 bright) | 1.66–5.48 km² |
-| Buildings overlapping the mask | 556 (6 flood, 550 debris) of 189,503 | 244–1,078 |
+| Buildings overlapping the mask | 556 (6 flood-like class, 550 other surface change) of 189,503 | 244–1,078 |
 | Buildings within 30 m | 881 | 407–1,775 |
 | Buildings with unknown status | 174,132 (92%) | n/a |
 | Motorable road in mask | 11.8 km (118 segments) | 6.4–22.0 km |
@@ -33,29 +31,38 @@ River p1 -6.22 dB vs -4.60 dB for the controls (-1.62); p5 -3.64 vs -3.13. By re
 | Settlements degraded (≥2× and ≥2 km longer) | 0 | 0–1 |
 | Settlements not assessed (no pre-flood route) | 141 | n/a |
 
-Range = 3 thresholds × mask ±1 px × bridges fail/survive. All 4 first breaks: 4 debris; the detector observed 28%–55% of each cut-off route. Cut-off covers only the 305 assessable settlements; 18 of 20 hospitals were reachable as destinations.
+Range = 3 thresholds × mask ±1 px × bridges fail/survive. All 4 first breaks: 4 debris; the detector observed 28%–55% of each cut-off route. Cut-off covers only the 305 assessable settlements; 18 of 20 hospitals were snapped to the road network.
 
 ## 4. Validation against Copernicus EMS (EMSR927)
 
-Hit rate of the fused flagged mask (classes 1–3) on EMSR927 damage points, against 200 random masks of the same size on assessed floor pixels in each AOI. Check only: EMS data is not an input to any number above.
+Check only: EMS data is not an input to any number above. Reference: landslide polygons (observedEventA) and damage points; no flood-extent layer in the local GRA products. Domain: AOI minus notAnalysedA, restricted to pixels the detector observed. Chance: the mask's own blobs relocated at random (100 draws).
 
-| AOI | Points | On assessed px | Flagged px | Observed hit | Null (mean ± sd) | z |
-|---|---|---|---|---|---|---|
-| AOI01 Syapru Besi | 433 | 175 | 0 | 0.000 | 0.000 ± 0.000 | n/a |
-| AOI02 Timure | 431 | 125 | 0 | 0.000 | 0.000 ± 0.000 | n/a |
-| AOI03 Bidur (hold-out) | 2,343 | 2,133 | 1,251 | 0.206 | 0.097 ± 0.010 | +10.5 |
-| AOI05 Phosretar | 581 | 493 | 1,601 | 0.067 | 0.126 ± 0.020 | -2.9 |
+| AOI | Reference px | Debris P / R / IoU | Flood or debris P / R / IoU |
+|---|---|---|---|
+| AOI01 Syapru Besi | 694 | n/a / 0.000 / 0.000 | n/a / 0.000 / 0.000 |
+| AOI02 Timure | 851 | n/a / 0.000 / 0.000 | n/a / 0.000 / 0.000 |
+| AOI03 Bidur (hold-out) | 6,208 | 0.925 / 0.166 / 0.164 | 0.928 / 0.174 / 0.172 |
+| AOI05 Phosretar | 4,826 | 0.988 / 0.200 / 0.200 | 0.990 / 0.245 / 0.244 |
+| Pooled non-hold-out | 6,371 | 0.988 / 0.152 / 0.151 | 0.990 / 0.185 / 0.185 |
+| Pooled hold-out | 6,208 | 0.925 / 0.166 / 0.164 | 0.928 / 0.174 / 0.172 |
 
-Above the null: AOI03. Below the null: AOI05. No flagged pixels: AOI01, AOI02 (a coverage limit, not a measured detection error). Association with damage points is not attribution to flooding. AOI03 was not used to tune the detector.
+| AOI | Assessed points | Recall 0 m | 30 m | 60 m | Flagged buildings within 30 m of a damage point vs all-building baseline |
+|---|---|---|---|---|---|
+| AOI01 Syapru Besi | 175 | 0.000 [0.00–0.00] n/a | 0.000 [0.00–0.00] n/a | 0.000 [0.00–0.00] n/a | n/a |
+| AOI02 Timure | 125 | 0.000 [0.00–0.00] n/a | 0.000 [0.00–0.00] n/a | 0.008 [0.00–0.05] n/a | n/a |
+| AOI03 Bidur (hold-out) | 2,133 | 0.226 [0.11–0.33] indistinguishable from chance | 0.345 [0.17–0.49] indistinguishable from chance | 0.417 [0.23–0.58] indistinguishable from chance | 97% (n=329) vs 54% |
+| AOI05 Phosretar | 493 | 0.079 [0.02–0.18] indistinguishable from chance | 0.118 [0.04–0.26] indistinguishable from chance | 0.164 [0.06–0.33] indistinguishable from chance | 78% (n=36) vs 44% |
+
+Verdict at 30 m: AOI01 n/a; AOI02 n/a; AOI03 indistinguishable from chance; AOI05 indistinguishable from chance. Association with damage points is not attribution to flooding. AOI03 was scored 4 times (docs/validation_log.md); S1 parameters unchanged since tag detector-frozen.
 
 ## 5. Limitations
 
 - Single Sentinel-1 track (asc85), one pre/post pair; the post scene is 2 days after the event, so a flash flood in a narrow gorge may already have drained.
 - Only the valley floor is assessed (200 km², 90% usable). 92% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.
-- Sentinel-2 added nothing: coverage is about 12% and its null calibration failed, so S2 is excluded and the fused product equals the S1 product.
+- Sentinel-2 added nothing: 12% of the valley floor has clear post-event S2 coverage and its status is null_not_calibrated (seed fraction 0.0006 vs gate 0.048), so S2 is excluded and the fused product equals the S1 product.
 - No cause attribution: flood-like, dark and bright classes are all surface change; bridges are exposed, never known to have failed.
 - 30 m pixels mix narrow channels; OSM snapshot 2026-07-27 predates the event and rural Rasuwa is under-mapped, so missing buildings undercount damage and missing tracks overstate cut-off (141 settlements have no pre-flood route).
-- EMSR927 GRA products contain no flood-extent layer; validation is proxy only.
+- EMSR927 products held locally (GRA) contain no flood-extent layer: the reference is landslide polygons and damage points, so the flood class is not validated against EMS.
 
 ## 6. Next steps (in scope)
 

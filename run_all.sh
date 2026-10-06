@@ -57,11 +57,8 @@ echo "[9b/12] cutoff (hospital reachability; the report checks this is newer tha
 $PY -m src.processing.cutoff_v2
 
 echo "[10/12] validation (EMSR927, check-only)"
-HAVE_EMSR=0
 if [ -d data/external/EMSR927 ]; then
-  HAVE_EMSR=1
-  $PY src/validation/emsr927_comparison.py
-  $PY src/validation/damage_sanity_check.py
+  $PY -m src.validation.emsr927_validate
 else
   echo "  EMSR927 folder absent, skipping validation"
 fi
@@ -69,9 +66,6 @@ fi
 echo "[11/12] mask validation (must be newer than flood_mask.tif for the report)"
 $PY tools/signal_check.py
 $PY tools/unet_corridor.py
-if [ "$HAVE_EMSR" -eq 1 ]; then
-  $PY tools/null_recall_aoi.py
-fi
 
 echo "[12/12] maps, dashboard, slides, situation report"
 $PY src/report/impact.py

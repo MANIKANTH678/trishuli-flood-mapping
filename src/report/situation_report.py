@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from src import config
 
+REF_DATES = {"pre": config.PRE_DATE, "post": config.POST_DATE, "placebo": "2026-08-04", "pre3": "2026-07-23", "pre4": "2026-07-11"}
+def rd(n): return f"{n} ({REF_DATES[n]})" if n in REF_DATES else n
 TRACK = "asc85"
 FUSED = "data/processed/fused_class_30m.tif"
 DETECT = f"outputs/diagnostics/detect_{TRACK}.json"
@@ -49,10 +51,10 @@ if snap >= config.FLOOD_DATE:
 
 # --- refuse stale inputs: everything must be newer than the fused class raster ------------------------------
 mask_p = ROOT / FUSED
-have_ems = ((ROOT / "data/external/EMSR927").is_dir() and (ROOT / "outputs/validation/null_recall_aoi.json").exists())
+have_ems = ((ROOT / "data/external/EMSR927").is_dir() and (ROOT / "outputs/validation/emsr927_validation.json").exists())
 files = [DETECT, "outputs/impact_summary.json", "outputs/cutoff_settlements.json",
          "outputs/validation/signal_check.json", "outputs/validation/unet_corridor.json"]
-if have_ems: files.append("outputs/validation/null_recall_aoi.json")
+if have_ems: files.append("outputs/validation/emsr927_validation.json")
 flood_p = ROOT / "data/processed/flood_mask.tif"      # detect -> fuse: detector-side files are checked against this
 VS_FLOOD = {DETECT, "outputs/validation/signal_check.json", "outputs/validation/unet_corridor.json"}
 for f in files:
@@ -73,7 +75,9 @@ try:
     cutj = J("outputs/cutoff_settlements.json")
     cut, setl, rngc = cutj["summary"], cutj["settlements"], cutj["sensitivity"]["range"]
     sig, un = J("outputs/validation/signal_check.json"), J("outputs/validation/unet_corridor.json")
-    nul = J("outputs/validation/null_recall_aoi.json") if have_ems else {}
+    s3e, s3p = J("outputs/diagnostics/step3_event.json"), J("outputs/diagnostics/step3_placebo.json")
+    s2 = J("outputs/diagnostics/s2_detect.json")
+    nul = J("outputs/validation/emsr927_validation.json") if have_ems else {}
 
     # --- mask areas from the fused raster; scenario range from the sensitivity detector runs ---------------
     with rasterio.open(mask_p) as s:
@@ -111,45 +115,75 @@ try:
     no_path = cut.get("hospital_no_pre_flood_path", 0)
 
     # --- validation (optional) ----------------------------------------------------------------------------------
-    aois = {a: n for a, n in nul.items() if a.startswith("AOI")}
-    def zs(n):
-        return (n["observed"] - n["null_mean"]) / n["null_sd"] if n.get("null_sd") else None
-    ems_rows = [f"| {a} {AOI_NAMES.get(a, '')}{' (hold-out)' if n.get('holdout') else ''} | {n['points']:,} | {n['assessed_points']:,} | {n['mask_px']:,} | "
-                f"{f3(n['observed'])} | {f3(n['null_mean'])} ± {f3(n['null_sd'])} | {'n/a' if zs(n) is None else f'{zs(n):+.1f}'} |"
-                for a, n in aois.items()]
-    above = [a for a, n in aois.items() if zs(n) is not None and zs(n) > 2]
-    below = [a for a, n in aois.items() if zs(n) is not None and zs(n) < -2]
-    empty = [a for a, n in aois.items() if n["mask_px"] == 0]
-    ems_read = (f"Above the null: {', '.join(above) or 'none'}. Below the null: {', '.join(below) or 'none'}. "
-                f"No flagged pixels: {', '.join(empty) or 'none'} (a coverage limit, not a measured detection error). "
-                "Association with damage points is not attribution to flooding.")
-    ems_block = ("""Hit rate of the fused flagged mask (classes 1–3) on EMSR927 damage points, against 200 random masks of the same size on assessed floor pixels in each AOI. Check only: EMS data is not an input to any number above.
-
-| AOI | Points | On assessed px | Flagged px | Observed hit | Null (mean ± sd) | z |
-|---|---|---|---|---|---|---|
-""" + "\n".join(ems_rows) + """
-
-""" + ems_read + " AOI03 was not used to tune the detector.") if have_ems else None
+    V, pooled = nul.get("aois", {}), nul.get("pooled_assessed_domain", {})
+    def prf(s): return f"{f3(s['precision'])} / {f3(s['recall'])} / {f3(s['iou'])}"
+    def pc(v): return "n/a" if v is None else f"{100 * v:.0f}%"
+    seg_rows, pt_rows, verdicts = [], [], []
+    for a, r in V.items():
+        tag = f"{a} {AOI_NAMES.get(a, '')}{' (hold-out)' if r.get('holdout') else ''}"
+        ev, dp, bp = r.get("event_area"), r.get("damage_points"), r.get("building_precision_proxy")
+        if ev:
+            seg_rows.append(f"| {tag} | {ev['ref_px_assessed']:,} | {prf(ev['debris']['assessed']['strict'])} | {prf(ev['flood_or_debris']['assessed']['strict'])} |")
+        if dp:
+            cells = []
+            for tol in ("0", "30", "60"):
+                v = dp["recall_assessed"].get(tol)
+                if not v: cells.append("n/a"); continue
+                lo, hi = v["ci95"]
+                cells.append(f"{v['rate']:.3f} " + ("" if lo is None else f"[{lo:.2f}–{hi:.2f}] ") + v["verdict"])
+            v30 = dp["recall_assessed"].get("30")
+            if v30: verdicts.append(f"{a} {v30['verdict']}")
+            fo, base = (bp or {}).get("flagged_overlap"), (bp or {}).get("baseline_all_assessed_buildings")
+            prox = "n/a" if not fo or not base else f"{pc(fo['30'])} (n={fo['n']}) vs {pc(base['30'])}"
+            pt_rows.append(f"| {tag} | {dp['n_assessed']:,} | {' | '.join(cells)} | {prox} |")
+    for key, lab in (("non_holdout", "Pooled non-hold-out"), ("holdout", "Pooled hold-out")):
+        g = pooled.get(key)
+        if g: seg_rows.append(f"| {lab} | {g['debris']['tp'] + g['debris']['fn']:,} | {prf(g['debris'])} | {prf(g['flood_or_debris'])} |")
+    ems_read = ("Verdict at 30 m: " + ("; ".join(verdicts) or "n/a") + ". Association with damage points is not attribution to flooding. "
+                "AOI03 was scored 4 times (docs/validation_log.md); S1 parameters unchanged since tag detector-frozen.")
+    ems_block = None
+    if have_ems:
+        ems_block = ("Check only: EMS data is not an input to any number above. Reference: landslide polygons (observedEventA) and damage points; no flood-extent layer in the local GRA products. "
+                     "Domain: AOI minus notAnalysedA, restricted to pixels the detector observed. Chance: the mask's own blobs relocated at random (100 draws).\n\n"
+                     "| AOI | Reference px | Debris P / R / IoU | Flood or debris P / R / IoU |\n|---|---|---|---|\n" + "\n".join(seg_rows) + "\n\n"
+                     "| AOI | Assessed points | Recall 0 m | 30 m | 60 m | Flagged buildings within 30 m of a damage point vs all-building baseline |\n|---|---|---|---|---|---|\n"
+                     + "\n".join(pt_rows) + "\n\n" + ems_read)
 
     days = (datetime.date.fromisoformat(config.POST_DATE) - datetime.date.fromisoformat(config.FLOOD_DATE)).days
     lims = [f"Single Sentinel-1 track ({det['track']}), one pre/post pair; the post scene is {days} days after the event, so a flash flood in a narrow gorge may already have drained.",
             f"Only the valley floor is assessed ({det['floor_km2']:.0f} km², {det['usable_fraction_of_floor']:.0%} usable). {unk_pct:.0f}% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.",
-            "Sentinel-2 added nothing: coverage is about 12% and its null calibration failed, so S2 is excluded and the fused product equals the S1 product.",
+            f"Sentinel-2 added nothing: {s2['floor_clear_post_fraction']:.0%} of the valley floor has clear post-event S2 coverage and its status is {s2['status']} (seed fraction {s2['seed_fraction']:.4f} vs gate {s2['gate_threshold']:.3f}), so S2 is excluded and the fused product equals the S1 product.",
             "No cause attribution: flood-like, dark and bright classes are all surface change; bridges are exposed, never known to have failed.",
             f"30 m pixels mix narrow channels; OSM snapshot {snap} predates the event and rural Rasuwa is under-mapped, so missing buildings undercount damage and missing tracks overstate cut-off ({no_path} settlements have no pre-flood route)."]
-    if have_ems: lims.append("EMSR927 GRA products contain no flood-extent layer; validation is proxy only.")
+    if have_ems: lims.append("EMSR927 products held locally (GRA) contain no flood-extent layer: the reference is landslide polygons and damage points, so the flood class is not validated against EMS.")
 
     sec = []
-    sec.append(("Situation", f"""{config.FLOOD_DATE} flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 {config.PRE_DATE} / {config.POST_DATE}, Copernicus GLO-30, OSM. Detector status: **{det['status']}** (track {det['track']}; VH robust-z change of {', '.join(det['refs'])} against {det['post']}, thresholds {det['t_hi']:g} / {det['t_lo']:g}, calibrated={det['calibrated']}, null false-alarm max {100 * det['null_far_max']:.3f}%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**."""))
-    sec.append(("Detection signal", f"""| VV change (post − pre), dB | n | p5 | p1 |
-|---|---|---|---|
-{sig_rows}
+    sec.append(("Situation", f"""{config.FLOOD_DATE} flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 {config.PRE_DATE} / {config.POST_DATE}, Copernicus GLO-30, OSM. Detector status: **{det['status']}** (track {det['track']}; VH robust-z change of {', '.join(rd(x) for x in det['refs'])} against {rd(det['post'])}, thresholds {det['t_hi']:g} / {det['t_lo']:g}, calibrated={det['calibrated']}, null false-alarm max {100 * det['null_far_max']:.3f}%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**."""))
+    def p2(v): return f"{100 * v:.2f}%"
+    def s3row(band):
+        e, p = s3e["stats"][band], s3p["stats"][band]
+        eb, pb = s3e["bootstrap"][band]["neg"]["excess_ci"], s3p["bootstrap"][band]["neg"]["excess_ci"]
+        return (f"| {band} | {p2(e['main_floor']['frac_neg'])} | {p2(e['trib_floor']['frac_neg'])} | {p2(e['hillslope_ctrl']['frac_neg'])} | "
+                f"{p2(eb[1])} [{p2(eb[0])}, {p2(eb[2])}] | {p2(p['main_floor']['frac_neg'])}; excess {p2(pb[1])} [{p2(pb[0])}, {p2(pb[2])}] |")
+    ev_ok = all(s3e["bootstrap"][b]["neg"]["excess_ci"][0] > 0 for b in ("VV", "VH"))
+    pl_none = all(s3p["bootstrap"][b]["neg"]["excess_ci"][1] <= 0 for b in ("VV", "VH"))
+    s3_read = (("The main floor has more decrease pixels than the tributary floors in both bands, with 95% CIs above zero" if ev_ok else
+                "The main floor does not show a clear decrease excess over the tributary floors in both bands") +
+               (", and the placebo pair shows none. " if pl_none else ", but the placebo pair also shows an excess, so this is not clean evidence. ") +
+               "This is evidence of surface change along the main reach, not by itself of flooding. ")
+    s3a = s3e["args"]
+    sec.append(("Detection signal", f"""Step 3 test ({s3a['first']} → {s3a['second']}; pixels flagged as decreases by robust z at threshold {s3a['thr']:g}): the main Trishuli / Bhote Koshi floor ({s3e['stats']['VV']['main_floor']['n_px']:,} px, {s3e['observability']['observable_fraction']:.0%} radar-observable) against tributary floors ({s3e['stats']['VV']['trib_floor']['n_px']:,} px) and hillslope controls. Placebo: {s3p['args']['first']} → {s3p['args']['second']} on the same geometry.
 
-River p1 {riv['p1']:.2f} dB vs {c1:.2f} dB for the controls ({riv['p1'] - c1:+.2f}); p5 {riv['p5']:.2f} vs {c5:.2f}. By reach: south half p1 {sh['p1']:.2f} ({sh['p1'] - c1:+.2f}), north half {nh['p1']:.2f} ({nh['p1'] - c1:+.2f}). {tail} The U-Net (Sen1Floods11) flags {pct(un['post']):.2f}% of the corridor post and {pct(un['pre']):.2f}% pre: it does not separate the scenes and is not independent evidence."""))
+| Band | Main floor decrease px | Tributary floor | Hillslope | Event excess, main − tributary [95% CI] | Placebo main floor; excess [95% CI] |
+|---|---|---|---|---|---|
+{s3row('VV')}
+{s3row('VH')}
+
+{s3_read}The U-Net (Sen1Floods11) flags {pct(un['post']):.2f}% of the corridor post and {pct(un['pre']):.2f}% pre: it does not separate the scenes and is not independent evidence."""))
     sec.append(("Exposure to the mask", f"""| Item | Headline (base mask) | Scenario range |
 |---|---|---|
 | Flagged area | {atot:.2f} km² ({a1:.2f} flood-like, {a2:.2f} dark, {a3:.2f} bright) | {area_rng} |
-| Buildings overlapping the mask | {b['overlap']:,} ({b['overlap_flood']:,} flood, {b['overlap_debris']:,} debris) of {b['total']:,} | {span(rr, 'buildings_overlap')} |
+| Buildings overlapping the mask | {b['overlap']:,} ({b['overlap_flood']:,} flood-like class, {b['overlap_debris']:,} other surface change) of {b['total']:,} | {span(rr, 'buildings_overlap')} |
 | Buildings within 30 m | {b['within_30m']:,} | {span(rr, 'buildings_within_30m')} |
 | Buildings with unknown status | {unknown:,} ({unk_pct:.0f}%) | n/a |
 | Motorable road in mask | {rb['motorable_road_km']:.1f} km ({rb['roads']} segments) | {span(rr, 'motorable_road_km', '{:.1f}')} km |
@@ -158,7 +192,7 @@ River p1 {riv['p1']:.2f} dB vs {c1:.2f} dB for the controls ({riv['p1'] - c1:+.2
 | Settlements degraded (≥2× and ≥2 km longer) | {deg_n} | {span(rngc, 'hospital_degraded')} |
 | Settlements not assessed (no pre-flood route) | {no_path} | n/a |
 
-Range = 3 thresholds × mask ±1 px × bridges fail/survive. {cut_detail} Cut-off covers only the {cut['total_settlements'] - no_path} assessable settlements; {cut.get('hospitals_snapped', '?')} of {cut['hospitals_total']} hospitals were reachable as destinations."""))
+Range = 3 thresholds × mask ±1 px × bridges fail/survive. {cut_detail} Cut-off covers only the {cut['total_settlements'] - no_path} assessable settlements; {cut.get('hospitals_snapped', '?')} of {cut['hospitals_total']} hospitals were snapped to the road network."""))
     if ems_block: sec.append(("Validation against Copernicus EMS (EMSR927)", ems_block))
     sec.append(("Limitations", "\n".join(f"- {x}" for x in lims)))
     sec.append(("Next steps (in scope)", f"""1. Add a second Sentinel-1 track or a closer post scene and rerun unchanged; the headline should stay inside the ranges above.
