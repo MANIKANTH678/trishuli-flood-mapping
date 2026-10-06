@@ -41,3 +41,4 @@ Disclosure: the first EMS check on S2/fused ran before the null gate was added. 
 - Verdict rules ("above chance" only if the CI lower bound exceeds the chance mean + 2 sd, mirror for "below") are coded in `emsr927_validate.py`. They were fixed in code, not recorded in a separate file before the first run.
 - Retired: emsr927_comparison.py, damage_sanity_check.py, emsr927_detector_check.py, null_recall_aoi.py, and the the retired mask-coverage field field.
 2026-10-06: AOI05 provenance check. Portal Grading v3 download (vector files labelled v2) is byte-identical to the local copy (fc /b, gpkg and observedEventA shp). Map PDF is v3. AOI05 scores unchanged; no rerun.
+2026-10-06: AOI03 Grading Monitoring 1 v1 downloaded (5 landslide polygons vs 2 in v1). Not used for the headline score; AOI03 v1 remains the reference. Scores unchanged.

@@ -72,3 +72,13 @@ AOI05\EMSR927_AOI05_GRA_PRODUCT_v2.gpkg | GRA | transportationL_v2 | MultiLineSt
 AOI05\EMSR927_AOI05_GRA_PRODUCT_v2.gpkg | GRA | layer_styles | None | n=6 | {}
 AOI05\EMSR927_AOI05_GRA_PRODUCT_v2.gpkg | GRA | layer_metadata | None | n=7 | {}
 AOI05\EMSR927_AOI05_GRA_PRODUCT_v2.gpkg | GRA | source_v2 | None | n=6 | {}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_areaOfInterestA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_areaOfInterestA_v1 | Polygon | n=1 | {}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_builtUpP_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_builtUpP_v1 | Point | n=3058 | {'damage_gra': ['Damaged', 'Destroyed', 'Possibly damaged']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_facilitiesA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_facilitiesA_v1 | Polygon | n=11 | {'damage_gra': ['Destroyed', 'Possibly damaged']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_facilitiesL_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_facilitiesL_v1 | LineString | n=4 | {'damage_gra': ['Destroyed', 'Possibly damaged']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_imageFootprintA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_imageFootprintA_v1 | Polygon | n=3 | {}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_notAnalysedA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_notAnalysedA_v1 | Polygon | n=1 | {}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_observedEventA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_observedEventA_v1 | Polygon | n=5 | {'event_type': ['6-Mass Movement'], 'obj_desc': ['Landslide']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_transportationA_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_transportationA_v1 | Polygon | n=2 | {'damage_gra': ['Destroyed']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_transportationL_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_transportationL_v1 | LineString | n=670 | {'damage_gra': ['Damaged', 'Destroyed', 'No visible damage', 'Not Analysed', 'Possibly damaged']}
+MON1_AOI03\EMSR927_AOI03_GRA_MONIT01_transportationP_v1.shp | GRA | EMSR927_AOI03_GRA_MONIT01_transportationP_v1 | Point | n=26 | {'damage_gra': ['Destroyed', 'Possibly damaged']}
