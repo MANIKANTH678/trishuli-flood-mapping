@@ -144,6 +144,13 @@ def git_commit() -> str:
 _NAME_RE = re.compile(r"^(?P<type>[a-z_]+?)_(?P<id>\d+)$")
 
 
+def _is_cut(raw: dict) -> bool:
+    h = raw.get("hospital")
+    if isinstance(h, dict):
+        return h.get("status") == "cut_off"
+    return bool(raw.get("cut_off"))      # old schema / hand-made records
+
+
 def settlement_record(raw: dict) -> dict:
     """Turn ``{"name": "hamlet_1234", ...}`` into a display-friendly record."""
     name = str(raw.get("name", ""))
@@ -162,7 +169,7 @@ def settlement_record(raw: dict) -> dict:
         "lat": round(float(raw.get("lat", 0.0)), 5),
         "lon": round(float(raw.get("lon", 0.0)), 5),
         "district": raw.get("district") or "",
-        "cut": bool(raw.get("cut_off")),
+        "cut": _is_cut(raw),
     }
 
 
@@ -453,7 +460,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-betw
     <div class="card kpi settlements">
       <div class="label">Cut-off settlements (under mask)</div>
       <div class="value">$cutoff_settlements</div>
-      <div class="sub">$pct_cutoff of $total_settlements settlements lost road access</div>
+      <div class="sub">$pct_cutoff of $total_settlements settlements lost road access$cutoff_range$no_path_note</div>
       <div class="meter"><i style="width:$pct_cutoff_w%"></i></div>
     </div>
     <div class="card kpi model">
@@ -473,7 +480,7 @@ $figures
 </section>
 
 <section id="settlements" aria-labelledby="settle-head">
-  <div class="section-head"><h2 id="settle-head">Cut-off settlements</h2><p class="muted">$cutoff_settlements of $total_settlements OpenStreetMap places lost every road connection once flooded segments were removed.</p></div>
+  <div class="section-head"><h2 id="settle-head">Cut-off settlements</h2><p class="muted">$cutoff_settlements of $total_settlements OpenStreetMap places lost every road connection once debris and flood segments were removed$cutoff_range$no_path_note.</p></div>
   <div class="settle-grid">
     <div class="card" style="overflow:hidden">
       <div id="settlement-map" role="region" aria-label="Map of cut-off settlements"></div>
@@ -693,10 +700,14 @@ $limitations
 def build(out_dir: Path) -> Path:
     stats = load_json(out_dir / "impact_summary.json", {})
     raw_settlements = load_json(out_dir / "cutoff_settlements.json", [])
-    cut_summary = {}
+    cut_summary, cut_range, no_path = {}, None, None
     if isinstance(raw_settlements, dict):
         cut_summary = raw_settlements.get("summary", {})
+        cut_range = (raw_settlements.get("sensitivity", {}).get("range") or {}).get("hospital_cut_off")
+        no_path = cut_summary.get("hospital_no_pre_flood_path")
         raw_settlements = raw_settlements.get("settlements", [])
+    range_txt = f" (scenario range {cut_range[0]}\u2013{cut_range[1]})" if cut_range else ""
+    no_path_txt = (f"; {fmt_int(no_path)} had no pre-flood route and are not assessed" if no_path is not None else "")
 
     settlements = [settlement_record(x) for x in raw_settlements if isinstance(x, dict)]
     cut = [s for s in settlements if s["cut"]]
@@ -807,6 +818,7 @@ def build(out_dir: Path) -> Path:
         flooded_roads=fmt_int(flooded_r), total_roads=fmt_int(total_r),
         pct_roads=pct(flooded_r, total_r), pct_roads_w=width(flooded_r, total_r),
         cutoff_settlements=fmt_int(cutoff_settlements), total_settlements=fmt_int(total_settlements),
+        cutoff_range=esc(range_txt), no_path_note=esc(no_path_txt),
         pct_cutoff=pct(cutoff_settlements, total_settlements),
         pct_cutoff_w=width(cutoff_settlements, total_settlements),
         flooded_bridges=fmt_int(flooded_br), total_bridges=fmt_int(total_br),

@@ -43,7 +43,7 @@ def test_embedded_settlement_data_matches_source(tmp_path):
     source = _load_settlements(tmp_path / "cutoff_settlements.json")
 
     assert len(data["settlements"]) == len(source)
-    assert sum(s["cut"] for s in data["settlements"]) == sum(x["cut_off"] for x in source)
+    assert sum(s["cut"] for s in data["settlements"]) == sum(1 for x in source if x["hospital"]["status"] == "cut_off")
     assert len(data["bbox"]) == 4
 
 

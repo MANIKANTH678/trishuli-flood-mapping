@@ -50,10 +50,11 @@ $PY -m src.analysis.s2_detect --event "$EVENT_DATE"
 $PY -m src.analysis.fuse
 
 echo "[9/12] damage"
-$PY src/processing/damage_v2.py
+$PY tools/make_sens_masks.py
+$PY -m src.processing.damage_v2
 
 echo "[9b/12] cutoff (hospital reachability; the report checks this is newer than flood_mask.tif)"
-$PY src/processing/cutoff_v2.py
+$PY -m src.processing.cutoff_v2
 
 echo "[10/12] validation (EMSR927, check-only)"
 HAVE_EMSR=0

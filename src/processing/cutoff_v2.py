@@ -1,288 +1,160 @@
 #!/usr/bin/env python3
-"""cutoff_v2.py — hospital reachability for settlements, pre vs post flood.
-
-Improvements over cutoff.py:
-  * Destination = nearest reachable hospital (not just "in main network")
-  * Shortest-path road distance (NetworkX multi-source Dijkstra)
-  * Pre-flood baseline vs post-flood delta → detour_factor
-  * cut_off flag = no path OR detour_factor > DETOUR_MAX
-  * Output includes which hospital serves each settlement + its distance
-
-Algorithm:
-  1. Load OSM roads, project to flood-mask CRS (EPSG:32645).
-  2. Build weighted graph (edge weight = Euclidean length in meters).
-  3. Snap settlements and hospitals to nearest graph node (≤ SNAP_RADIUS_M).
-  4. Multi-source Dijkstra from all hospital-snapped nodes → dist to nearest
-     hospital for every node in the graph. Pre-flood.
-  5. Remove roads whose midpoint is inside flood_mask, rebuild graph, run
-     the same Dijkstra → post-flood distances.
-  6. For each settlement: read pre/post distances, compute detour_factor,
-     set cut_off = (post is inf) OR (detour_factor > DETOUR_MAX).
-
-Output: outputs/cutoff_settlements.json
-"""
-from __future__ import annotations
-
-import json
-import math
-import sys
-import os
+import argparse, json
+from collections import Counter
 from pathlib import Path
-
-import geopandas as gpd
-import networkx as nx
-import numpy as np
-import rasterio
+import networkx as nx, numpy as np, pandas as pd, geopandas as gpd, shapely
 from scipy.spatial import cKDTree
-from shapely.geometry import Point
+from src.analysis.impact_lib import *
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
+SEG_M, SNAP_M = 30.0, 1000.0
+DEGRADED_RATIO, DEGRADED_ABS_M = 2.0, 2000.0
+SRC = ("SRC",)
 
-FLOOD = ROOT / "data/processed/flood_mask.tif"
-RDS   = ROOT / "data/raw/osm/roads.geojson"
-HOS   = ROOT / "data/raw/osm/hospitals.geojson"
-SET   = ROOT / "data/raw/osm/settlements.geojson"
-OUT   = ROOT / "outputs/cutoff_settlements.json"
+def classify(pre_m, post_m):
+    if pre_m is None: return "no_pre_flood_path", None
+    if post_m is None: return "cut_off", None
+    ratio = post_m / max(pre_m, 1.0)
+    return ("degraded" if ratio >= DEGRADED_RATIO and post_m - pre_m >= DEGRADED_ABS_M else "reachable"), ratio
 
-SNAP_RADIUS_M = 1000.0     # settlement/hospital must be within 1 km of a road node
-DETOUR_MAX    = 3.0        # post/pre path ratio above which we flag as cut off
+def reach(G, dest_nodes):
+    """(pred, dist) to the nearest destination via a zero-weight super-source (added then removed)."""
+    if not dest_nodes: return {}, {}
+    G.add_edges_from((SRC, d, {"w": 0.0, "e": -1}) for d in dest_nodes)
+    pred, dist = nx.dijkstra_predecessor_and_distance(G, SRC, weight="w")
+    G.remove_node(SRC)
+    return pred, dist
 
+def walk(pred, G, node):
+    """Edge ids along the pre-flood route from node to its destination."""
+    steps = []
+    while pred.get(node) and pred[node][0] != SRC:
+        p = pred[node][0]; steps.append(G[node][p]["e"]); node = p
+    return steps
 
-# ---------- helpers ----------
+def snap(xy, kd, n, radius):
+    d, i = kd.query(xy, distance_upper_bound=radius)
+    return np.where(np.isfinite(d) & (i < n), i, -1), d
 
-def load_flood_polygon():
-    with rasterio.open(FLOOD) as src:
-        arr = src.read(1)
-        crs = src.crs
-        tr = src.transform
-    from rasterio.features import shapes as rio_shapes
-    from shapely.geometry import shape
-    from shapely.ops import unary_union
-    geoms = [shape(g) for g, v in rio_shapes(arr.astype("uint8"),
-                                             mask=(arr == 1),
-                                             transform=tr)]
-    return unary_union(geoms) if geoms else None, crs
-
-
-def build_graph(roads: gpd.GeoDataFrame) -> nx.Graph:
-    G = nx.Graph()
-    for geom in roads.geometry:
-        if geom is None or geom.is_empty:
-            continue
-        parts = [geom] if geom.geom_type == "LineString" else \
-                list(geom.geoms) if geom.geom_type == "MultiLineString" else []
-        for part in parts:
-            coords = [(round(x, 4), round(y, 4)) for x, y in part.coords]
-            for a, b in zip(coords[:-1], coords[1:]):
-                w = math.hypot(a[0] - b[0], a[1] - b[1])
-                if w <= 0:
-                    continue
-                # keep shorter edge if the pair already exists
-                if G.has_edge(a, b):
-                    if w < G[a][b]["weight"]:
-                        G[a][b]["weight"] = w
-                else:
-                    G.add_edge(a, b, weight=w)
-    return G
-
-
-def node_kdtree(G: nx.Graph):
-    nodes = np.array(list(G.nodes), dtype=np.float64)
-    return nodes, cKDTree(nodes) if len(nodes) else None
-
-
-def snap(points: gpd.GeoSeries, tree: cKDTree, nodes: np.ndarray,
-         radius: float):
-    """Return (node_idx per point, node_xy per point, distance per point).
-    -1 means no node within radius.
-    """
-    dists, idxs = tree.query(list(zip(points.x.values, points.y.values)),
-                             k=1, distance_upper_bound=radius)
-    n = len(idxs)
-    ok = np.isfinite(dists) & (idxs < len(nodes))
-    idxs = np.where(ok, idxs, -1).astype(np.int64)
-    return idxs, dists
-
-
-def nearest_hospital_distances(G: nx.Graph, hospital_nodes: list[tuple]):
-    """Multi-source Dijkstra → {node: distance_m_to_nearest_hospital}."""
-    if not hospital_nodes:
-        return {}
-    return nx.multi_source_dijkstra_path_length(G, sources=hospital_nodes,
-                                                weight="weight")
-
-
-# ---------- main ----------
+def load_network(crs):
+    r = gpd.read_file(OSM / "roads.geojson").to_crs(crs)
+    r = r[r.geometry.notna() & ~r.geometry.is_empty].explode(index_parts=False).reset_index(drop=True)
+    mot = r["motorable"].astype(bool) if "motorable" in r else ~txt(r, "highway").isin(NON_MOTORABLE)
+    r = r[mot.to_numpy()].reset_index(drop=True)
+    xy, gi = shapely.get_coordinates(shapely.segmentize(r.geometry.to_numpy(), SEG_M), return_index=True)
+    same = gi[1:] == gi[:-1]
+    A, B, way = xy[:-1][same], xy[1:][same], gi[:-1][same]
+    w = np.hypot(*(A - B).T); k = w > 0; A, B, way, w = A[k], B[k], way[k], w[k]
+    ua, ub = list(map(tuple, np.round(A, 2))), list(map(tuple, np.round(B, 2)))
+    G = nx.Graph(); G.add_edges_from((u, v, {"w": float(x), "e": i}) for i, (u, v, x) in enumerate(zip(ua, ub, w)))
+    return {"G": G, "A": A, "B": B, "W": w, "ua": ua, "ub": ub,
+            "bridge": (txt(r, "bridge") != "").to_numpy()[way], "tunnel": (txt(r, "tunnel") != "").to_numpy()[way],
+            "lines": shapely.linestrings(np.stack([A, B], axis=1))}
 
 def main():
-    flood_poly, mask_crs = load_flood_polygon()
-    print(f"flood polygon loaded  (crs={mask_crs})")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cls", default="data/processed/fused_class_30m.tif")
+    ap.add_argument("--sens-dir", default="data/processed/_sens"); ap.add_argument("--out", default="outputs/cutoff_settlements.json")
+    a = ap.parse_args()
+    base = load_classes(a.cls); crs, T = base["crs"], base["T"]
+    N = load_network(crs); G = N["G"]; nodes = list(G.nodes); kd = cKDTree(np.array(nodes))
+    big = len(max(nx.connected_components(G), key=len)) / G.number_of_nodes()
+    print(f"network: {G.number_of_nodes():,} nodes, {G.number_of_edges():,} edges, largest component {big:.0%}")
 
-    print("loading roads / hospitals / settlements ...")
-    roads = gpd.read_file(RDS).to_crs(mask_crs)
-    hos   = gpd.read_file(HOS).to_crs(mask_crs)
-    setl  = gpd.read_file(SET).to_crs(mask_crs)
-    print(f"  roads: {len(roads):,}  hospitals: {len(hos):,}  settlements: {len(setl):,}")
+    def read(name):
+        d = gpd.read_file(OSM / f"{name}.geojson").to_crs(crs)
+        return d[d.geometry.notna() & ~d.geometry.is_empty].reset_index(drop=True)
+    hos, setl = read("hospitals"), read("settlements")
+    centre = lambda d: shapely.get_coordinates(shapely.centroid(d.geometry.to_numpy()))
+    sxy, hxy = centre(setl), centre(hos)
+    s_i, s_d = snap(sxy, kd, len(nodes), SNAP_M); h_i, _ = snap(hxy, kd, len(nodes), SNAP_M)     # snapped ONCE
+    place = txt(setl, "place").to_numpy(); is_town = np.isin(place, ("city", "town"))
+    dests = {"hospital": sorted({nodes[i] for i in h_i if i >= 0}), "town": sorted({nodes[i] for i in s_i[is_town] if i >= 0})}
+    PRE = {k: reach(G, d) for k, d in dests.items()}
+    mid = (N["A"] + N["B"]) / 2
+    assessed = np.isin(sample(base["cls"], T, mid[:, 0], mid[:, 1]), ASSESSED)
+    etree = shapely.STRtree(N["lines"])
 
-    # ensure point geometries — some OSM features are polygons (hospital buildings)
-    def to_points(gdf):
-        non_pt = ~gdf.geometry.geom_type.isin(["Point", "MultiPoint"])
-        if non_pt.any():
-            gdf = gdf.copy()
-            gdf.loc[non_pt, "geometry"] = gdf.loc[non_pt, "geometry"].centroid
-        return gdf
+    def blocked(both, policy):
+        if both.is_empty: return np.array([], dtype=int)
+        idx = etree.query(both, predicate="intersects"); idx = idx[~N["tunnel"][idx]]
+        return idx[~N["bridge"][idx]] if policy == "survive" else idx
+    def run(removed):
+        H = G.copy(); H.remove_edges_from([(N["ua"][i], N["ub"][i]) for i in removed])
+        return {k: reach(H, d) for k, d in dests.items()}
+    def statuses(post):
+        out = {}
+        for k in dests:
+            dpre, dpost, rows_ = PRE[k][1], post[k][1], []
+            for j in range(len(setl)):
+                if k == "town" and is_town[j]: rows_.append(("is_town", None, None, None)); continue
+                n = nodes[s_i[j]] if s_i[j] >= 0 else None
+                pm, qm = (dpre.get(n), dpost.get(n)) if n is not None else (None, None)
+                lab, ratio = classify(pm, qm); rows_.append((lab, ratio, pm, qm))
+            out[k] = rows_
+        return out
 
-    hos  = to_points(hos)
-    setl = to_points(setl)
-    print(f"  after point normalization: "
-          f"hospitals {hos.geometry.geom_type.value_counts().to_dict()}  "
-          f"settlements {setl.geometry.geom_type.value_counts().to_dict()}")
+    paths = {"base": a.cls}
+    for nm in ("low", "high"):
+        p = Path(a.sens_dir) / nm / "fused_class_30m.tif"
+        if p.exists(): paths[nm] = str(p)
+    rows = []
+    for nm in ("low", "base", "high"):
+        if nm not in paths: continue
+        for morph in (-1, 0, 1):
+            Mx = load_classes(paths[nm], morph); both = union_mask(Mx)
+            for pol in ("fail", "survive"):
+                st = statuses(run(blocked(both, pol)))
+                rows.append({"thr": nm, "morph": morph, "bridges": pol,
+                             **{f"{k}_{lab}": c for k in dests for lab, c in Counter(x[0] for x in st[k]).items()}})
+    df = pd.DataFrame(rows).fillna(0)
+    rng = {c: [int(df[c].min()), int(df[c].max())] for c in df.columns if c.endswith(("_cut_off", "_degraded"))}
 
-    # ---- PRE-FLOOD GRAPH ----
-    print("building pre-flood graph ...")
-    # Restrict to the study region to keep graph tractable
-    # (0.1 degree buffer around settlements)
-    from shapely.geometry import box
-    sb = setl.total_bounds  # minx, miny, maxx, maxy
-    buffer_m = 5000
-    study_bbox = box(sb[0] - buffer_m, sb[1] - buffer_m,
-                     sb[2] + buffer_m, sb[3] + buffer_m)
-    n_before = len(roads)
-    roads = roads[roads.geometry.intersects(study_bbox)].copy()
-    print(f"  roads filtered to study region: {len(roads):,}/{n_before:,}")
-
-    G_pre = build_graph(roads)
-    print(f"  nodes={G_pre.number_of_nodes():,}  edges={G_pre.number_of_edges():,}")
-    if G_pre.number_of_nodes() == 0:
-        sys.exit("graph is empty — check roads CRS / geometry")
-
-    nodes_pre, tree_pre = node_kdtree(G_pre)
-
-    # snap hospitals & settlements to pre-flood graph
-    h_idx_pre, h_d = snap(hos.geometry, tree_pre, nodes_pre, SNAP_RADIUS_M)
-    s_idx_pre, s_d = snap(setl.geometry, tree_pre, nodes_pre, SNAP_RADIUS_M)
-    hos_in = h_idx_pre >= 0
-    set_in = s_idx_pre >= 0
-    print(f"  hospitals snapped:   {int(hos_in.sum())}/{len(hos)}")
-    print(f"  settlements snapped: {int(set_in.sum())}/{len(setl)}")
-
-    hospital_nodes = [tuple(nodes_pre[i]) for i in h_idx_pre[hos_in]]
-    print(f"running pre-flood Dijkstra from {len(hospital_nodes)} hospitals ...")
-    dist_pre = nearest_hospital_distances(G_pre, hospital_nodes)
-
-    # ---- POST-FLOOD GRAPH ----
-    print("removing roads inside flood polygon ...")
-    mids = roads.geometry.interpolate(0.5, normalized=True)
-    roads_post = roads[~mids.within(flood_poly)].copy() if flood_poly else roads
-    print(f"  roads remaining: {len(roads_post):,}/{len(roads):,}")
-
-    G_post = build_graph(roads_post)
-    print(f"  post graph nodes={G_post.number_of_nodes():,}  "
-          f"edges={G_post.number_of_edges():,}")
-    nodes_post, tree_post = node_kdtree(G_post)
-
-    # snap hospitals to post graph (settlements too, for distance lookup)
-    h_idx_post, _ = snap(hos.geometry, tree_post, nodes_post, SNAP_RADIUS_M)
-    s_idx_post, _ = snap(setl.geometry, tree_post, nodes_post, SNAP_RADIUS_M)
-    hospital_nodes_post = [tuple(nodes_post[i]) for i in h_idx_post[h_idx_post >= 0]]
-    print(f"running post-flood Dijkstra from {len(hospital_nodes_post)} hospitals ...")
-    dist_post = nearest_hospital_distances(G_post, hospital_nodes_post)
-
-    # ---- per-settlement results ----
-    print("computing per-settlement reachability ...")
-    results = []
-    n_cut = n_no_path = n_detour = 0
-    import pandas as pd
-    from pyproj import Transformer
-    _to_wgs84 = Transformer.from_crs(mask_crs, "EPSG:4326", always_xy=True)
-    for i, row in setl.iterrows():
-        nm = row.get("name")
-        di = row.get("district")
-        if not pd.notna(nm):
-            nm = di if pd.notna(di) else None
-        if not pd.notna(nm):
-            nm = f"settlement_{row.get('id', i)}"
-        name = str(nm)
-        lon, lat = _to_wgs84.transform(row.geometry.x, row.geometry.y)
-        district = str(di) if pd.notna(di) else None
-
-        # pre-flood
-        pre_m = None
-        if s_idx_pre[i] >= 0:
-            node_pre = tuple(nodes_pre[s_idx_pre[i]])
-            pre_m = dist_pre.get(node_pre)
-        pre_km = pre_m / 1000.0 if pre_m is not None else None
-
-        # post-flood
-        post_m = None
-        if s_idx_post[i] >= 0:
-            node_post = tuple(nodes_post[s_idx_post[i]])
-            post_m = dist_post.get(node_post)
-        post_km = post_m / 1000.0 if post_m is not None else None
-
-        # verdict
-        reason = None
-        if pre_km is None:
-            cut = False; reason = "unsnapped_pre"
-        elif post_km is None:
-            cut = True; reason = "no_post_flood_path"
-            n_no_path += 1
-        else:
-            df = post_km / max(pre_km, 0.1)
-            if df > DETOUR_MAX:
-                cut = True; reason = f"detour_{df:.2f}x"
-                n_detour += 1
-            else:
-                cut = False
-
-        if cut:
-            n_cut += 1
-
-        results.append({
-            "name": str(name),
-            "lat": float(lat),
-            "lon": float(lon),
-            "district": str(district) if district is not None else None,
-            "pre_flood_hospital_km": round(pre_km, 3) if pre_km is not None else None,
-            "post_flood_hospital_km": round(post_km, 3) if post_km is not None else None,
-            "detour_factor": round(post_km / max(pre_km, 0.1), 3)
-                             if (pre_km and post_km) else None,
-            "cut_off": bool(cut),
-            "cut_off_reason": reason,
-        })
-
-    # ---- output ----
-    result = {
-        "metadata": {
-            "source_flood_mask": str(FLOOD.relative_to(ROOT)),
-            "snap_radius_m": SNAP_RADIUS_M,
-            "detour_max": DETOUR_MAX,
-            "note": ("Pre-flood graph uses all OSM roads; post-flood graph removes "
-                     "roads whose midpoint lies inside flood_mask.tif. The flood mask "
-                     "is unvalidated (damage-point recall against EMSR927 is near zero; "
-                     "see data/processed/emsr927_comparison.json), so the cut_off flags "
-                     "are provisional and should not be read as the real event."),
-        },
-        "summary": {
-            "total_settlements": len(results),
-            "hospitals_total": len(hos),
-            "hospitals_snapped_pre": int(hos_in.sum()),
-            "hospitals_snapped_post": int((h_idx_post >= 0).sum()),
-            "reachable_pre": sum(1 for r in results
-                                 if r["pre_flood_hospital_km"] is not None),
-            "reachable_post": sum(1 for r in results
-                                  if r["post_flood_hospital_km"] is not None),
-            "cut_off": n_cut,
-            "cut_off_no_path": n_no_path,
-            "cut_off_detour_only": n_detour,
-        },
-        "settlements": results,
-    }
-    OUT.write_text(json.dumps(result, indent=2))
-    print(f"\n✅ {OUT}")
-    print(json.dumps(result["summary"], indent=2))
-
+    both0 = union_mask(base); removed0 = blocked(both0, "fail"); st0 = statuses(run(removed0))   # headline scenario
+    rem = set(removed0.tolist()); fl_set = set(etree.query(mask_geom(base["flood"], T), predicate="intersects").tolist())
+    lon, lat = to_lonlat(crs, sxy[:, 0], sxy[:, 1])
+    nm_col = setl["name"].fillna("").astype(str).to_numpy() if "name" in setl else np.array([""] * len(setl))
+    recs = []
+    for j in range(len(setl)):
+        rec = {"name": nm_col[j] or f"settlement_{j}", "lat": float(lat[j]), "lon": float(lon[j]), "place": place[j] or None,
+               "snap_dist_m": round(float(s_d[j]), 1) if s_i[j] >= 0 else None}
+        for k in dests:
+            lab, ratio, pm, qm = st0[k][j]
+            rec[k] = {"status": lab, "pre_km": round(pm / 1000, 2) if pm is not None else None,
+                      "post_km": round(qm / 1000, 2) if qm is not None else None,
+                      "detour_factor": round(ratio, 2) if ratio is not None else None}
+        lab, _, pm, _ = st0["hospital"][j]
+        rec["pre_detail"] = ("off_network" if s_i[j] < 0 else "disconnected") if lab == "no_pre_flood_path" else None
+        steps = walk(PRE["hospital"][0], G, nodes[s_i[j]]) if (s_i[j] >= 0 and pm is not None) else []
+        rec["route_assessed_frac"] = round(float(N["W"][steps][assessed[steps]].sum() / N["W"][steps].sum()), 2) if steps else None
+        brk = next((e for e in steps if e in rem), None) if lab in ("cut_off", "degraded") else None
+        if brk is not None:
+            blon, blat = to_lonlat(crs, mid[brk, 0], mid[brk, 1])
+            rec["first_break"] = {"lat": float(blat), "lon": float(blon), "cause": "flood" if brk in fl_set else "debris",
+                                  "bridge": bool(N["bridge"][brk])}
+        else: rec["first_break"] = None
+        recs.append(rec)
+    cnt = {k: Counter(x[0] for x in st0[k]) for k in dests}
+    mf = OSM / "manifest.json"
+    result = {"metadata": {"class_raster": a.cls, "osm_snapshot": json.loads(mf.read_text()).get("snapshot") if mf.exists() else None,
+                           "snap_radius_m": SNAP_M, "segment_m": SEG_M,
+                           "degraded_rule": f">= {DEGRADED_RATIO:g}x and >= {DEGRADED_ABS_M / 1000:g} km longer",
+                           "headline_scenario": "base threshold, mask +-0 px, exposed bridges fail",
+                           "scenario_axes": "threshold low/base/high x mask -1/0/+1 px x bridges fail/survive",
+                           "limitations": ["Only valley-floor change is detected: blockages on hillside roads are not seen (route_assessed_frac).",
+                                           "OSM motorable ways at the snapshot date; missing roads show as no_pre_flood_path; distances are ground lengths, not travel times.",
+                                           "Bridges are exposed, not known to have failed.",
+                                           "EMSR927 contains no cut-off ground truth; the scenario range is the uncertainty we can quantify."]},
+              "summary": {"total_settlements": len(recs), "hospitals_total": len(hos), "hospitals_snapped": int((h_i >= 0).sum()),
+                          "hospital_nodes": len(dests["hospital"]),
+                          "towns_as_destinations": len(dests["town"]),
+                          **{f"{k}_{lab}": c for k in dests for lab, c in cnt[k].items()},
+                          "cut_off": cnt["hospital"]["cut_off"], "cut_off_no_path": cnt["hospital"]["cut_off"],
+                          "cut_off_detour_only": cnt["hospital"]["degraded"],      # legacy keys, new meanings
+                          "reachable_pre": sum(1 for r_ in st0["hospital"] if r_[2] is not None),
+                          "network_largest_component": round(big, 3)},
+              "sensitivity": {"scenarios": rows, "range": rng}, "settlements": recs}
+    Path(a.out).parent.mkdir(parents=True, exist_ok=True); Path(a.out).write_text(json.dumps(result, indent=2))
+    print(json.dumps({"summary": result["summary"], "range": rng}, indent=2))
 
 if __name__ == "__main__":
     main()
