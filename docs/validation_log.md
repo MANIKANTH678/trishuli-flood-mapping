@@ -2,21 +2,19 @@
 
 EMS is used for checking only. Thresholds come from the null, not from EMS.
 
-|Scoring|Commit|What was scored|What changed afterwards|
-|-|-|-|-|
-|S1 detector, recall by AOI|ea4d310, c0ee96c (last commits that changed the EMS output files)|S1 flood mask vs EMSR927 damage points, plus random-mask null|nothing; S1 numbers identical across all runs|
-|S2/fused, first check|not recorded as a commit; run from the working tree|EMS check on S2/fused, run before the null gate existed|null gate added; first commit containing it is bb783ff (s2-frozen-3)|
-|S2/fused, after gate|not recorded as a commit; run from the working tree|same check with S2 gated on null calibration|calibrated flag fixed in 377b1ec (s2-frozen-4 originally pointed here)|
+| Scoring                    | Commit                                                            | What was scored                                               | What changed afterwards                                                |
+| -------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| S1 detector, recall by AOI | ea4d310, c0ee96c (last commits that changed the EMS output files) | S1 flood mask vs EMSR927 damage points, plus random-mask null | nothing; S1 numbers identical across all runs                          |
+| S2/fused, first check      | not recorded as a commit; run from the working tree               | EMS check on S2/fused, run before the null gate existed       | null gate added; first commit containing it is bb783ff (s2-frozen-3)   |
+| S2/fused, after gate       | not recorded as a commit; run from the working tree               | same check with S2 gated on null calibration                  | calibrated flag fixed in 377b1ec (s2-frozen-4 originally pointed here) |
 
 Tags: s2-frozen, s2-frozen-2, s2-frozen-3 and s2-frozen-4 exist. s2-frozen-4 is final and has been moved to the last commit of Step 5; no further numbered tags will be added.
 
 Disclosure: the first EMS check on S2/fused ran before the null gate was added. The gate is conservative and does not depend on EMS values, and S1 numbers are identical across all runs. AOI03 remains the hold-out and is touched only for the final run.
 
-
-
 \## Step 5.B: S2 null diagnosis (post-freeze edit, no new tag)
 
-\- Edit: src/analysis/s2\_detect.py gained --diag and --max-elev (default None, unused).
+\- Edit: src/analysis/s2_detect.py gained --diag and --max-elev (default None, unused).
 
 \- Diagnosis (null only, leave-one-out over pre dates, t=6.0; no EMS data used, AOI03 not touched):
 
@@ -28,5 +26,17 @@ Disclosure: the first EMS check on S2/fused ran before the null gate was added. 
 
 &#x20; One-attempt stop rule applied; no further S2 tuning.
 
-\- Outcome: status remains null\_not\_calibrated; fused == S1; S2 provides qualitative context only.
+\- Outcome: status remains null_not_calibrated; fused == S1; S2 provides qualitative context only.
 
+## Step 7: single EMSR927 validation script
+
+| Scoring                                                         | Commit                                                                                 | What was scored                                                                                                                                           | What changed afterwards                                     |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Fused (= S1) class raster, `src/validation/emsr927_validate.py` | f224f86 on branch ems-validation, plus the follow-up fix commit (record its hash here) | Landslide polygons and damage points, assessed domain (AOI minus notAnalysedA), tolerance 0/30/60/100 m, block-bootstrap CI, blob-relocation chance model | nothing tuned; detector unchanged since tag detector-frozen |
+
+- AOI03 (hold-out) scoring count: **4** (the three rows of the first table plus this one). Confirm this count before merging.
+- Regression: area metrics (AOI03 0.928/0.174/0.172, AOI05 0.990/0.245/0.244), point counts (433, 431, 2,343, 581) and 0 m recall (AOI03 0.2061, AOI05 0.0671) reproduce the retired scripts exactly.
+- Reference: all local EMSR927 products are GRA. observedEventA is 6-Mass Movement / Landslide in all four AOIs, so the metric is scored against landslide polygons, not flood extent (docs/ems_inventory.md).
+- Superseded finding: `null_recall_aoi.py` reported AOI03 above its null (z about +10.5) and AOI05 below (z about -2.9). Its null scattered single pixels, so its variance was far too small. Withdrawn. With the blob-relocation null and block-bootstrap CIs, damage-point recall is indistinguishable from chance in both AOIs at every tolerance (AOI03 23% [11-33%] vs chance 9%; AOI05 8% [2-18%] vs chance 8%).
+- Verdict rules ("above chance" only if the CI lower bound exceeds the chance mean + 2 sd, mirror for "below") are coded in `emsr927_validate.py`. They were fixed in code, not recorded in a separate file before the first run.
+- Retired: emsr927_comparison.py, damage_sanity_check.py, emsr927_detector_check.py, null_recall_aoi.py, and the flood_mask_coverage field.

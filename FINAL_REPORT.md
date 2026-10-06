@@ -157,17 +157,16 @@ pixels. Best checkpoint saved to `outputs/flood_unet.pt`.
 
 ### 3.6 Validation
 
-Three reference checks:
-
-- `src/validation/emsr927_comparison.py` — rasterizes EMSR927 `builtUpP`
-  damage points and `observedEventA` landslide polygons onto the flood-mask
-  grid, clips to AOI, and computes damage-point recall and landslide overlap.
-- `src/validation/damage_sanity_check.py` — compares our `impact_summary.json`
-  counts against EMSR927 per-AOI damage totals.
-- `src/validation/emsr927_detector_check.py` — checks detector classes 1 to 3 against the same
-  layers: damage-point recall within 0, 30, 60 and 100 m of a detection, and precision, recall
-  and IoU against landslide polygons, restricted to the assessed domain. The hold-out AOI
-  (Bidur) is flagged. It was run once, after the `detector-frozen` tag.
+One check-only script, `src/validation/emsr927_validate.py`, scores the fused class raster against
+the downloaded EMSR927 GRA products (AOI01 v1, AOI02 v2, AOI03 v1, AOI05 v2; `docs/ems_inventory.md`).
+It works inside the AOI minus `notAnalysedA`, guards every layer (a missing layer is logged and that
+metric skipped), picks the latest version, and reports: precision, recall and IoU against the
+`observedEventA` landslide polygons (strict and with 30, 60 and 100 m tolerance); damage-point
+recall at 0, 30, 60 and 100 m with a 1 km block-bootstrap CI; a chance level from relocating the
+mask's own blobs; and a building precision proxy beside its baseline. AOI03 (Bidur) is the hold-out.
+EMS data never feeds a mask, threshold or product number. It replaces `emsr927_comparison.py`,
+`damage_sanity_check.py`, `emsr927_detector_check.py` and `tools/null_recall_aoi.py`, which were
+retired after the new script reproduced their area metrics, point counts and 0 m recall exactly.
 
 ### 3.7 Main-stem z-score analysis (exploratory)
 
@@ -355,7 +354,7 @@ main-floor pixels lie on mapped polygons and none is an exceedance, so lying on 
 polygon does not by itself produce the signal.
 
 This matches §4.4, where nearly all detections at these AOIs also lie on landslide polygons
-(precision 0.93 and 0.99), so it is not independent support for flooding. EMSR927 has no flood-extent
+(precision 0.93 and 0.99), so it is not independent support for flooding. The downloaded EMSR927 GRA products have no flood-extent
 layer (§5.2), so the check cannot say whether the darkening on the polygons is debris,
 deposited sediment, standing water or a mixture. The polygons cover 63% of the
 main-floor pixels inside the AOIs, so they are not a small target. The exceedances form
@@ -418,40 +417,46 @@ The proxy evaluation is only 0.02 IoU below the full val, so the proxy score is 
 
 ### 4.4 EMSR927 validation
 
-EMSR927 has no flood-extent layer (§5.2), so both checks are proxies. Landslide polygons are not
-flood extent, and precision against them is a lower bound because analysts did not map everything.
+All local EMSR927 products are GRA, and `observedEventA` is "6-Mass Movement / Landslide" in all four
+AOIs (§5.2), so every check here is a proxy. The metric called "debris" is scored against landslide
+polygons, not flood extent, and the flood class is not validated against EMS. Precision against
+landslide polygons is a lower bound because analysts did not map everything. Source:
+`outputs/validation/emsr927_validation.json` (`emsr927_validate.py`); assessed domain, classes 1 to 3.
 
-**Flood-water class only** (`emsr927_comparison.py`, `tools/null_recall_aoi.py`; recall is printed to three decimals):
+**Area metrics against landslide polygons** (Bidur is the hold-out AOI):
 
-| AOI            | Damage points | Damage-point recall | Landslide overlap | Hit rate, observed vs null |
-| -------------- | ------------- | ------------------- | ----------------- | -------------------------- |
-| 01 Syapru Besi | 433           | 0.000               | 0.000             | 0.000 vs 0.000             |
-| 02 Timure      | 431           | 0.000               | 0.000             | 0.000 vs 0.000             |
-| 03 Bidur       | 2,343         | 0.000               | 0.008             | 0.000 vs 0.0024 ± 0.0017   |
-| 05 Phosretar   | 609           | 0.000               | 0.043             | 0.000 vs 0.0102 ± 0.0071   |
+| AOI                 | Precision | Recall | IoU  |
+| ------------------- | --------- | ------ | ---- |
+| 01 Syapru Besi      | n/a       | 0.00   | 0.00 |
+| 02 Timure           | n/a       | 0.00   | 0.00 |
+| 03 Bidur (hold-out) | 0.93      | 0.17   | 0.17 |
+| 05 Phosretar        | 0.99      | 0.25   | 0.24 |
 
-Landslide overlap is the fraction of mapped landslide area inside the flood-water class. The null
-test uses 581 of Phosretar's 609 points. The flood-water class is small (0.31 km²) and does not
-coincide with damage points anywhere.
+At Bidur and Phosretar nearly all detected pixels fall on mapped landslide polygons, but only 17% to 25%
+of the mapped landslide area is detected. At Syapru Besi and Timure nothing is flagged (0 of 694 and
+0 of 851 landslide pixels), which is a coverage limit of the detector, not evidence about the polygons.
 
-**All detected classes, 1 to 3** (`emsr927_detector_check.py`, `outputs/validation/detector_vs_emsr927.json`, run once after the `detector-frozen` tag; Bidur is the hold-out AOI and is reported separately):
+**Damage-point recall in the assessed domain** (recall at 0 m, 95% block-bootstrap CI, chance mean):
 
-| AOI                 | Damage points | On assessed floor | Within 0 / 30 / 60 / 100 m of a detection | Landslide area on assessed floor | Precision | Recall | IoU  |
-| ------------------- | ------------- | ----------------- | ----------------------------------------- | -------------------------------- | --------- | ------ | ---- |
-| 01 Syapru Besi      | 433           | 40%               | 0 / 0 / 0 / 0%                            | 56%                              | 0.00      | 0.00   | 0.00 |
-| 02 Timure           | 431           | 29%               | 0 / 0 / 0.5 / 2.1%                        | 59%                              | 0.00      | 0.00   | 0.00 |
-| 03 Bidur (hold-out) | 2,343         | 91%               | 20.6 / 32.6 / 40.3 / 52.3%                | 95%                              | 0.93      | 0.17   | 0.17 |
-| 05 Phosretar        | 581           | 85%               | 6.7 / 10.5 / 14.5 / 23.6%                 | 96%                              | 0.99      | 0.24   | 0.24 |
+| AOI                 | Recall at 0 m | 95% CI    | Chance | Verdict                       |
+| ------------------- | ------------- | --------- | ------ | ----------------------------- |
+| 03 Bidur (hold-out) | 23%           | 11% - 33% | 9%     | indistinguishable from chance |
+| 05 Phosretar        | 8%            | 2% - 18%  | 8%     | indistinguishable from chance |
 
-At Bidur and Phosretar, where most EMSR927 content lies on the assessed floor, nearly all detected
-pixels fall on mapped landslide polygons, but only 17% to 24% of the mapped landslide area is
-detected. At Syapru Besi and Timure nothing is detected, although 56% and 59% of the landslide
-area lies on the assessed floor, so this is a miss and not a "not assessed" case. Precision 0.00
-there most likely means no detections; the JSON does not separate that from all-false detections.
-The detector thresholds were set from null runs before any EMSR927 comparison of the detector,
-but earlier pipeline stages also ran EMS comparison scripts, so this is not an independent
-validation. Detections coinciding with landslide polygons and nearby damage points are consistent
-with landslide and debris related surface change; they do not show that the detector maps flooding.
+The verdict is the same at 30, 60 and 100 m. Damage-point recall therefore gives no evidence either
+way. The Bidur point estimate is about 2.5 times chance, but the interval is wide. An earlier
+single-pixel null (`null_recall_aoi.py`) reported Bidur above chance and Phosretar below it; that
+null ignored the clustering of the mask, its variance was far too small, and both findings are withdrawn.
+
+**Building proxy.** Buildings overlapping the mask lie within 30 m of an EMS damage point in 97% of
+cases at Bidur (n=329, baseline 54% for all assessed buildings) and 78% at Phosretar (n=36, baseline
+44%). This is a lower bound, and it is not independent of landslide location.
+
+**Reading.** The mask sits on landslide scars: high precision, low recall, damage-point recall at
+chance. This validates surface change on landslides, not flooding. The detector thresholds were set
+from null runs before any EMSR927 comparison of the detector, but earlier pipeline stages also ran
+EMS comparison scripts, so this is not an independent validation. AOI03 has been scored four times
+(`docs/validation_log.md`); nothing was tuned on it.
 
 ### 4.5 Damage assessment versus EMSR927
 
@@ -472,10 +477,12 @@ Hospital reachability was computed on a road graph of 14,536 OSM segments (14,15
 
 **5.1 The event is not demonstrably observable in the input data.** In both the earlier and the rebuilt run, the Sentinel-1 pair (16 and 28 August, ascending, 30 m) shows no detectable signal at the two Rasuwa AOIs, and the Step 4 detector, which uses four earlier scenes as its reference, also finds nothing there (§4.4). Possible reasons include the two-day gap after a fast-draining flood, the 30 m resolution, and debris-roughened surfaces. The radar-geometry mask (§3.7) makes shadow an unlikely main cause on the main-stem floor, although a 30 m DEM may under-resolve a narrow gorge. We have not shown that the event is unobservable, only that this pair and this method do not detect it. Optical imagery or higher-resolution SAR would be needed to map the flood surface directly.
 
-**5.2 EMSR927 GRA products contain no flood extent layer.** The activation
-mapped building damage and mass movements, not water. Our validation is
-therefore proxy-based (damage-point recall and landslide overlap), not a
-direct IoU against a flood reference.
+**5.2 The downloaded EMSR927 GRA products contain no flood extent layer.** Every local product
+(AOI01 v1, AOI02 v2, AOI03 v1, AOI05 v2) is GRA, and `observedEventA` is a landslide layer in all
+four AOIs. The EU Space pages describe the activation as covering flood extent mapping, so other
+product types may exist on the activation page; `docs/ems_inventory.md` records what was checked and
+when. Our validation is therefore proxy-based (landslide-polygon overlap and damage-point recall),
+not a direct IoU against a flood reference.
 
 **5.3 30 m resolution limits bridge-level accuracy.** The Bhote Koshi
 channel is ~30–50 m wide. Even with a correct SAR signal, pixel-level
@@ -551,11 +558,9 @@ OSM and DEM download, SNAP preprocessing and gridding for the five dates, then:
     python -m src.analysis.detect
     python src/processing/damage_v2.py
     python src/processing/cutoff_v2.py
-    python src/validation/emsr927_comparison.py
-    python src/validation/damage_sanity_check.py
+    python -m src.validation.emsr927_validate
     python tools/signal_check.py
     python tools/unet_corridor.py
-    python tools/null_recall_aoi.py
     python src/report/impact.py
     python -m src.report.dashboard_full
     python src/report/slides.py
@@ -570,7 +575,6 @@ Run separately (not in `run_all.sh`):
     python -m src.validation.step3_landslide_check --final --out outputs/validation/step3_landslide_check_final.json
     python -m src.analysis.compare_pairs
     python -m src.analysis.detect --ref placebo,pre3,pre4 --post pre --out-dir data/processed/_null --track-id null_pre
-    python -m src.validation.emsr927_detector_check    # only after the detector-frozen tag
 
 `src/config.py` is not committed (it holds credentials and dates); copy the
 values from `src/config.example.py`.
@@ -583,33 +587,31 @@ Checks:
 
 Key artifacts:
 
-| File                                                             | Description                                                                             |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `data/raw/osm/manifest.json`                                     | OSM snapshot provenance (ohsome, 2026-07-27)                                            |
-| `data/processed/flood_mask.tif`                                  | Class 1 (flood water) of the Step 4 detector, binary (unvalidated)                      |
-| `outputs/impact_summary.json`                                    | Building, road and bridge counts                                                        |
-| `outputs/affected_bridges.geojson`                               | 0 bridge features                                                                       |
-| `outputs/affected_buildings.gpkg`                                | 476 building features (3 flooded + 473 surface-change)                                  |
-| `outputs/cutoff_settlements.json`                                | Per-settlement reachability                                                             |
-| `outputs/validation/damage_sanity.json`                          | EMSR927 damage-point totals                                                             |
-| `data/processed/emsr927_comparison.json`                         | EMSR927 proxy validation (not committed)                                                |
-| `outputs/diagnostics/aoi_backscatter_diagnostics.json`           | Pre-rebuild backscatter diagnostic (no generator)                                       |
-| `outputs/flood_unet.pt`                                          | U-Net best checkpoint (IoU 0.523), earlier run                                          |
-| `outputs/unet_metrics.json`                                      | 20-epoch training history, earlier run                                                  |
-| `outputs/himalaya_heldout_metrics.json`                          | Proxy eval, earlier run (its Rasuwa prediction is withdrawn)                            |
-| `outputs/validation/signal_check.json`                           | VV change along the river and controls (written by `tools/signal_check.py`)             |
-| `outputs/diagnostics/step3_event.json`                           | Main-stem z-score statistics and bootstrap (exploratory)                                |
-| `outputs/diagnostics/step3_profile_event.csv`                    | Profile data behind the step 3 profile figure                                           |
-| `outputs/diagnostics/look_geometry.json`                         | Look geometry used by the radar mask                                                    |
-| `outputs/diagnostics/step3_placebo.json`                         | Placebo pair (4 Aug vs 16 Aug) z-score statistics                                       |
-| `outputs/validation/step3_landslide_check_final.json`            | Main-floor exceedances on and off EMSR927 landslide polygons                            |
-| `outputs/figures/step3_map_event.png`, `step3_profile_event.png` | Step 3 map and profile figures                                                          |
-| `data/processed/detect_class_30m.tif`                            | Step 4 class raster (1 to 3 detections, 0 assessed no change, 253/254/255 not assessed) |
-| `outputs/diagnostics/step4_null_calibration.json`                | Leave-one-out null runs and the chosen `t_hi`                                           |
-| `outputs/diagnostics/detect_asc85.json`                          | Event run summary (status, seed fraction, gate, areas)                                  |
-| `outputs/diagnostics/detect_null_pre.json`                       | Null test on the 16 Aug scene                                                           |
-| `outputs/diagnostics/step4_detect_overview.png`                  | Detections over the DEM                                                                 |
-| `outputs/validation/detector_vs_emsr927.json`                    | EMSR927 proxy check of the frozen detector                                              |
+| File                                                             | Description                                                                               |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `data/raw/osm/manifest.json`                                     | OSM snapshot provenance (ohsome, 2026-07-27)                                              |
+| `data/processed/flood_mask.tif`                                  | Class 1 (flood water) of the Step 4 detector, binary (unvalidated)                        |
+| `outputs/impact_summary.json`                                    | Building, road and bridge counts                                                          |
+| `outputs/affected_bridges.geojson`                               | 0 bridge features                                                                         |
+| `outputs/affected_buildings.gpkg`                                | 476 building features (3 flooded + 473 surface-change)                                    |
+| `outputs/cutoff_settlements.json`                                | Per-settlement reachability                                                               |
+| `outputs/validation/emsr927_validation.json`                     | EMSR927 check-only validation (area metrics, damage-point recall with CI, building proxy) |
+| `outputs/diagnostics/aoi_backscatter_diagnostics.json`           | Pre-rebuild backscatter diagnostic (no generator)                                         |
+| `outputs/flood_unet.pt`                                          | U-Net best checkpoint (IoU 0.523), earlier run                                            |
+| `outputs/unet_metrics.json`                                      | 20-epoch training history, earlier run                                                    |
+| `outputs/himalaya_heldout_metrics.json`                          | Proxy eval, earlier run (its Rasuwa prediction is withdrawn)                              |
+| `outputs/validation/signal_check.json`                           | VV change along the river and controls (written by `tools/signal_check.py`)               |
+| `outputs/diagnostics/step3_event.json`                           | Main-stem z-score statistics and bootstrap (exploratory)                                  |
+| `outputs/diagnostics/step3_profile_event.csv`                    | Profile data behind the step 3 profile figure                                             |
+| `outputs/diagnostics/look_geometry.json`                         | Look geometry used by the radar mask                                                      |
+| `outputs/diagnostics/step3_placebo.json`                         | Placebo pair (4 Aug vs 16 Aug) z-score statistics                                         |
+| `outputs/validation/step3_landslide_check_final.json`            | Main-floor exceedances on and off EMSR927 landslide polygons                              |
+| `outputs/figures/step3_map_event.png`, `step3_profile_event.png` | Step 3 map and profile figures                                                            |
+| `data/processed/detect_class_30m.tif`                            | Step 4 class raster (1 to 3 detections, 0 assessed no change, 253/254/255 not assessed)   |
+| `outputs/diagnostics/step4_null_calibration.json`                | Leave-one-out null runs and the chosen `t_hi`                                             |
+| `outputs/diagnostics/detect_asc85.json`                          | Event run summary (status, seed fraction, gate, areas)                                    |
+| `outputs/diagnostics/detect_null_pre.json`                       | Null test on the 16 Aug scene                                                             |
+| `outputs/diagnostics/step4_detect_overview.png`                  | Detections over the DEM                                                                   |
 
 ---
 

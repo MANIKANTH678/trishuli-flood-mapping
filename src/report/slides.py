@@ -32,9 +32,27 @@ def mask_stats():
 
 imp = J("outputs/impact_summary.json")
 cut = J("outputs/cutoff_settlements.json")["summary"]
-nul = J("outputs/validation/null_recall_aoi.json")
+_vp = ROOT / "outputs/validation/emsr927_validation.json"
+val = json.loads(_vp.read_text(encoding="utf-8")) if _vp.exists() else None
 px, area = mask_stats()
-empty_aois = [k for k, v in nul.items() if v["mask_px"] == 0]
+
+
+def ems_lines(val):
+    """Validation slide text from emsr927_validation.json (assessed domain, flood_or_debris)."""
+    if not val:
+        return ["• EMSR927 check not run (data/external/EMSR927 missing)"]
+    out = ["• Check-only reference: EMSR927 landslide polygons and damage points (GRA products)"]
+    a = val["aois"].get("AOI03", {})
+    seg = a.get("event_area", {}).get("flood_or_debris", {}).get("assessed", {}).get("strict")
+    if seg and seg.get("precision") is not None:
+        out.append(f"• Hold-out AOI03 vs landslide polygons: precision {seg['precision']:.2f}, "
+                   f"recall {seg['recall']:.2f}, IoU {seg['iou']:.2f}")
+    r0 = (a.get("damage_points", {}).get("recall_assessed", {}) or {}).get("0")
+    if r0:
+        lo, hi = r0["ci95"]
+        out.append(f"• Damage-point recall at 0 m: {r0['rate']:.0%} [{lo:.0%}-{hi:.0%}], {r0['verdict']}")
+    out.append("• No flood-extent layer: the flood class is not validated against EMS")
+    return out
 
 prs = Presentation()
 
@@ -58,7 +76,7 @@ slide("Trishuli / Bhote Koshi flood: Sentinel-1 analysis",
 slide("Problem",
       [f"• Suspected GLOF on {config.FLOOD_DATE}, Rasuwa District, Nepal",
        "• Can free Sentinel-1 data map flood extent and impact quickly?",
-       "• EMSR927 mapped damaged structures but has no flood-extent layer"])
+       "• The downloaded EMSR927 GRA products have no flood-extent layer"])
 
 slide("Data",
       [f"• Sentinel-1 GRD VV/VH: {config.PRE_DATE} (pre), {config.POST_DATE} (post)",
@@ -90,11 +108,9 @@ slide("Exposure to the mask",
        f"• Settlements cut off: {cut['cut_off']} of {cut['total_settlements']}"])
 
 slide("Validation",
-      ["• Mask hit rate on EMSR927 damage points vs a random-mask null",
-       f"• No mask pixels in {len(empty_aois)} of {len(nul)} AOIs: a coverage limit, "
-       "not a detection error",
-       "• U-Net (Sen1Floods11) cannot separate the two scenes, so it is not "
-       "independent evidence"])
+      ems_lines(val) +
+      ["• U-Net (Sen1Floods11) cannot separate the two scenes, so it is not "
+       "independent evidence"], size=20)
 
 slide("Deliverables",
       ["• Interactive dashboard (outputs/dashboard.html)",
