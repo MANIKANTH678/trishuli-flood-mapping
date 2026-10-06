@@ -1,0 +1,134 @@
+{
+  "holdout_included": true,
+  "per_aoi": {
+    "AOI01 Syapru Besi": {
+      "main_floor_on_landslide": {
+        "n_px": 694,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 50,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    },
+    "AOI02 Timure": {
+      "main_floor_on_landslide": {
+        "n_px": 851,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 35,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    },
+    "AOI03 Bidur": {
+      "main_floor_on_landslide": {
+        "n_px": 6208,
+        "neg_VV": {
+          "n_exceed": 154,
+          "frac": 0.024806701030927834
+        },
+        "neg_VH": {
+          "n_exceed": 429,
+          "frac": 0.06910438144329897
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 4178,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 1,
+          "frac": 0.00023934897079942556
+        }
+      }
+    },
+    "AOI05 Phosretar": {
+      "main_floor_on_landslide": {
+        "n_px": 4826,
+        "neg_VV": {
+          "n_exceed": 353,
+          "frac": 0.07314546208039785
+        },
+        "neg_VH": {
+          "n_exceed": 817,
+          "frac": 0.16929133858267717
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 3179,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    }
+  },
+  "pooled_on_landslide": {
+    "n_px": 12579,
+    "neg_VV": {
+      "n_exceed": 507,
+      "frac": 0.04030527068924398
+    },
+    "neg_VH": {
+      "n_exceed": 1246,
+      "frac": 0.09905397885364496
+    }
+  },
+  "pooled_off_landslide": {
+    "n_px": 7442,
+    "neg_VV": {
+      "n_exceed": 0,
+      "frac": 0.0
+    },
+    "neg_VH": {
+      "n_exceed": 1,
+      "frac": 0.0001343724805159903
+    }
+  },
+  "main_floor_outside_these_aois": {
+    "n_px": 16687,
+    "neg_VV": {
+      "n_exceed": 181,
+      "frac": 0.01084676694432792
+    },
+    "neg_VH": {
+      "n_exceed": 417,
+      "frac": 0.024989512794390843
+    }
+  }
+}

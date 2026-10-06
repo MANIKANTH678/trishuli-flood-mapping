@@ -1,0 +1,110 @@
+{
+  "holdout_included": false,
+  "per_aoi": {
+    "AOI01 Syapru Besi": {
+      "main_floor_on_landslide": {
+        "n_px": 694,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 50,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    },
+    "AOI02 Timure": {
+      "main_floor_on_landslide": {
+        "n_px": 851,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 35,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    },
+    "AOI05 Phosretar": {
+      "main_floor_on_landslide": {
+        "n_px": 4826,
+        "neg_VV": {
+          "n_exceed": 353,
+          "frac": 0.07314546208039785
+        },
+        "neg_VH": {
+          "n_exceed": 817,
+          "frac": 0.16929133858267717
+        }
+      },
+      "main_floor_off_landslide": {
+        "n_px": 3179,
+        "neg_VV": {
+          "n_exceed": 0,
+          "frac": 0.0
+        },
+        "neg_VH": {
+          "n_exceed": 0,
+          "frac": 0.0
+        }
+      }
+    }
+  },
+  "pooled_on_landslide": {
+    "n_px": 6371,
+    "neg_VV": {
+      "n_exceed": 353,
+      "frac": 0.05540731439334484
+    },
+    "neg_VH": {
+      "n_exceed": 817,
+      "frac": 0.12823732538063098
+    }
+  },
+  "pooled_off_landslide": {
+    "n_px": 3264,
+    "neg_VV": {
+      "n_exceed": 0,
+      "frac": 0.0
+    },
+    "neg_VH": {
+      "n_exceed": 0,
+      "frac": 0.0
+    }
+  },
+  "main_floor_outside_these_aois": {
+    "n_px": 27073,
+    "neg_VV": {
+      "n_exceed": 335,
+      "frac": 0.012373951907804824
+    },
+    "neg_VH": {
+      "n_exceed": 847,
+      "frac": 0.03128578288331548
+    }
+  }
+}
