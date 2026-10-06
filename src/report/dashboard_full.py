@@ -78,7 +78,7 @@ DATA_FILES = [
     ("cutoff_settlements.json", "Settlements with cut-off flag", "JSON"),
     ("impact_summary.json", "Headline statistics", "JSON"),
     ("validation/signal_check.json", "VV change along the river and controls", "JSON"),
-    ("validation/null_recall_aoi.json", "Mask hit rate against a random-mask null", "JSON"),
+    ("validation/emsr927_validation.json", "EMSR927 check: area metrics and damage-point recall vs chance", "JSON"),
     ("validation/unet_corridor.json", "U-Net corridor check", "JSON"),
     ("unet_metrics.json", "U-Net training metrics", "JSON"),
     ("flood_unet.pt", "Trained U-Net weights", "PyTorch"),

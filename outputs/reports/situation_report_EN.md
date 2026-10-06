@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-06 from commit `7f591ed`. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-06 from commit `f224f86` + uncommitted changes (DRAFT). Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
@@ -35,40 +35,25 @@ River p1 -6.22 dB vs -4.60 dB for the controls (-1.62); p5 -3.64 vs -3.13. By re
 
 Range = 3 thresholds × mask ±1 px × bridges fail/survive. All 4 first breaks: 4 debris; the detector observed 28%–55% of each cut-off route. Cut-off covers only the 305 assessable settlements; 18 of 20 hospitals were reachable as destinations.
 
-## 4. Validation against Copernicus EMS (EMSR927)
-
-Hit rate of the fused flagged mask (classes 1–3) on EMSR927 damage points, against 200 random masks of the same size on assessed floor pixels in each AOI. Check only: EMS data is not an input to any number above.
-
-| AOI | Points | On assessed px | Flagged px | Observed hit | Null (mean ± sd) | z |
-|---|---|---|---|---|---|---|
-| AOI01 Syapru Besi | 433 | 175 | 0 | 0.000 | 0.000 ± 0.000 | n/a |
-| AOI02 Timure | 431 | 125 | 0 | 0.000 | 0.000 ± 0.000 | n/a |
-| AOI03 Bidur (hold-out) | 2,343 | 2,133 | 1,251 | 0.206 | 0.097 ± 0.010 | +10.5 |
-| AOI05 Phosretar | 581 | 493 | 1,601 | 0.067 | 0.126 ± 0.020 | -2.9 |
-
-Above the null: AOI03. Below the null: AOI05. No flagged pixels: AOI01, AOI02 (a coverage limit, not a measured detection error). Association with damage points is not attribution to flooding. AOI03 was not used to tune the detector.
-
-## 5. Limitations
+## 4. Limitations
 
 - Single Sentinel-1 track (asc85), one pre/post pair; the post scene is 2 days after the event, so a flash flood in a narrow gorge may already have drained.
 - Only the valley floor is assessed (200 km², 90% usable). 92% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.
 - Sentinel-2 added nothing: coverage is about 12% and its null calibration failed, so S2 is excluded and the fused product equals the S1 product.
 - No cause attribution: flood-like, dark and bright classes are all surface change; bridges are exposed, never known to have failed.
 - 30 m pixels mix narrow channels; OSM snapshot 2026-07-27 predates the event and rural Rasuwa is under-mapped, so missing buildings undercount damage and missing tracks overstate cut-off (141 settlements have no pre-flood route).
-- EMSR927 GRA products contain no flood-extent layer; validation is proxy only.
 
-## 6. Next steps (in scope)
+## 5. Next steps (in scope)
 
 1. Add a second Sentinel-1 track or a closer post scene and rerun unchanged; the headline should stay inside the ranges above.
 2. Check the 4 cut-off first-break points against field or imagery reports.
 3. Refresh OSM after the event and rerun cut-off to separate missing roads from real loss.
 
-## 7. Data sources
+## 6. Data sources
 
 - Contains modified Copernicus Sentinel data 2026 (Sentinel-1 GRD, Copernicus Data Space Ecosystem)
 - (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA; all rights reserved (Copernicus DEM GLO-30)
 - (c) OpenStreetMap contributors, ODbL v1.0 (ohsome snapshot 2026-07-27, pre-event)
-- Copernicus EMS Rapid Mapping, EMSR927 (validation only)
 - Sen1Floods11 v1.1, CC BY 4.0: Bonafilia et al. (2020), CVPR EarthVision workshop
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md).
