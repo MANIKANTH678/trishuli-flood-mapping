@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-06 from commit `48b55fb`. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-06 from commit `834454e`. Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
