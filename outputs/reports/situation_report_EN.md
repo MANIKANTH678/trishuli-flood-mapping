@@ -1,23 +1,21 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-06 from commit `8c8ea49`. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-06 from commit `43365bb`. Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
-2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre, placebo, pre3, pre4 against post, thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.
+2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.
 
 ## 2. Detection signal
 
-| VV change (post − pre), dB | n | p5 | p1 |
-|---|---|---|---|
-| all pixels | 4,113,397 | -2.91 | -4.30 |
-| river, 60 m buffer | 61,080 | -3.64 | -6.22 |
-| river, north (Rasuwa) half | 21,498 | -3.04 | -4.71 |
-| river, south half | 39,582 | -3.95 | -6.91 |
-| river shifted +1.5 km (control) | 61,084 | -3.24 | -4.74 |
-| river shifted −1.5 km (control) | 61,079 | -3.03 | -4.46 |
+Step 3 test (pre → post; pixels flagged as decreases by robust z at threshold 3.5): the main Trishuli / Bhote Koshi floor (36,708 px, 93% radar-observable) against tributary floors (176,217 px) and hillslope controls. Placebo: placebo → pre on the same geometry.
 
-River p1 -6.22 dB vs -4.60 dB for the controls (-1.62); p5 -3.64 vs -3.13. By reach: south half p1 -6.91 (-2.31), north half -4.71 (-0.11). The river reach has a lower-tail excess over the shifted controls: it is evidence of surface change along the reach, not by itself of flooding. The U-Net (Sen1Floods11) flags 5.03% of the corridor post and 5.05% pre: it does not separate the scenes and is not independent evidence.
+| Band | Main floor decrease px | Tributary floor | Hillslope | Event excess, main − tributary [95% CI] | Placebo main floor; excess [95% CI] |
+|---|---|---|---|---|---|
+| VV | 1.87% | 0.05% | 0.01% | 1.79% [0.86%, 2.88%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
+| VH | 4.53% | 0.06% | 0.01% | 4.44% [2.67%, 6.46%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
+
+The main floor has more decrease pixels than the tributary floors in both bands, with 95% CIs above zero, and the placebo pair shows none. This is evidence of surface change along the main reach, not by itself of flooding. The U-Net (Sen1Floods11) flags 5.03% of the corridor post and 5.05% pre: it does not separate the scenes and is not independent evidence.
 
 ## 3. Exposure to the mask
 
@@ -61,7 +59,7 @@ Verdict at 30 m: AOI01 n/a; AOI02 n/a; AOI03 indistinguishable from chance; AOI0
 
 - Single Sentinel-1 track (asc85), one pre/post pair; the post scene is 2 days after the event, so a flash flood in a narrow gorge may already have drained.
 - Only the valley floor is assessed (200 km², 90% usable). 92% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.
-- Sentinel-2 added nothing: coverage is about 12% and its null calibration failed, so S2 is excluded and the fused product equals the S1 product.
+- Sentinel-2 added nothing: 12% of the valley floor has clear post-event S2 coverage and its status is null_not_calibrated (seed fraction 0.0006 vs gate 0.048), so S2 is excluded and the fused product equals the S1 product.
 - No cause attribution: flood-like, dark and bright classes are all surface change; bridges are exposed, never known to have failed.
 - 30 m pixels mix narrow channels; OSM snapshot 2026-07-27 predates the event and rural Rasuwa is under-mapped, so missing buildings undercount damage and missing tracks overstate cut-off (141 settlements have no pre-flood route).
 - EMSR927 products held locally (GRA) contain no flood-extent layer: the reference is landslide polygons and damage points, so the flood class is not validated against EMS.
