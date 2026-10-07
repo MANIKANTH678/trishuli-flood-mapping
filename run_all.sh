@@ -65,7 +65,8 @@ fi
 
 echo "[11/12] mask validation (must be newer than flood_mask.tif for the report)"
 $PY tools/signal_check.py
-$PY tools/unet_corridor.py
+$PY -m src.modeling.predict_scene --arch smp_resnet34
+$PY -m src.analysis.ai_corridor
 
 echo "[12/12] maps, dashboard, slides, situation report"
 $PY src/report/impact.py

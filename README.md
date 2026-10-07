@@ -15,8 +15,8 @@ OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
 > gate and a pre-event scene does not. The flood-water class itself is small (0.31 km²). Damage-point recall of the detected
 > classes is indistinguishable from chance in both scored AOIs. Most detected change is dark or bright
 > surface change on the valley floor; at Bidur and Phosretar nearly all of it lies on mapped
-> landslide polygons, and nothing is detected at the two Rasuwa AOIs. A U-Net water check
-> shows no net change. An earlier README claimed the pair holds no GLOF signal; that claim is
+> landslide polygons, and nothing is detected at the two Rasuwa AOIs. A Sen1Floods11-trained water
+> model, run prediction-only on the corridor, is not separable from pre-event nulls. An earlier README claimed the pair holds no GLOF signal; that claim is
 > withdrawn, because its diagnostic used uncalibrated, GCP-geocoded imagery.
 
 ## Pipeline
@@ -36,7 +36,7 @@ OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
 | 9   | Damage                          | `src/processing/damage_v2.py`                                                            | `outputs/affected_*`, `impact_summary.json`                                                                                                                                                                          |
 | 9b  | Cutoff                          | `src/processing/cutoff_v2.py`                                                            | `outputs/cutoff_settlements.json`                                                                                                                                                                                    |
 | 10  | EMSR927 validation (check only) | `src/validation/emsr927_validate.py`                                                     | `outputs/validation/emsr927_validation.json`                                                                                                                                                                         |
-| 11  | Mask validation                 | `tools/signal_check.py`, `tools/unet_corridor.py`                                        | JSON per tool                                                                                                                                                                                                        |
+| 11  | Mask validation                 | `tools/signal_check.py`, `src/modeling/predict_scene.py`, `src/analysis/ai_corridor.py`                                        | JSON per tool                                                                                                                                                                                                        |
 | 12  | Maps, dashboard, slides, report | `src/report/impact.py`, `dashboard_full.py`, `slides.py`, `situation_report.py`          | `outputs/`                                                                                                                                                                                                           |
 
 Step 10 and the EMS block of the situation report need `data/external/EMSR927` (the downloaded
@@ -55,8 +55,8 @@ Not part of `run_all.sh`:
 | Stage              | Script                                                                                                                                                      | Output                                                                           |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Detector null test | `python -m src.analysis.detect --ref placebo,pre3,pre4 --post pre --out-dir data/processed/_null --track-id null_pre` (create `data/processed/_null` first) | `outputs/diagnostics/detect_null_pre.json` (must report `no_significant_change`) |
-| Train U-Net        | `src/modeling/train_segmentation.py`                                                                                                                        | `outputs/flood_unet.pt`                                                          |
-| Eval U-Net         | `src/modeling/eval_himalaya_heldout.py`                                                                                                                     | `outputs/himalaya_heldout_metrics.json`                                          |
+| Train water model | `src/modeling/train_segmentation.py` | `outputs/ai/<arch>/model.pt`, `train_log.json`, `threshold.json` |
+| Evaluate water model | `src/modeling/evaluate.py` | `outputs/ai/<arch>/metrics.json` |
 
 ## Setup
 
@@ -106,22 +106,26 @@ Wait for the quota to reset and rerun. `HTTP 429, waiting 15s` messages are retr
 differs from `config.OSM_SNAPSHOT_DATE`, or if `cutoff_settlements.json` and the three
 validation JSONs from step 11 are older than `flood_mask.tif`.
 
-## Train / eval U-Net
+## Train / eval water model
 
-```
-python -m src.modeling.train_segmentation      # ~2.5 h CPU, 20 epochs
-python src/modeling/eval_himalaya_heldout.py   # ~5 min
-```
+Trained on **Sen1Floods11 v1.1** hand-labelled chips (Bonafilia et al., 2020); open water only. Checkpoint and
+threshold are chosen on validation only. Pooled IoU over all valid pixels, 95% chip-bootstrap CIs:
 
-Trained on **Sen1Floods11 v1.1** (252 train / 89 val). Best val IoU **0.523**,
-final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
+| Row | Val IoU (pooled) | Test | Bolivia (unseen region) |
+|---|---|---|---|
+| Old checkpoint, thr 0.5 (the old 0.523 was a mean of per-batch IoUs) | 0.575 [0.49, 0.65] | 0.612 [0.49, 0.71] | 0.666 [0.48, 0.77] |
+| U-Net, 20 epochs, thr 0.5 | 0.634 [0.55, 0.70] | 0.659 [0.54, 0.75] | 0.687 [0.50, 0.79] |
+| **ResNet34-U-Net, 40 epochs, thr 0.4** | **0.672 [0.59, 0.74]** | **0.682 [0.57, 0.77]** | **0.680 [0.46, 0.80]** |
+
+Test chips come from the training events, so Bolivia (15 chips) is the only unseen-region test and its
+interval is wide. Sen1Floods11 contains no Himalayan scenes. See `MODEL_CARD.md`.
 
 ## Key results
 
 | Metric                                                           | Value                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| U-Net val IoU (best epoch, per-batch mean)                       | 0.523 (pooled held-out: 0.574)                                                                                                                                                                                                                         |
-| U-Net proxy-Himalaya IoU                                         | 0.554                                                                                                                                                                                                                                                  |
+| Water model (ResNet34 U-Net, Sen1Floods11), pooled IoU [95% CI] | val 0.672 [0.59, 0.74]; test 0.682 [0.57, 0.77]; Bolivia 0.680 [0.46, 0.80]. Old checkpoint: val 0.575, test 0.612, Bolivia 0.666 |
+| Labelled Himalayan chips | not made: no labelled Himalayan test exists; Sen1Floods11 has no Himalayan scenes |
 | Detector threshold (null-calibrated)                             | t_hi 4.0: the smallest grid value whose worst leave-one-out false-alarm fraction is ≤ 1e-3 (3.5e-4 at 4.0). t_lo 2.5. Gate: seed fraction must exceed 1.05e-3 of the assessed floor                                                                    |
 | Event vs null                                                    | Event seed fraction 1.09e-2 (about 10× the gate), status `change_detected`. A pre-event scene tested against the other references: 0.0, `no_significant_change` (that scene was also one of the four calibration scenes)                               |
 | Assessed floor                                                   | 199.9 km² (HAND ≤ 30 m), 89.7% radar-observable                                                                                                                                                                                                        |
@@ -131,7 +135,7 @@ final F1 **0.593**. Proxy-Himalaya (India + Pakistan) IoU **0.554**.
 | Buildings overlapping the mask vs EMS damage points              | Within 30 m of a damage point: AOI03 97% (n=329, baseline 54%); AOI05 78% (n=36, baseline 44%). A lower bound, and not independent of landslide location                                                                                               |
 | Detections on mapped landslide polygons                          | Precision (a lower bound) / recall / IoU: Bidur (hold-out AOI) 0.93 / 0.17 / 0.17; Phosretar 0.99 / 0.24 / 0.24; Syapru Besi and Timure 0 for all three. Landslide polygons are not flood extent, so these are proxies                                 |
 | EMSR927 content on the assessed floor                            | Damage points / landslide area: Bidur 91% / 95%; Phosretar 85% / 96%; Syapru Besi 40% / 56%; Timure 29% / 59%                                                                                                                                          |
-| U-Net corridor water check                                       | 21,020 new vs 21,627 lost water px: no net change, so it does **not** independently confirm the flood                                                                                                                                                  |
+| AI corridor water test (prediction-only, shadow/layover masked, floor via HAND) | New-water excess main − tributary floor 0.86% vs largest leave-one-out null 0.76% (1.13x): not separable from the nulls. Does not independently confirm the flood |
 | Buildings in surface-change or flood classes                     | 3 flooded + 473 in surface-change classes, of 189,503 (0.002 % flooded). Not a validated flood                                                                                                                                                         |
 | Roads / bridges in flood class                                   | 0 of 14,151 roads; 0 of 385 bridges                                                                                                                                                                                                                    |
 | Settlements cut off from all 20 hospitals                        | 0 of 446 (379 reach a hospital before and after). The flood-water class is small, so this is not evidence that nothing was cut off                                                                                                                     |

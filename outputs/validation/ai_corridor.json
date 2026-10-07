@@ -1,0 +1,34 @@
+{
+  "threshold": 0.4,
+  "prediction_only": true,
+  "event": {
+    "main_floor": 0.010881887567973907,
+    "trib_floor": 0.0022894658732204335,
+    "excess": 0.008592421694753473
+  },
+  "nulls": {
+    "pre": {
+      "main_floor": 0.007320266985141222,
+      "trib_floor": 0.0012723456091472763,
+      "excess": 0.0060479213759939456
+    },
+    "placebo": {
+      "main_floor": 0.00037586464023085363,
+      "trib_floor": 0.0011337046809588658,
+      "excess": -0.0007578400407280122
+    },
+    "pre3": {
+      "main_floor": 0.008872224209320231,
+      "trib_floor": 0.001268564492923956,
+      "excess": 0.007603659716396275
+    },
+    "pre4": {
+      "main_floor": 0.009223839517923287,
+      "trib_floor": 0.003063964512963872,
+      "excess": 0.006159875004959415
+    }
+  },
+  "max_null_excess": 0.007603659716396275,
+  "verdict": "not separable from the nulls",
+  "note": "Model trained on Sen1Floods11 (flat floodplains); radar shadow/layover masked via the DEM mask, floor via HAND."
+}

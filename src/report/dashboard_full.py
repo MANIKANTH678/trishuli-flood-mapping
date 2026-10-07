@@ -79,7 +79,7 @@ DATA_FILES = [
     ("impact_summary.json", "Headline statistics", "JSON"),
     ("validation/signal_check.json", "VV change along the river and controls", "JSON"),
     ("validation/emsr927_validation.json", "EMSR927 check: area metrics and damage-point recall vs chance", "JSON"),
-    ("validation/unet_corridor.json", "U-Net corridor check", "JSON"),
+    ("validation/ai_corridor.json", "AI corridor check (prediction-only)", "JSON"),
     ("unet_metrics.json", "U-Net training metrics", "JSON"),
     ("flood_unet.pt", "Trained U-Net weights", "PyTorch"),
     ("reports/situation_report_EN.md", "Situation report (English)", "Markdown"),

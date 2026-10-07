@@ -27,7 +27,7 @@ metrics, and a trained U-Net segmentation model.
 | Sentinel-1 VV change, river corridor (median)     | **+0.02 dB**                                        | median unchanged; a GLOF over water would shift it to −5 to −10 dB (§4.1)                                                                                          |
 | U-Net flagged fraction of corridor, post / pre    | **5.03% / 5.05%**                                   | cannot discriminate the two scenes (§4.2)                                                                                                                          |
 | U-Net val IoU (Sen1Floods11)                      | 0.523                                               | best epoch chosen on val; pooled held-out 0.574                                                                                                                    |
-| U-Net proxy-Himalaya IoU                          | 0.554                                               | monsoon-subcontinent chips                                                                                                                                         |
+| Himalayan labelled chips | not made | no labelled Himalayan test exists; Sen1Floods11 has no Himalayan scenes |
 | Detector threshold and gate                       | **t_hi 4.0**                                        | smallest null-run value with worst false-alarm fraction ≤ 1e-3; event seed fraction 1.09e-2 against a gate of 1.05e-3; a pre-event scene reports no change (§4.1d) |
 | Detected change, valley floor (199.9 km²)         | **0.31 km² flood water**; 2.29 dark, 0.54 bright    | surface-change classes are descriptive, not confirmed damage (§4.1d)                                                                                               |
 | EMSR927 damage points within 100 m of a detection | Bidur 52%, Phosretar 24%, Timure 2%, Syapru Besi 0% | flood-water class alone: recall prints 0.000 in all four AOIs (§4.4)                                                                                               |
@@ -411,7 +411,7 @@ On the rebuilt inputs, the U-Net (absolute dB input, as in training) flags 5.03%
 | Split                                       | IoU   | F1    | Precision | Recall |
 | ------------------------------------------- | ----- | ----- | --------- | ------ |
 | Sen1Floods11 full val (89 chips)            | 0.574 | 0.729 | 0.723     | 0.735  |
-| Proxy-Himalaya, India + Pakistan (20 chips) | 0.554 | 0.713 | 0.685     | 0.744  |
+| Proxy-Himalaya (withdrawn: India and Pakistan are neither mountainous nor unseen) | n/a | n/a | n/a | n/a |
 
 The proxy evaluation is only 0.02 IoU below the full val, so the proxy score is close to the pooled score. (0.523 elsewhere in this report is the mean of per-batch IoUs; 0.574 is pooled over all pixels.)
 
@@ -560,7 +560,8 @@ OSM and DEM download, SNAP preprocessing and gridding for the five dates, then:
     python src/processing/cutoff_v2.py
     python -m src.validation.emsr927_validate
     python tools/signal_check.py
-    python tools/unet_corridor.py
+    python -m src.modeling.predict_scene --arch smp_resnet34
+    python -m src.analysis.ai_corridor
     python src/report/impact.py
     python -m src.report.dashboard_full
     python src/report/slides.py
