@@ -1,62 +1,33 @@
-# Flood Segmentation Model — Model Card
-
-## Summary
-Small U-Net (1.93 M params) that segments flood extent from dual-pol
-Sentinel-1 GRD (VV + VH) imagery at 512x512 chip resolution.
-
-## Data
-- **Training dataset:** Sen1Floods11 v1.1 hand-labeled subset
-  (Bonafilia et al., 2020, CVPR Workshops).
-- **Chips:** 252 train / 89 validation / 90 test.
-- **Labels:** hand-verified flood masks derived from Planet optical + Sentinel-1.
-  Not derived from our own pipeline output — no circularity.
-- **Known biases:** sampling skewed to Bolivia, India, US, and a few African sites.
-  Himalayan glaciated terrain is under-represented.
+# Model card: Sentinel-1 open-water segmentation
 
 ## Model
-- **Architecture:** 4-level U-Net, base=32, 1.93 M params.
-- **Input:** 2 channels (VV, VH), rescaled from dB.
-- **Output:** 1 channel pre-sigmoid logits; flood = logit > 0.
-- **Loss:** BCEWithLogitsLoss, masked to valid pixels.
+ResNet34-encoder U-Net (segmentation-models-pytorch, ImageNet-pretrained encoder, 2-channel input). Input: Sentinel-1 VV+VH in dB, normalized as clip((x+25)/15, -3, 3). Output: per-pixel open-water probability. Threshold 0.4, chosen on validation only.
 
-## Training
-- **Optimizer:** Adam, lr=1e-3, cosine annealing over 20 epochs.
-- **Batch size:** 4. Hardware: CPU-only (20 cores). Time: ~110 min.
+## Training data
+Sen1Floods11 hand-labelled chips (Bonafilia et al., CVPR Workshops 2020), published train/valid splits. 40 epochs, AdamW, masked BCE + Dice, rot90/flip augmentation, seed 0. Checkpoint and threshold selected on validation pooled IoU. No EMS (EMSR927) data was used for training or tuning.
 
-## Metrics
+## What it detects
+Open water only. No allowed dataset labels debris; debris and damage evidence come from the change detector.
 
-| Split | Chips | Mean IoU | Mean F1 | Global IoU | Global F1 |
-|---|---|---|---|---|---|
-| Validation | 89 | 0.5170 | 0.6312 | — | — |
-| Test (held-out) | 90 | 0.5534 | 0.6878 | 0.6387 | 0.7795 |
+## Results (pooled IoU, 95% chip-bootstrap CI)
+| Row | Val IoU (pooled) | Test | Bolivia (unseen region) |
+|---|---|---|---|
+| Old checkpoint, thr 0.5 | 0.575 [0.49, 0.65] | 0.612 [0.49, 0.71] | 0.666 [0.48, 0.77] |
+| U-Net, 20 epochs, thr 0.5 | 0.634 [0.55, 0.70] | 0.659 [0.54, 0.75] | 0.687 [0.50, 0.79] |
+| **ResNet34-U-Net, 40 epochs, thr 0.4** | **0.672 [0.59, 0.74]** | **0.682 [0.57, 0.77]** | **0.680 [0.46, 0.80]** |
 
-Confusion at test time: TP=1,865,791 | FP=355,230 | FN=700,310.
+Himalayan hand-labelled chips: not made. Test chips come from the training events, so Bolivia (15 chips) is the only unseen-region test. The two new models are not separable on test or Bolivia (intervals overlap); ResNet34 was chosen on validation IoU.
 
-Reference points on Sen1Floods11 hand-labeled test set:
-- Random baseline IoU: ~0.20
-- Published U-Net baselines: 0.55-0.70
-- Our model (global IoU): 0.64 — competitive, no augmentation, CPU-trained.
+## Himalayan evidence
+Sen1Floods11 has no Himalayan scenes. Corridor test (prediction-only, no flood-extent reference; shadow/layover masked, floor via HAND): new-water excess 0.0086 vs largest leave-one-out null 0.0076 (1.13x), verdict: not separable from the nulls.
 
-## Limitations
-- **Domain shift:** trained mostly on non-Himalayan scenes. Applying directly
-  to Trishuli SAR data without fine-tuning will degrade accuracy.
-- **Resolution:** 512x512 chips at ~10 m; floods < ~1 ha may be missed.
-- **Cloudy events** under-represented (labels depended on optical verification).
-- **No permanent-water exclusion:** may confuse permanent water with floods.
+## Failure modes
+Radar shadow in mountains; turbid or sediment-laden water; urban areas; arid scenes. Weakest test regions: Pakistan 0.36 (n=6), Somalia 0.53 (n=6), USA 0.57 (n=14).
 
-## Intended use
-- Research-grade flood extent estimation on Sentinel-1 GRD.
-- NOT for operational emergency response without local validation.
+## Radiometry check (training chips vs Trishuli post-event scene)
+- VV: Sen1Floods11 p5/p50/p95 = [-18.0, -9.8, -5.3]; Trishuli post = [-18.0, -8.2, 2.8]; median difference +1.6 dB
+- VH: Sen1Floods11 p5/p50/p95 = [-26.5, -16.4, -11.9]; Trishuli post = [-24.1, -14.6, -4.8]; median difference +1.8 dB
+- Medians are within about 3.5 dB of the training data.
 
-## How to reproduce
-python -m src.modeling.train_segmentation     # 20 epochs, ~2 hours CPU
-python -m src.modeling.eval_segmentation      # held-out test split
-
-## Checkpoints
-- outputs/flood_unet.pt      — best val IoU (epoch 12)
-- outputs/flood_unet_last.pt — last epoch
-
-## Citations
-- Bonafilia, D., Tellman, B., Anderson, T., & Issenberg, E. (2020).
-  Sen1Floods11: a georeferenced dataset to train and test deep learning
-  flood algorithms. CVPR Workshops.
+## Licences and attribution
+Sen1Floods11 (Bonafilia et al., 2020). ImageNet-pretrained ResNet34 weights via segmentation-models-pytorch; check and cite the weights' licence.

@@ -53,10 +53,10 @@ if snap >= config.FLOOD_DATE:
 mask_p = ROOT / FUSED
 have_ems = ((ROOT / "data/external/EMSR927").is_dir() and (ROOT / "outputs/validation/emsr927_validation.json").exists())
 files = [DETECT, "outputs/impact_summary.json", "outputs/cutoff_settlements.json",
-         "outputs/validation/signal_check.json", "outputs/validation/unet_corridor.json"]
+         "outputs/validation/signal_check.json", "outputs/validation/ai_corridor.json"]
 if have_ems: files.append("outputs/validation/emsr927_validation.json")
 flood_p = ROOT / "data/processed/flood_mask.tif"      # detect -> fuse: detector-side files are checked against this
-VS_FLOOD = {DETECT, "outputs/validation/signal_check.json", "outputs/validation/unet_corridor.json"}
+VS_FLOOD = {DETECT, "outputs/validation/signal_check.json", "outputs/validation/ai_corridor.json"}
 for f in files:
     if not (ROOT / f).exists(): die(f"{f} is missing; rerun that step")
     ref = flood_p if f in VS_FLOOD else mask_p
@@ -74,7 +74,7 @@ try:
     det, imp = J(DETECT), J("outputs/impact_summary.json")
     cutj = J("outputs/cutoff_settlements.json")
     cut, setl, rngc = cutj["summary"], cutj["settlements"], cutj["sensitivity"]["range"]
-    sig, un = J("outputs/validation/signal_check.json"), J("outputs/validation/unet_corridor.json")
+    sig, un = J("outputs/validation/signal_check.json"), J("outputs/validation/ai_corridor.json")
     s3e, s3p = J("outputs/diagnostics/step3_event.json"), J("outputs/diagnostics/step3_placebo.json")
     s2 = J("outputs/diagnostics/s2_detect.json")
     nul = J("outputs/validation/emsr927_validation.json") if have_ems else {}
@@ -100,7 +100,11 @@ try:
         ("all pixels", "all"), ("river, 60 m buffer", "river_60m"), ("river, north (Rasuwa) half", "river_north_half"),
         ("river, south half", "river_south_half"), ("river shifted +1.5 km (control)", "river_shifted_1500m"),
         ("river shifted −1.5 km (control)", "river_shifted_-1500m")])
-    pct = lambda d: 100 * d["flood_px"] / d["covered_px"]
+    ai_m = J("outputs/ai/smp_resnet34/metrics.json")
+    _bo = ai_m["splits"]["bolivia"]; _ci = _bo["iou_ci95_chip_bootstrap"]
+    _ex, _nl = un["event"]["excess"], un["max_null_excess"]
+    ai_sentence = (f"A Sen1Floods11-trained water model (ResNet34 U-Net; unseen-region IoU {_bo['at_threshold']['iou']:.2f}, 95% CI {_ci[0]:.2f}–{_ci[1]:.2f}, {_bo['n_chips']} chips; no Himalayan training scenes) "
+                   f"finds a new-water excess on the main floor of {100 * _ex:.2f}% against a pre-event null maximum of {100 * _nl:.2f}%: {un['verdict']}. Prediction-only; not independent evidence.")
 
     # --- exposure ---------------------------------------------------------------------------------------------
     b, rb, rr = imp["buildings"], imp["roads_bridges"]["exposure_by_tolerance"]["0m"], imp["sensitivity"]["range"]
@@ -179,7 +183,7 @@ try:
 {s3row('VV')}
 {s3row('VH')}
 
-{s3_read}The U-Net (Sen1Floods11) flags {pct(un['post']):.2f}% of the corridor post and {pct(un['pre']):.2f}% pre: it does not separate the scenes and is not independent evidence."""))
+{s3_read}{ai_sentence}"""))
     sec.append(("Exposure to the mask", f"""| Item | Headline (base mask) | Scenario range |
 |---|---|---|
 | Flagged area | {atot:.2f} km² ({a1:.2f} flood-like, {a2:.2f} dark, {a3:.2f} bright) | {area_rng} |

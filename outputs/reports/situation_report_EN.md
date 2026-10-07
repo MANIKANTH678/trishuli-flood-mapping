@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-06 from commit `58d3b9f`. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-07 from commit `5aaae33` + uncommitted changes (DRAFT). Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
@@ -15,7 +15,7 @@ Step 3 test (pre → post; pixels flagged as decreases by robust z at threshold 
 | VV | 1.87% | 0.05% | 0.01% | 1.79% [0.86%, 2.88%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
 | VH | 4.53% | 0.06% | 0.01% | 4.44% [2.67%, 6.46%] | 0.00%; excess 0.00% [0.00%, 0.00%] |
 
-The main floor has more decrease pixels than the tributary floors in both bands, with 95% CIs above zero, and the placebo pair shows none. This is evidence of surface change along the main reach, not by itself of flooding. The U-Net (Sen1Floods11) flags 5.03% of the corridor post and 5.05% pre: it does not separate the scenes and is not independent evidence.
+The main floor has more decrease pixels than the tributary floors in both bands, with 95% CIs above zero, and the placebo pair shows none. This is evidence of surface change along the main reach, not by itself of flooding. A Sen1Floods11-trained water model (ResNet34 U-Net; unseen-region IoU 0.68, 95% CI 0.46–0.80, 15 chips; no Himalayan training scenes) finds a new-water excess on the main floor of 0.86% against a pre-event null maximum of 0.76%: not separable from the nulls. Prediction-only; not independent evidence.
 
 ## 3. Exposure to the mask
 

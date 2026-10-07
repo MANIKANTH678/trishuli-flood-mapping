@@ -1,0 +1,189 @@
+{
+  "arch": "unet",
+  "threshold": 0.5,
+  "roles": {
+    "valid": "checkpoint and threshold selection",
+    "test": "held-out chips from TRAINING events (same events, different chips)",
+    "bolivia": "held-out REGION (not Himalayan)",
+    "himalaya_chips": "team-labelled, unseen region and terrain"
+  },
+  "splits": {
+    "valid": {
+      "n_chips": 89,
+      "at_threshold": {
+        "iou": 0.6340240701932698,
+        "f1": 0.776027822060514,
+        "precision": 0.7793150797618219,
+        "recall": 0.7727681800783971,
+        "accuracy": 0.9509100108443489,
+        "tp": 1724205,
+        "fp": 488257,
+        "fn": 507001,
+        "tn": 17554691
+      },
+      "at_0.5": {
+        "iou": 0.6340240701932698,
+        "f1": 0.776027822060514,
+        "precision": 0.7793150797618219,
+        "recall": 0.7727681800783971,
+        "accuracy": 0.9509100108443489,
+        "tp": 1724205,
+        "fp": 488257,
+        "fn": 507001,
+        "tn": 17554691
+      },
+      "iou_ci95_chip_bootstrap": [
+        0.5496,
+        0.703
+      ],
+      "per_region": {
+        "Ghana": {
+          "n_chips": 11,
+          "iou": 0.5516
+        },
+        "India": {
+          "n_chips": 14,
+          "iou": 0.6762
+        },
+        "Mekong": {
+          "n_chips": 6,
+          "iou": 0.85
+        },
+        "Nigeria": {
+          "n_chips": 4,
+          "iou": 0.7868
+        },
+        "Pakistan": {
+          "n_chips": 6,
+          "iou": 0.415
+        },
+        "Paraguay": {
+          "n_chips": 14,
+          "iou": 0.5523
+        },
+        "Somalia": {
+          "n_chips": 5,
+          "iou": 0.1532
+        },
+        "Spain": {
+          "n_chips": 6,
+          "iou": 0.7575
+        },
+        "Sri-Lanka": {
+          "n_chips": 9,
+          "iou": 0.67
+        },
+        "USA": {
+          "n_chips": 14,
+          "iou": 0.6474
+        }
+      }
+    },
+    "test": {
+      "n_chips": 90,
+      "at_threshold": {
+        "iou": 0.6585069131669544,
+        "f1": 0.7940960727254629,
+        "precision": 0.7889245655164944,
+        "recall": 0.7993358271623788,
+        "accuracy": 0.9490052782829392,
+        "tp": 2010336,
+        "fp": 537862,
+        "fn": 504672,
+        "tn": 17391089
+      },
+      "at_0.5": {
+        "iou": 0.6585069131669544,
+        "f1": 0.7940960727254629,
+        "precision": 0.7889245655164944,
+        "recall": 0.7993358271623788,
+        "accuracy": 0.9490052782829392,
+        "tp": 2010336,
+        "fp": 537862,
+        "fn": 504672,
+        "tn": 17391089
+      },
+      "iou_ci95_chip_bootstrap": [
+        0.5439,
+        0.7466
+      ],
+      "per_region": {
+        "Ghana": {
+          "n_chips": 11,
+          "iou": 0.5512
+        },
+        "India": {
+          "n_chips": 14,
+          "iou": 0.7266
+        },
+        "Mekong": {
+          "n_chips": 6,
+          "iou": 0.854
+        },
+        "Nigeria": {
+          "n_chips": 4,
+          "iou": 0.8766
+        },
+        "Pakistan": {
+          "n_chips": 6,
+          "iou": 0.2027
+        },
+        "Paraguay": {
+          "n_chips": 14,
+          "iou": 0.544
+        },
+        "Somalia": {
+          "n_chips": 6,
+          "iou": 0.5457
+        },
+        "Spain": {
+          "n_chips": 6,
+          "iou": 0.7247
+        },
+        "Sri-Lanka": {
+          "n_chips": 9,
+          "iou": 0.8487
+        },
+        "USA": {
+          "n_chips": 14,
+          "iou": 0.5431
+        }
+      }
+    },
+    "bolivia": {
+      "n_chips": 15,
+      "at_threshold": {
+        "iou": 0.6868571293530085,
+        "f1": 0.8143631341398208,
+        "precision": 0.861906374103244,
+        "recall": 0.7717907240745208,
+        "accuracy": 0.9437027029132209,
+        "tp": 348773,
+        "fp": 55880,
+        "fn": 103128,
+        "tn": 2316653
+      },
+      "at_0.5": {
+        "iou": 0.6868571293530085,
+        "f1": 0.8143631341398208,
+        "precision": 0.861906374103244,
+        "recall": 0.7717907240745208,
+        "accuracy": 0.9437027029132209,
+        "tp": 348773,
+        "fp": 55880,
+        "fn": 103128,
+        "tn": 2316653
+      },
+      "iou_ci95_chip_bootstrap": [
+        0.5036,
+        0.792
+      ],
+      "per_region": {
+        "Bolivia": {
+          "n_chips": 15,
+          "iou": 0.6869
+        }
+      }
+    }
+  }
+}
