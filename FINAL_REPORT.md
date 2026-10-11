@@ -30,7 +30,7 @@ metrics, and a trained U-Net segmentation model.
 | Himalayan labelled chips | not made | no labelled Himalayan test exists; Sen1Floods11 has no Himalayan scenes |
 | Detector threshold and gate                       | **t_hi 4.0**                                        | smallest null-run value with worst false-alarm fraction ≤ 1e-3; event seed fraction 1.09e-2 against a gate of 1.05e-3; a pre-event scene reports no change (§4.1d) |
 | Detected change, valley floor (199.9 km²)         | **0.31 km² flood water**; 2.29 dark, 0.54 bright    | surface-change classes are descriptive, not confirmed damage (§4.1d)                                                                                               |
-| EMSR927 damage points within 100 m of a detection | Bidur 52%, Phosretar 24%, Timure 2%, Syapru Besi 0% | flood-water class alone: recall prints 0.000 in all four AOIs (§4.4)                                                                                               |
+| EMSR927 damage points within 100 m of a detection | Bidur 52%, Phosretar 24%, Timure 2%, Syapru Besi 0% | flood-water class: event 0.306 km² vs largest null 0.014 km² (separable); Flood-like (new open water) change is separable from the no-flood nulls.                                                                                               |
 | Our "flooded" buildings                           | **3** (+473 in surface-change classes)              | counts not comparable to EMSR927 (different areas, §4.5)                                                                                                           |
 
 ---

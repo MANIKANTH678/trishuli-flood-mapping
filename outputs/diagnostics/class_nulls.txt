@@ -1,0 +1,117 @@
+{
+  "track": "null_pre",
+  "status": "no_significant_change",
+  "refs": [
+    "placebo",
+    "pre3",
+    "pre4"
+  ],
+  "post": "pre",
+  "t_hi": 4.0,
+  "t_lo": 2.5,
+  "calibrated": true,
+  "null_far_max": 0.0003512627445329106,
+  "gate_threshold": 0.0010537882335987319,
+  "seed_fraction_floor": 0.0,
+  "water_thresholds_db": {
+    "VV": -16.0,
+    "VH": -22.0,
+    "source": "fixed"
+  },
+  "floor_km2": 199.8567,
+  "usable_fraction_of_floor": 0.8968473853411092,
+  "area_km2": {
+    "flood_water": 0.0,
+    "surface_dark": 0.0,
+    "surface_bright": 0.0
+  }
+}
+{
+  "track": "null_placebo",
+  "status": "no_significant_change",
+  "refs": [
+    "pre",
+    "pre3",
+    "pre4"
+  ],
+  "post": "placebo",
+  "t_hi": 4.0,
+  "t_lo": 2.5,
+  "calibrated": true,
+  "null_far_max": 0.0003512627445329106,
+  "gate_threshold": 0.0010537882335987319,
+  "seed_fraction_floor": 4.503267120295775e-05,
+  "water_thresholds_db": {
+    "VV": -16.0,
+    "VH": -22.0,
+    "source": "fixed"
+  },
+  "floor_km2": 199.8549,
+  "usable_fraction_of_floor": 0.896839307927174,
+  "area_km2": {
+    "flood_water": 0.0,
+    "surface_dark": 0.0,
+    "surface_bright": 0.0
+  }
+}
+{
+  "track": "null_pre3",
+  "status": "change_detected",
+  "refs": [
+    "pre",
+    "placebo",
+    "pre4"
+  ],
+  "post": "pre3",
+  "t_hi": 4.0,
+  "t_lo": 2.5,
+  "calibrated": true,
+  "null_far_max": 0.0003512627445329106,
+  "gate_threshold": 0.0010537882335987319,
+  "seed_fraction_floor": 0.00013059004183384445,
+  "water_thresholds_db": {
+    "VV": -16.0,
+    "VH": -22.0,
+    "source": "fixed"
+  },
+  "floor_km2": 199.8621,
+  "usable_fraction_of_floor": 0.8968716175829147,
+  "area_km2": {
+    "flood_water": 0.0144,
+    "surface_dark": 0.039599999999999996,
+    "surface_bright": 0.0
+  }
+}
+{
+  "track": "null_pre4",
+  "status": "change_detected",
+  "refs": [
+    "pre",
+    "placebo",
+    "pre3"
+  ],
+  "post": "pre4",
+  "t_hi": 4.0,
+  "t_lo": 2.5,
+  "calibrated": true,
+  "null_far_max": 0.0003512627445329106,
+  "gate_threshold": 0.0010537882335987319,
+  "seed_fraction_floor": 0.0003512627445329106,
+  "water_thresholds_db": {
+    "VV": -16.0,
+    "VH": -22.0,
+    "source": "fixed"
+  },
+  "floor_km2": 199.8504,
+  "usable_fraction_of_floor": 0.8968191143923362,
+  "area_km2": {
+    "flood_water": 0.0,
+    "surface_dark": 0.0,
+    "surface_bright": 0.09179999999999999
+  }
+}
+event {'flood_water': 0.306, 'surface_dark': 2.2941, 'surface_bright': 0.5418}
+pre {'flood_water': 0.0, 'surface_dark': 0.0, 'surface_bright': 0.0}
+placebo {'flood_water': 0.0, 'surface_dark': 0.0, 'surface_bright': 0.0}
+pre3 {'flood_water': 0.0144, 'surface_dark': 0.039599999999999996, 'surface_bright': 0.0}
+pre4 {'flood_water': 0.0, 'surface_dark': 0.0, 'surface_bright': 0.09179999999999999}

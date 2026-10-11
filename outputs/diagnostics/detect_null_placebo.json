@@ -1,0 +1,28 @@
+{
+  "track": "null_placebo",
+  "status": "no_significant_change",
+  "refs": [
+    "pre",
+    "pre3",
+    "pre4"
+  ],
+  "post": "placebo",
+  "t_hi": 4.0,
+  "t_lo": 2.5,
+  "calibrated": true,
+  "null_far_max": 0.0003512627445329106,
+  "gate_threshold": 0.0010537882335987319,
+  "seed_fraction_floor": 4.503267120295775e-05,
+  "water_thresholds_db": {
+    "VV": -16.0,
+    "VH": -22.0,
+    "source": "fixed"
+  },
+  "floor_km2": 199.8549,
+  "usable_fraction_of_floor": 0.896839307927174,
+  "area_km2": {
+    "flood_water": 0.0,
+    "surface_dark": 0.0,
+    "surface_bright": 0.0
+  }
+}

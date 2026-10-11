@@ -1,0 +1,9 @@
+{
+  "start_snapped_lonlat": [
+    85.37665726707405,
+    28.27563384480703
+  ],
+  "path_km": 89.6,
+  "n_settlements": 20,
+  "note": "D8 path on Copernicus GLO-30 + HAND floor; geometry only, no hydraulics or arrival times"
+}

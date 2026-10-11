@@ -16,10 +16,31 @@ Open water only. No allowed dataset labels debris; debris and damage evidence co
 | U-Net, 20 epochs, thr 0.5 | 0.634 [0.55, 0.70] | 0.659 [0.54, 0.75] | 0.687 [0.50, 0.79] |
 | **ResNet34-U-Net, 40 epochs, thr 0.4** | **0.672 [0.59, 0.74]** | **0.682 [0.57, 0.77]** | **0.680 [0.46, 0.80]** |
 
-Himalayan hand-labelled chips: not made. Test chips come from the training events, so Bolivia (15 chips) is the only unseen-region test. The two new models are not separable on test or Bolivia (intervals overlap); ResNet34 was chosen on validation IoU.
+
+<!-- STEP8:seeds -->
+## Seeds (training noise)
+
+| Split | Mean IoU | SD (seeds) | Min | Max |
+|---|---|---|---|---|
+| valid | 0.672 | 0.005 | 0.667 | 0.677 |
+| test | 0.682 | 0.002 | 0.680 | 0.683 |
+| bolivia | 0.702 | 0.020 | 0.680 | 0.719 |
+
+3 seeds (0, 1, 2); the **seed-0 model is the shipped model**; seeds 1-2 only measure training noise.
+<!-- /STEP8:seeds -->
 
 ## Himalayan evidence
-Sen1Floods11 has no Himalayan scenes. Corridor test (prediction-only, no flood-extent reference; shadow/layover masked, floor via HAND): new-water excess 0.0086 vs largest leave-one-out null 0.0076 (1.13x), verdict: not separable from the nulls.
+
+<!-- STEP8:himalaya -->
+Himalayan hand-labelled chips: not evaluated yet.
+
+Agreement with Sentinel-2 MNDWI water on clear valley-floor pixels (a pseudo-reference, **not accuracy**: turbid water fools MNDWI, S1 and S2 are 1–4 days apart, 30 m): post (20260827) IoU 0.06, P 0.51, R 0.07, n=31,000; pre (20260812) IoU 0.03, P 0.49, R 0.03, n=22,127.
+
+Corridor test (prediction-only; shadow/layover masked, floor via HAND): new-water excess main − tributary floor 0.0086 vs largest leave-one-out null 0.0076: **not separable from the nulls**.
+
+The model detects **open water only**: no allowed training dataset labels debris, so debris and mud come from the change detector, not the AI.
+<!-- /STEP8:himalaya -->
+
 
 ## Failure modes
 Radar shadow in mountains; turbid or sediment-laden water; urban areas; arid scenes. Weakest test regions: Pakistan 0.36 (n=6), Somalia 0.53 (n=6), USA 0.57 (n=14).

@@ -1,10 +1,10 @@
 # Situation Report — Trishuli / Bhote Koshi GLOF
 
-> **PRELIMINARY** — generated 2026-10-07 from commit `5aaae33` + uncommitted changes (DRAFT). Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-11 from commit `c81474a` + uncommitted changes (DRAFT). Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
-2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.
+2026-08-26 flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated=True, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**. Flood-like (new open water) change is separable from the no-flood nulls.
 
 ## 2. Detection signal
 
@@ -73,9 +73,9 @@ Verdict at 30 m: AOI01 n/a; AOI02 n/a; AOI03 indistinguishable from chance; AOI0
 ## 7. Data sources
 
 - Contains modified Copernicus Sentinel data 2026 (Sentinel-1 GRD, Copernicus Data Space Ecosystem)
-- (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA; all rights reserved (Copernicus DEM GLO-30)
+- Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
 - (c) OpenStreetMap contributors, ODbL v1.0 (ohsome snapshot 2026-07-27, pre-event)
-- Copernicus EMS Rapid Mapping, EMSR927 (validation only)
+- European Union, Copernicus Emergency Management Service data (EMSR927, validation only)
 - Sen1Floods11 v1.1, CC BY 4.0: Bonafilia et al. (2020), CVPR EarthVision workshop
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md).

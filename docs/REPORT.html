@@ -1,0 +1,257 @@
+<!doctype html><meta charset='utf-8'><style>@page{size:A4;margin:14mm}body{font:9.5pt/1.32 'Segoe UI',Arial,sans-serif;color:#111}table{border-collapse:collapse;font-size:7.5pt;margin:3px 0}td,th{border:1px solid #999;padding:1px 4px;vertical-align:top}th{background:#eef}h1{font-size:13pt;margin:0 0 4px}h2{font-size:10pt;margin:6px 0 2px;color:#1e3a8a}p,li{margin:2px 0}ul{margin:2px 0;padding-left:16px}blockquote{margin:2px 0;color:#444}img{max-width:100%;max-height:150mm;display:block;margin:2px auto}</style><h1>Trishuli / Bhote Koshi flood, 2026-08-26: change detection, exposure and road access from open satellite data</h1>
+<p><em>Multimodal AI Hackathon 2026, FloodDamage from Space. Educational prototype, not an operational product. Generated 2026-10-11 from commit <code>c81474a</code>; every number below is read from the pipeline's output files.</em></p>
+<p><strong>Status.</strong> Detector status <strong>change_detected</strong> on Sentinel-1 track asc85. The product is surface change on the valley floor and exposure to it, <strong>not a validated flood extent</strong>. Flood-like (new open water) change is separable from the no-flood nulls.</p>
+<h2>1. Approach and data</h2>
+<p>One pipeline (<code>run_all.sh</code>) runs from raw data: Sentinel-1 GRD scenes are calibrated and terrain-corrected, gridded to 30 m (10 m for the AI model), and compared with four pre-event reference dates on the same track; the HAND valley floor and a radar layover/shadow mask come from the Copernicus DEM; detected change is overlaid on pre-event OpenStreetMap buildings, roads and bridges; road paths from each settlement to the nearest hospital are recomputed with blocked segments removed; a dashboard and a one-page situation report are built from the outputs.</p>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Role</th>
+<th>Dates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sentinel-1 GRD, relative orbit 85 ascending</td>
+<td>input</td>
+<td>references 2026-08-16, 2026-08-04, 2026-07-23, 2026-07-11; post 2026-08-28</td>
+</tr>
+<tr>
+<td>Sentinel-2 L2A</td>
+<td>input (gated; excluded if it fails its gate)</td>
+<td>post-event scenes from 2026-08-27</td>
+</tr>
+<tr>
+<td>Copernicus DEM GLO-30</td>
+<td>input (HAND, radar geometry, flow path)</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>OpenStreetMap via ohsome</td>
+<td>input, <strong>pre-event snapshot</strong></td>
+<td>2026-07-27</td>
+</tr>
+<tr>
+<td>Sen1Floods11 v1.1 hand labels</td>
+<td>AI training</td>
+<td>published splits</td>
+</tr>
+<tr>
+<td>Copernicus EMS EMSR927</td>
+<td><strong>checking only</strong>, after thresholds were frozen</td>
+<td>activation 2026-08-26</td>
+</tr>
+</tbody>
+</table>
+<p>Rules enforced in code: the OSM snapshot must predate the flood; detector thresholds come from pre-event null runs, never from EMS; EMS is read only by <code>src/validation/</code>; unobservable ground is UNKNOWN, never clear; bridges are <em>exposed</em>, never declared failed; settlements without a pre-flood road route are <em>not assessed</em>, never counted as cut off.</p>
+<h2>2. Detection method and evidence</h2>
+<p>VH robust-z change of the post scene against the four references, restricted to the HAND ≤ 30 m valley floor (200 km², 90% usable after the radar mask). Thresholds 4 / 2.5 are the smallest values whose worst false-alarm fraction over the null runs is ≤ 1e-3 (calibrated = True). Classes: flood-like (dark and below open-water dB), dark change, bright change. Headline areas: 0.31 km² flood-like, 2.29 km² dark, 0.54 km² bright.</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Main floor decrease px</th>
+<th>Tributary floor</th>
+<th>Event excess [95% CI]</th>
+<th>Placebo excess [95% CI]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VV</td>
+<td>1.9%</td>
+<td>0.1%</td>
+<td>1.8% [0.9%, 2.9%]</td>
+<td>0.0% [0.0%, 0.0%]</td>
+</tr>
+<tr>
+<td>VH</td>
+<td>4.5%</td>
+<td>0.1%</td>
+<td>4.4% [2.7%, 6.5%]</td>
+<td>0.0% [0.0%, 0.0%]</td>
+</tr>
+</tbody>
+</table>
+<p>The step-3 criteria were written after the first event run, so this test is exploratory.</p>
+<p><strong>Class-level nulls</strong> (separable only if event area &gt; 3x the largest null area (nulls ungated, leave-one-out)):</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Event km²</th>
+<th>Largest null km²</th>
+<th>Ratio</th>
+<th>Separable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flood_water</td>
+<td>0.306</td>
+<td>0.014</td>
+<td>21.2</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>surface_dark</td>
+<td>2.294</td>
+<td>0.040</td>
+<td>57.9</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>surface_bright</td>
+<td>0.542</td>
+<td>0.092</td>
+<td>5.9</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Flood-like (new open water) change is separable from the no-flood nulls.</strong></p>
+<p><img alt="" src="figures/step3_event.png" /> <img alt="" src="figures/step3_placebo.png" /></p>
+<h2>3. Impact and cut-off</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Headline</th>
+<th>Scenario range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Buildings overlapping the mask</td>
+<td>556 (6 flood-like, 550 other change) of 189,503</td>
+<td>244–1,078</td>
+</tr>
+<tr>
+<td>Buildings with unknown status (outside the observed floor)</td>
+<td>174,132 (92%)</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Motorable road in mask</td>
+<td>11.8 km</td>
+<td>6.4–22.0 km</td>
+</tr>
+<tr>
+<td>Bridges exposed (not failed)</td>
+<td>20 of 385</td>
+<td>12–30</td>
+</tr>
+<tr>
+<td>Settlements cut off / degraded</td>
+<td>4 / 0</td>
+<td>2–12 / 0–1</td>
+</tr>
+</tbody>
+</table>
+<p>4 of 446 settlements are cut off from every hospital (range 2–12), 0 degraded (range 0–1); 141 have no pre-flood road route and are not assessed. Range = 3 thresholds × mask ±1 px × bridges fail/survive; 18 of 20 hospitals snap to the road network. There is no cut-off ground truth.</p>
+<p><img alt="" src="figures/scenario_range.png" />
+<img alt="" src="figures/dashboard.png" /></p>
+<h2>4. AI component</h2>
+<p>ResNet34 U-Net (segmentation-models-pytorch), Sentinel-1 VV+VH input, trained on Sen1Floods11 hand labels; threshold 0.4 chosen on validation only. The seed-0 model is the shipped model; seeds 1 and 2 measure training noise.</p>
+<table>
+<thead>
+<tr>
+<th>Split</th>
+<th>Chips</th>
+<th>Shipped IoU [95% chip CI]</th>
+<th>Mean ± sd over 3 seeds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sen1Floods11 valid (selection)</td>
+<td>89</td>
+<td>0.672 [0.59–0.74]</td>
+<td>0.672 ± 0.005</td>
+</tr>
+<tr>
+<td>Sen1Floods11 test (training events)</td>
+<td>90</td>
+<td>0.682 [0.57–0.77]</td>
+<td>0.682 ± 0.002</td>
+</tr>
+<tr>
+<td>Bolivia (unseen region)</td>
+<td>15</td>
+<td>0.680 [0.46–0.80]</td>
+<td>0.702 ± 0.020</td>
+</tr>
+</tbody>
+</table>
+<p>Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Agreement with Sentinel-2 MNDWI water on clear floor pixels (pseudo-reference, not accuracy): post IoU 0.06 (P 0.51, R 0.07); pre IoU 0.03 (P 0.49, R 0.03). Corridor null test (prediction-only): excess 0.009 vs largest leave-one-out null 0.008: <strong>not separable from the nulls</strong>. The model detects <strong>open water only</strong>; no allowed dataset labels debris, so debris comes from the change detector.</p>
+<h2>5. Validation against Copernicus EMS EMSR927 (check only)</h2>
+<p>The local EMSR927 products are grading maps: <code>observedEventA</code> is <strong>landslide</strong> polygons and there is <strong>no flood-extent layer</strong>, so scores are "detected change vs EMS landslide polygons" and the flood class cannot be validated against EMS. Domain: AOI minus notAnalysedA, restricted to pixels the detector observed. Chance for damage points: the mask's own blobs relocated at random (100 draws); CI: 1 km block bootstrap.</p>
+<table>
+<thead>
+<tr>
+<th>AOI</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>IoU</th>
+<th>EMS damage points within 30 m [95% CI] vs chance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AOI01 Syapru Besi</td>
+<td>n/a</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.000 [0.00–0.00] n/a</td>
+</tr>
+<tr>
+<td>AOI02 Timure</td>
+<td>n/a</td>
+<td>0.000</td>
+<td>0.000</td>
+<td>0.000 [0.00–0.00] n/a</td>
+</tr>
+<tr>
+<td>AOI03 Bidur (hold-out)</td>
+<td>0.928</td>
+<td>0.174</td>
+<td>0.172</td>
+<td>0.345 [0.17–0.49] indistinguishable from chance</td>
+</tr>
+<tr>
+<td>AOI05 Phosretar</td>
+<td>0.990</td>
+<td>0.245</td>
+<td>0.244</td>
+<td>0.118 [0.04–0.26] indistinguishable from chance</td>
+</tr>
+<tr>
+<td><strong>Pooled non-hold-out</strong></td>
+<td>0.990</td>
+<td>0.185</td>
+<td>0.185</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Pooled hold-out</strong></td>
+<td>0.928</td>
+<td>0.174</td>
+<td>0.172</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Syapru Besi: n/a; Timure: n/a; Bidur: indistinguishable from chance; Phosretar: indistinguishable from chance. Association with damage points is not attribution to flooding; every EMS scoring is listed in <code>docs/validation_log.md</code>.</p>
+<h2>6. Limitations</h2>
+<ul>
+<li>Single Sentinel-1 track (asc85), one post scene 2 days after the event; a flash flood in a gorge may have drained.</li>
+<li>Valley floor only: 92% of OSM buildings and the hillside roads are outside it and UNKNOWN, not clear.</li>
+<li>Sentinel-2: 12% of the floor has clear post-event coverage; status null_not_calibrated, so S2 is excluded from the fused product.</li>
+<li>No cause attribution: flood-like, dark and bright are surface-change classes; bridges are exposed, never known failed.</li>
+<li>OSM currency: snapshot 2026-07-27; rural Rasuwa is under-mapped (141 settlements have no pre-flood route), so cut-off can be overstated and damage undercounted.</li>
+<li>No cut-off ground truth exists; the scenario range is the uncertainty we can quantify.</li>
+<li>Flood-like (new open water) change is separable from the no-flood nulls.</li>
+</ul>
+<h2>7. Attribution and citations</h2>
+<p>"Contains modified Copernicus Sentinel data 2026." "Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved." "© OpenStreetMap contributors." Copernicus EMS credit: "European Union, Copernicus Emergency Management Service data" (EMSR927, checking only). Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0). Flood-path bonus: D8 path 89.6 km, 20 settlements on the HAND corridor (geometry only, no hydraulics).</p>

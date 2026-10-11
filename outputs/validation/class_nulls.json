@@ -1,0 +1,51 @@
+{
+  "rule": "separable only if event area > 3x the largest null area (nulls ungated, leave-one-out)",
+  "event_source": "detect_event_nogate.json",
+  "event_status": "change_detected",
+  "event_refs": [
+    "pre",
+    "placebo",
+    "pre3",
+    "pre4"
+  ],
+  "classes": {
+    "flood_water": {
+      "event_km2_ungated": 0.306,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.0144,
+        "pre4": 0.0
+      },
+      "max_null_km2": 0.0144,
+      "ratio": 21.2,
+      "separable": true
+    },
+    "surface_dark": {
+      "event_km2_ungated": 2.2941,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.0396,
+        "pre4": 0.0
+      },
+      "max_null_km2": 0.0396,
+      "ratio": 57.9,
+      "separable": true
+    },
+    "surface_bright": {
+      "event_km2_ungated": 0.5418,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.0,
+        "pre4": 0.0918
+      },
+      "max_null_km2": 0.0918,
+      "ratio": 5.9,
+      "separable": true
+    }
+  },
+  "flood_water_separable": true,
+  "statement": "Flood-like (new open water) change is separable from the no-flood nulls."
+}

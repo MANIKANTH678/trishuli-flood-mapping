@@ -42,3 +42,11 @@ Disclosure: the first EMS check on S2/fused ran before the null gate was added. 
 - Retired: emsr927_comparison.py, damage_sanity_check.py, emsr927_detector_check.py, null_recall_aoi.py, and the the retired mask-coverage field field.
 2026-10-06: AOI05 provenance check. Portal Grading v3 download (vector files labelled v2) is byte-identical to the local copy (fc /b, gpkg and observedEventA shp). Map PDF is v3. AOI05 scores unchanged; no rerun.
 2026-10-06: AOI03 Grading Monitoring 1 v1 downloaded (5 landslide polygons vs 2 in v1). Not used for the headline score; AOI03 v1 remains the reference. Scores unchanged.
+flood_water is separable only if event area > 3x the largest null area
+### Step 8/9 runs logged 2026-10-11 23:37 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like (new open water) change is separable from the no-flood nulls. [class_nulls.json f582ed00cac2]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.

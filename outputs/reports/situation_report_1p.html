@@ -1,0 +1,60 @@
+<!doctype html><meta charset='utf-8'><style>@page{size:A4;margin:12mm}body{font:9pt/1.25 'Segoe UI',Arial,sans-serif;color:#111}table{border-collapse:collapse;font-size:7.5pt;margin:3px 0}td,th{border:1px solid #999;padding:1px 4px;vertical-align:top}th{background:#eef}h1{font-size:13pt;margin:0 0 4px}h2{font-size:10pt;margin:6px 0 2px;color:#1e3a8a}p,li{margin:2px 0}ul{margin:2px 0;padding-left:16px}blockquote{margin:2px 0;color:#444}img{max-width:100%;max-height:92mm;display:block;margin:2px auto}</style><h1>Situation report: Trishuli / Bhote Koshi, 2026-08-26</h1>
+<blockquote>
+<p>PRELIMINARY, 2026-10-11, commit <code>c81474a</code> + uncommitted changes (DRAFT)</p>
+</blockquote>
+<p><strong>Situation.</strong> Flash flood (suspected GLOF) on 2026-08-26, Trishuli / Bhote Koshi, Rasuwa, Nepal. Sentinel-1 track asc85, 2026-08-16 / 2026-08-28: detector status <strong>change_detected</strong> (calibrated=True). Surface change was detected on the valley floor; it is <strong>not attributed to flooding and not a validated flood extent</strong>. Counts below are exposure to that mask. Flood-like (new open water) change is separable from the no-flood nulls.</p>
+<table>
+<thead>
+<tr>
+<th>Key number</th>
+<th>Headline</th>
+<th>Scenario range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flagged area</td>
+<td>3.14 km²</td>
+<td>1.66–5.48 km²</td>
+</tr>
+<tr>
+<td>Buildings overlapping the mask (unknown status: 92%)</td>
+<td>556 (6 flood-like, 550 other change)</td>
+<td>244–1,078</td>
+</tr>
+<tr>
+<td>Motorable road in mask</td>
+<td>11.8 km</td>
+<td>6.4–22.0 km</td>
+</tr>
+<tr>
+<td>Bridges exposed (not failed)</td>
+<td>20 of 385</td>
+<td>12–30</td>
+</tr>
+<tr>
+<td>Settlements cut off (no path to hospital)</td>
+<td>4 of 446</td>
+<td>2–12</td>
+</tr>
+<tr>
+<td>Settlements degraded</td>
+<td>0</td>
+<td>0–1</td>
+</tr>
+<tr>
+<td>Settlements with no pre-flood route (not assessed)</td>
+<td>141</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="map" src="situation_map.png" /></p>
+<p><strong>Limitations</strong></p>
+<ul>
+<li>Single Sentinel-1 track (asc85), one pre/post pair; the post scene is 2 days after the event, so a flash flood in a narrow gorge may already have drained.</li>
+<li>Only the valley floor is assessed (200 km², 90% usable). 92% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.</li>
+<li>No cause attribution: flood-like, dark and bright classes are all surface change; bridges are exposed, never known to have failed.</li>
+<li>Sentinel-2 added nothing: 12% of the valley floor has clear post-event S2 coverage and its status is null_not_calibrated (seed fraction 0.0006 vs gate 0.048), so S2 is excluded and the fused product equals the S1 product.</li>
+</ul>
+<p><small>Contains modified Copernicus Sentinel data 2026. Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. © OpenStreetMap contributors. Educational prototype, not an operational tool.</small></p>

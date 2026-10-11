@@ -1,0 +1,25 @@
+{
+  "threshold": 0.4,
+  "reference": "S2 MNDWI > 0.1 on pixels with clear > 0.9, HAND <= 30 m, radar-observable",
+  "caveat": "pseudo-reference: agreement, not accuracy",
+  "results": {
+    "post": {
+      "s2_date": "20260827",
+      "n_px": 31000,
+      "s2_water_px": 5630,
+      "ai_water_px": 729,
+      "iou": 0.061,
+      "precision": 0.505,
+      "recall": 0.065
+    },
+    "pre": {
+      "s2_date": "20260812",
+      "n_px": 22127,
+      "s2_water_px": 4909,
+      "ai_water_px": 307,
+      "iou": 0.03,
+      "precision": 0.492,
+      "recall": 0.031
+    }
+  }
+}

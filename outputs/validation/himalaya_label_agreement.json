@@ -1,0 +1,8 @@
+{
+  "n_chips_preregistered": 20,
+  "n_usable_A": 0,
+  "n_chips": 0,
+  "iou_A_vs_B": null,
+  "iou_ci95_chip_bootstrap": null,
+  "note": "the model cannot be scored above the inter-annotator IoU; with ~20 chips the bootstrap CI is wide"
+}

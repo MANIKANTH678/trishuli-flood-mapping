@@ -1,0 +1,46 @@
+{
+  "path_vs_osm_river_px": {
+    "median": 0.59,
+    "p90": 1.63,
+    "share_within_2px": 0.947
+  },
+  "ems_localities": [
+    {
+      "aoi": "AOI02",
+      "name": "Timure",
+      "km_downstream": 1.9,
+      "offset_from_path_km": 0.08
+    },
+    {
+      "aoi": "AOI01",
+      "name": "Syapru Besi",
+      "km_downstream": 13.9,
+      "offset_from_path_km": 0.29
+    },
+    {
+      "aoi": "AOI03",
+      "name": "Bidur",
+      "km_downstream": 55.1,
+      "offset_from_path_km": 0.35
+    },
+    {
+      "aoi": "AOI05",
+      "name": "Phosretar",
+      "km_downstream": 77.6,
+      "offset_from_path_km": 0.13
+    }
+  ],
+  "ems_order_downstream": [
+    "Timure",
+    "Syapru Besi",
+    "Bidur",
+    "Phosretar"
+  ],
+  "median_distance_to_osm_river_px": 0.59,
+  "order_ok": true,
+  "missing": [
+    "Syapru Besi",
+    "Timure",
+    "Phosretar"
+  ]
+}

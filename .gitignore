@@ -78,3 +78,7 @@ outputs/flood_model.joblib
 outputs/susceptibility_preview.png
 outputs/affected_buildings_map.png
 outputs/affected_roads_map.png
+.tmp.driveupload/
+seed_metrics/
+hark_cpu_results/
+outputs/ai_seed*/**/model.pt

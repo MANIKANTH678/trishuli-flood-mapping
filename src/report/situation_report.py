@@ -39,6 +39,7 @@ def span(r, key, fmt="{:,}"):
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--final", action="store_true", help="require a clean working tree (outputs/ ignored)")
+ap.add_argument("--one-page", action="store_true", help="also write the A4 one-page PDF (page-gated)")
 args = ap.parse_args()
 
 # --- single source of truth for the OSM date --------------------------------------------------------------
@@ -70,6 +71,8 @@ if args.final and dirty != "":
     die("working tree is not clean (outputs/ excluded); commit first so the numbers can be reproduced")
 stamp = f"commit `{commit}`" + ("" if dirty == "" else " + uncommitted changes (DRAFT)" if dirty else " (git state unknown)")
 
+_cn = ROOT / "outputs/validation/class_nulls.json"
+NULL_NOTE = "" if not _cn.exists() else " " + json.loads(_cn.read_text(encoding="utf-8"))["statement"]
 try:
     det, imp = J(DETECT), J("outputs/impact_summary.json")
     cutj = J("outputs/cutoff_settlements.json")
@@ -162,7 +165,7 @@ try:
     if have_ems: lims.append("EMSR927 products held locally (GRA) contain no flood-extent layer: the reference is landslide polygons and damage points, so the flood class is not validated against EMS.")
 
     sec = []
-    sec.append(("Situation", f"""{config.FLOOD_DATE} flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 {config.PRE_DATE} / {config.POST_DATE}, Copernicus GLO-30, OSM. Detector status: **{det['status']}** (track {det['track']}; VH robust-z change of {', '.join(rd(x) for x in det['refs'])} against {rd(det['post'])}, thresholds {det['t_hi']:g} / {det['t_lo']:g}, calibrated={det['calibrated']}, null false-alarm max {100 * det['null_far_max']:.3f}%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**."""))
+    sec.append(("Situation", f"""{config.FLOOD_DATE} flash flood (suspected GLOF), Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 {config.PRE_DATE} / {config.POST_DATE}, Copernicus GLO-30, OSM. Detector status: **{det['status']}** (track {det['track']}; VH robust-z change of {', '.join(rd(x) for x in det['refs'])} against {rd(det['post'])}, thresholds {det['t_hi']:g} / {det['t_lo']:g}, calibrated={det['calibrated']}, null false-alarm max {100 * det['null_far_max']:.3f}%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent**.{NULL_NOTE}"""))
     def p2(v): return f"{100 * v:.2f}%"
     def s3row(band):
         e, p = s3e["stats"][band], s3p["stats"][band]
@@ -203,8 +206,8 @@ Range = 3 thresholds × mask ±1 px × bridges fail/survive. {cut_detail} Cut-of
 2. Check the {len(cut_set)} cut-off first-break points against field or imagery reports.
 3. Refresh OSM after the event and rerun cut-off to separate missing roads from real loss."""))
     sec.append(("Data sources", f"""- Contains modified Copernicus Sentinel data 2026 (Sentinel-1 GRD, Copernicus Data Space Ecosystem)
-- (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA; all rights reserved (Copernicus DEM GLO-30)
-- (c) OpenStreetMap contributors, ODbL v1.0 (ohsome snapshot {snap}, pre-event){chr(10) + '- Copernicus EMS Rapid Mapping, EMSR927 (validation only)' if have_ems else ''}
+- Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
+- (c) OpenStreetMap contributors, ODbL v1.0 (ohsome snapshot {snap}, pre-event){chr(10) + '- European Union, Copernicus Emergency Management Service data (EMSR927, validation only)' if have_ems else ''}
 - Sen1Floods11 v1.1, CC BY 4.0: Bonafilia et al. (2020), CVPR EarthVision workshop
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md)."""))
@@ -228,3 +231,41 @@ out = ROOT / "outputs/reports/situation_report_EN.md"
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(md, encoding="utf-8")
 print("wrote", out, f"({words} words)")
+if args.one_page:
+    from src.report.pdf_gate import to_pdf
+    pic = ROOT / "outputs/reports/situation_map.png"
+    if not pic.exists(): die("outputs/reports/situation_map.png is missing; run tools/make_situation_map.py")
+    sit = (f"Flash flood (suspected GLOF) on {config.FLOOD_DATE}, Trishuli / Bhote Koshi, Rasuwa, Nepal. "
+           f"Sentinel-1 track {det['track']}, {config.PRE_DATE} / {config.POST_DATE}: detector status **{det['status']}** "
+           f"(calibrated={det['calibrated']}). Surface change was detected on the valley floor; it is **not attributed to flooding "
+           f"and not a validated flood extent**. Counts below are exposure to that mask." + NULL_NOTE)
+    one = f"""# Situation report: Trishuli / Bhote Koshi, {config.FLOOD_DATE}
+
+> PRELIMINARY, {datetime.date.today()}, {stamp}
+
+**Situation.** {sit}
+
+| Key number | Headline | Scenario range |
+|---|---|---|
+| Flagged area | {atot:.2f} km² | {area_rng} |
+| Buildings overlapping the mask (unknown status: {unk_pct:.0f}%) | {b['overlap']:,} ({b['overlap_flood']:,} flood-like, {b['overlap_debris']:,} other change) | {span(rr, 'buildings_overlap')} |
+| Motorable road in mask | {rb['motorable_road_km']:.1f} km | {span(rr, 'motorable_road_km', '{:.1f}')} km |
+| Bridges exposed (not failed) | {rb['bridges']} of {imp['total_bridges']} | {span(rr, 'bridges_exposed')} |
+| Settlements cut off (no path to hospital) | {cut_n} of {cut['total_settlements']} | {span(rngc, 'hospital_cut_off')} |
+| Settlements degraded | {deg_n} | {span(rngc, 'hospital_degraded')} |
+| Settlements with no pre-flood route (not assessed) | {no_path} | n/a |
+
+![map](situation_map.png)
+
+**Limitations**
+
+- {lims[0]}
+- {lims[1]}
+- {lims[3]}
+- {lims[2]}
+
+<small>Contains modified Copernicus Sentinel data 2026. Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. © OpenStreetMap contributors. Educational prototype, not an operational tool.</small>
+"""
+    p1 = ROOT / "outputs/reports/situation_report_1p.md"
+    p1.write_text(one, encoding="utf-8")
+    print("wrote", to_pdf(p1))

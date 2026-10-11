@@ -1,0 +1,48 @@
+{
+  "model": "smp_resnet34 (ResNet34 U-Net), Sen1Floods11 hand-labelled",
+  "shipped": "seed 0",
+  "per_seed": {
+    "0": {
+      "threshold": 0.4,
+      "valid": 0.672,
+      "test": 0.6816,
+      "bolivia": 0.6796
+    },
+    "1": {
+      "threshold": 0.5,
+      "valid": 0.6666,
+      "test": 0.6834,
+      "bolivia": 0.7191
+    },
+    "2": {
+      "threshold": 0.6,
+      "valid": 0.6768,
+      "test": 0.6797,
+      "bolivia": 0.7058
+    }
+  },
+  "summary": {
+    "valid": {
+      "mean": 0.6718,
+      "sd": 0.0051,
+      "min": 0.6666,
+      "max": 0.6768,
+      "n_seeds": 3
+    },
+    "test": {
+      "mean": 0.6816,
+      "sd": 0.0019,
+      "min": 0.6797,
+      "max": 0.6834,
+      "n_seeds": 3
+    },
+    "bolivia": {
+      "mean": 0.7015,
+      "sd": 0.0201,
+      "min": 0.6796,
+      "max": 0.7191,
+      "n_seeds": 3
+    }
+  },
+  "note": "sd over 3 seeds; each seed's threshold is tuned on its own validation split"
+}
