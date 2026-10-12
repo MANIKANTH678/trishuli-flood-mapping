@@ -47,5 +47,5 @@
     }
   },
   "flood_water_separable": true,
-  "statement": "Flood-like (new open water) change is separable from the no-flood nulls."
+  "statement": "Flood-like change (0.31 km\u00b2 of water-like backscatter change) and surface change (2.29 km\u00b2 dark, 0.54 km\u00b2 bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water."
 }
