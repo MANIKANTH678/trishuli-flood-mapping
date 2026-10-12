@@ -30,7 +30,7 @@ metrics, and a trained U-Net segmentation model.
 | Himalayan labelled chips | not made | no labelled Himalayan test exists; Sen1Floods11 has no Himalayan scenes |
 | Detector threshold and gate                       | **t_hi 4.0**                                        | smallest null-run value with worst false-alarm fraction ≤ 1e-3; event seed fraction 1.09e-2 against a gate of 1.05e-3; a pre-event scene reports no change (§4.1d) |
 | Detected change, valley floor (199.9 km²)         | **0.31 km² flood water**; 2.29 dark, 0.54 bright    | surface-change classes are descriptive, not confirmed damage (§4.1d)                                                                                               |
-| EMSR927 damage points within 100 m of a detection | Bidur 52%, Phosretar 24%, Timure 2%, Syapru Besi 0% | flood-water class: event 0.306 km² vs largest null 0.014 km² (separable); Flood-like (new open water) change is separable from the no-flood nulls.                                                                                               |
+| EMSR927 damage points within 100 m of a detection | Bidur 52%, Phosretar 24%, Timure 2%, Syapru Besi 0% | flood-water class: event 0.306 km² vs largest null 0.014 km² (separable); Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.                                                                                               |
 | Our "flooded" buildings                           | **3** (+473 in surface-change classes)              | counts not comparable to EMSR927 (different areas, §4.5)                                                                                                           |
 
 ---
@@ -641,6 +641,6 @@ occurred.
 ## 8. Attribution
 
 Full data attribution in [ATTRIBUTION.md](ATTRIBUTION.md). Contains modified
-Copernicus Sentinel data 2026; EMSR927 (c) Copernicus EMS; © OpenStreetMap contributors (ODbL); Sen1Floods11 (c) Bonafilia et al. (CC BY 4.0).
+Copernicus Sentinel data 2026; EMSR927: European Union, Copernicus Emergency Management Service data; © OpenStreetMap contributors (ODbL); Sen1Floods11 (c) Bonafilia et al. (CC BY 4.0).
 
 **Code license:** MIT.

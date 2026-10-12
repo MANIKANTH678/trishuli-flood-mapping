@@ -44,14 +44,21 @@ def main():
     inb = (rw >= 0) & (rw < fdir.shape[0]) & (cl >= 0) & (cl < fdir.shape[1]); near = ndi.binary_dilation(keep, iterations=3)       # 90 m tolerance
     hit = np.zeros(len(st), bool); hit[inb] = near[rw[inb], cl[inb]]
     dpx, j = cKDTree(P).query(np.c_[rw, cl][hit])
-    rows = pd.DataFrame({"name": st["name"].to_numpy()[hit] if "name" in st else "", "name_en": st["name:en"].to_numpy()[hit] if "name:en" in st else "", "km_downstream": (chain[j] / 1000).round(2),
+    col = lambda c: pd.Series(st[c].to_numpy()[hit] if c in st else [None] * int(hit.sum())).fillna("").astype(str).str.strip()
+    nen, nloc = col("name:en"), col("name")
+    rows = pd.DataFrame({"label": np.where(nen != "", nen, nloc), "name_en": nen, "name": nloc,          # name:en first, then name
+                         "km_downstream": (chain[j] / 1000).round(2),
                          "height_above_channel_m": np.round(hand[rw[hit], cl[hit]], 1), "distance_to_path_m": (dpx * res).round(0)}).sort_values("km_downstream")
     lon, lat = Transformer.from_crs(crs, 4326, always_xy=True).transform(*(T * (P[0, 1] + .5, P[0, 0] + .5)))
     line = gpd.GeoSeries([shapely.LineString([T * (c_ + .5, r_ + .5) for r_, c_ in path])], crs=crs).to_crs(4326)
     poly = gpd.GeoSeries([shapely.union_all([shape(g) for g, _ in shapes(keep.astype("uint8"), mask=keep, transform=T)])], crs=crs).to_crs(4326)
     line.to_file(out / "path.geojson", driver="GeoJSON"); poly.to_file(out / "corridor.geojson", driver="GeoJSON"); rows.to_csv(out / "settlements.csv", index=False)
+    er, ec = P[-1]; nr, nc = fdir.shape
+    at_edge = bool(er in (0, nr - 1) or ec in (0, nc - 1) or (0 <= r < nr and 0 <= c < nc and not np.isfinite(hand[min(r, nr - 1), min(c, nc - 1)])))
     (out / "summary.json").write_text(json.dumps({"start_snapped_lonlat": [lon, lat], "path_km": round(float(chain[-1]) / 1000, 1), "n_settlements": int(len(rows)),
-        "note": "D8 path on Copernicus GLO-30 + HAND floor; geometry only, no hydraulics or arrival times"}, indent=2)); print(rows.to_string(index=False))
+        "ends_at_study_area_edge": at_edge, "extent": "within the study area (DEM / bbox); the river continues beyond it" if at_edge else "within the study area",
+        "note": "D8 path on Copernicus GLO-30 + HAND floor within the study area; geometry only, no hydraulics or arrival times; "
+                "settlement labels use name:en, then name"}, indent=2)); print(rows.to_string(index=False))
 
 if __name__ == "__main__":
     main()

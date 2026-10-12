@@ -10,3 +10,5 @@ src/validation/emsr927_validate.py before that run; this file documents it.
   - otherwise: indistinguishable from chance
 - CI: 2,000-resample block bootstrap over 1 km blocks. Chance: 100 relocations of the mask's own blobs.
 - No tuning on these results. Detector frozen at tag detector-frozen.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).

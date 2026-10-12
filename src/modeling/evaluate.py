@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np, torch
 from torch.utils.data import DataLoader
 from src.modeling.dataset import Sen1Floods11
-from src.modeling.common import build_model, probs, pooled
+from src.modeling.common import build_model, default_run, load_weights, probs, pooled
 
 def chip_ci(items, thr, n=1000):
     c = np.array([[((p > thr) & y & v).sum(), ((p > thr) & ~y & v).sum(), (~(p > thr) & y & v).sum()] for _, p, y, v in items], float)
@@ -22,8 +22,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arch", default="smp_resnet34"); ap.add_argument("--run"); ap.add_argument("--ckpt"); ap.add_argument("--thr", type=float)
     ap.add_argument("--extra"); ap.add_argument("--extra-s1"); ap.add_argument("--extra-lbl"); ap.add_argument("--out")
-    a = ap.parse_args(); run = Path(a.run or f"outputs/ai/{a.arch}"); dev = "cuda" if torch.cuda.is_available() else "cpu"
-    model = build_model(a.arch).to(dev); model.load_state_dict(torch.load(a.ckpt or run / "model.pt", map_location=dev))
+    a = ap.parse_args(); run = Path(a.run) if a.run else default_run(a.arch); dev = "cuda" if torch.cuda.is_available() else "cpu"
+    model = build_model(a.arch, pretrained=False).to(dev); load_weights(model, run, a.ckpt, dev); model.eval()
     thr = a.thr if a.thr is not None else json.load(open(run / "threshold.json"))["threshold"]
     sets = {"valid": Sen1Floods11("flood_valid_data.csv"), "test": Sen1Floods11("flood_test_data.csv"), "bolivia": Sen1Floods11("flood_bolivia_data.csv")}
     if a.extra: sets["himalaya_chips"] = Sen1Floods11(a.extra, s1_dir=a.extra_s1, lbl_dir=a.extra_lbl)

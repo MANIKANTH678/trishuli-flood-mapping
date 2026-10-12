@@ -6,6 +6,7 @@ manifest.json (counts, filters, last-edit check) as audit evidence.
 
 Needs an ohsome API key (free): https://account.heigit.org/signup
     export OHSOME_API_KEY="..."
+Without a key (--source auto, the default) it falls back to a dated Geofabrik extract: src/download/osm_geofabrik.py.
 
     python -m src.download.fetch_osm --event-date 2026-08-26
     (bbox defaults to BBOX in src/config.py; override with --bbox W,S,E,N)
@@ -16,7 +17,7 @@ import argparse, io, json, os, shutil, sys, time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import pyarrow.parquet as pq
+# pyarrow is imported lazily (ohsome route only), so the Geofabrik fallback works without it
 import requests
 from shapely import wkb
 from shapely.geometry import mapping, shape
@@ -25,9 +26,7 @@ from src.config import BBOX
 
 API  = "https://api.heigit.org/ohsome-api/v2-rc/extraction/features.parquet"
 META = "https://api.heigit.org/ohsome-api/v2-rc/metadata"
-KEY = os.environ.get("OHSOME_API_KEY", "").strip().strip("\"'").strip()
-if not KEY:
-    sys.exit("Set OHSOME_API_KEY first")
+KEY = os.environ.get("OHSOME_API_KEY", "").strip().strip("\"'").strip()     # checked in main(), not at import
 SESSION = requests.Session()
 SESSION.headers.update({
     "Authorization": KEY,
@@ -111,6 +110,7 @@ def request_features(bbox, flt, snapshot):
             sys.exit(f"ohsome rejected the request ({r.status_code}): {r.text[:300]}")
         r.raise_for_status()
 
+        import pyarrow.parquet as pq
         tbl = pq.read_table(io.BytesIO(r.content))
         meta = tbl.schema.metadata or {}
         gcol = None
@@ -219,7 +219,17 @@ def main():
     ap.add_argument("--event-date", required=True, help="YYYY-MM-DD")
     ap.add_argument("--snapshot", help="YYYY-MM-DD (default: event date minus 30 days)")
     ap.add_argument("--out", default="data/raw/osm")
+    ap.add_argument("--source", choices=["auto", "ohsome", "geofabrik"], default="auto",
+                    help="auto = ohsome when OHSOME_API_KEY is set, else a dated Geofabrik extract (src/download/osm_geofabrik.py)")
+    ap.add_argument("--region", default="asia/nepal", help="Geofabrik region for --source geofabrik")
     a = ap.parse_args()
+    if a.source == "geofabrik" or (a.source == "auto" and not KEY):
+        if a.source == "auto": print("OHSOME_API_KEY not set: using a dated Geofabrik extract instead (pre-event, no key)")
+        from src.download import osm_geofabrik
+        sys.argv = [sys.argv[0], "--bbox", a.bbox, "--event-date", a.event_date, "--region", a.region, "--out", a.out] + (["--snapshot", a.snapshot] if a.snapshot else [])
+        return osm_geofabrik.main()
+    if not KEY:
+        sys.exit("Set OHSOME_API_KEY first (or use --source geofabrik)")
 
     event = date.fromisoformat(a.event_date)
     snap = date.fromisoformat(a.snapshot) if a.snapshot else event - timedelta(days=30)

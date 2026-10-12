@@ -5,5 +5,7 @@
   ],
   "path_km": 81.5,
   "n_settlements": 18,
-  "note": "D8 path on Copernicus GLO-30 + HAND floor; geometry only, no hydraulics or arrival times"
+  "ends_at_study_area_edge": true,
+  "extent": "within the study area (DEM / bbox); the river continues beyond it",
+  "note": "D8 path on Copernicus GLO-30 + HAND floor within the study area; geometry only, no hydraulics or arrival times; settlement labels use name:en, then name"
 }

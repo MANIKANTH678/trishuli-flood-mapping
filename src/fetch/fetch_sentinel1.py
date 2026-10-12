@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-fetch_sentinel1.py — Find and download Sentinel-1 GRD scenes covering
-the Trishuli GLOF source (Rasuwa, Nepal, ~85.35E 28.17N).
+fetch_sentinel1.py — download the Sentinel-1 GRD scenes chosen by src/fetch/select_s1.py (Step 10.2).
 
-Search-only mode (NO credentials needed):
-    python src/fetch/fetch_sentinel1.py --dry-run
+    python -m src.fetch.select_s1 --bbox W,S,E,N --event-date YYYY-MM-DD      # writes data/raw/sentinel1/selection.json
+    python -m src.fetch.fetch_sentinel1 --selection data/raw/sentinel1/selection.json            # list only
+    python -m src.fetch.fetch_sentinel1 --selection data/raw/sentinel1/selection.json --download # needs credentials
 
-Download mode (requires credentials in src/config.py):
-    python src/fetch/fetch_sentinel1.py --download
+Credentials come ONLY from the environment (COPERNICUS_USER / COPERNICUS_PASS) and are read lazily, at download time,
+so listing works on a clean clone without them.
 """
 from __future__ import annotations
 
@@ -24,25 +24,16 @@ sys.path.insert(
     0,
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
 )
-from src.config import S1_DIR, COPERNICUS_USER, COPERNICUS_PASS
+import json
+from src.config import S1_DIR
 
-# --- Search parameters -------------------------------------------------------
-# GLOF source + downstream corridor. Must include Rasuwa (lat 28.15-28.28).
-FOOTPRINT_WKT = (
-    "POLYGON(("
-    "84.90 27.70, 85.70 27.70, 85.70 28.40, 84.90 28.40, 84.90 27.70"
-    "))"
-)
-DATE_RANGES = [
-    ("pre3", "2026-07-21T00:00:00.000Z", "2026-07-25T23:59:59.999Z"),
-    ("pre4", "2026-07-09T00:00:00.000Z", "2026-07-13T23:59:59.999Z"),
-    ("pre",  "2026-08-13T00:00:00.000Z", "2026-08-19T23:59:59.999Z"),
-    ("post", "2026-08-25T00:00:00.000Z", "2026-08-31T23:59:59.999Z"),
-    ("placebo", "2026-08-01T00:00:00.000Z", "2026-08-07T23:59:59.999Z"),
-]
-TARGET_REL_ORBIT  = 85
-TARGET_PASS_DIR   = "ASCENDING"
-PRODUCT_TYPE      = "IW_GRDH_1S"
+# --- Scene list: from the selection (src/fetch/select_s1.py) -----------------
+SPLITS = ["pre", "placebo", "pre3", "pre4"]          # nearest pre-event date first
+def picks_from_selection(path):
+    sel = json.loads(Path(path).read_text()); out = [("post", p) for p in sel["products"][sel["post"]]]
+    for sp, d in zip(SPLITS, sel["pre"]): out += [(sp, p) for p in sel["products"][d]]
+    return out                                        # [(split, {"id", "name", "size_mb"})]
+
 
 # --- Endpoints ---------------------------------------------------------------
 ODATA   = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
@@ -53,18 +44,20 @@ ZIPPER  = "https://zipper.dataspace.copernicus.eu/odata/v1/Products"
 # ---------- helpers ----------------------------------------------------------
 
 def get_token() -> str:
-    if not COPERNICUS_USER or "example.com" in COPERNICUS_USER:
+    user = os.environ.get("COPERNICUS_USER", "").strip().strip("\"'").strip()
+    pw = os.environ.get("COPERNICUS_PASS", "").strip().strip("\"'").strip()
+    if not user or not pw or "example.com" in user:
         raise SystemExit(
-            "❌ No Copernicus credentials. Set COPERNICUS_USER / COPERNICUS_PASS "
-            "in src/config.py. Register free at https://dataspace.copernicus.eu/"
+            "No Copernicus credentials. Set the environment variables COPERNICUS_USER / COPERNICUS_PASS "
+            "(cmd: set COPERNICUS_USER=you@example.com). Register free at https://dataspace.copernicus.eu/"
         )
     r = requests.post(
         TOKEN,
         data={
             "client_id": "cdse-public",
             "grant_type": "password",
-            "username": COPERNICUS_USER,
-            "password": COPERNICUS_PASS,
+            "username": user,
+            "password": pw,
         },
         timeout=30,
     )
@@ -168,76 +161,36 @@ def download(product_id: str, name: str, token: str, out_dir: Path) -> Path:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true",
-                    help="Search only; print candidates; don't download.")
-    ap.add_argument("--download", action="store_true",
-                    help="Download matching scenes to data/raw/sentinel1/{pre,post}.")
-    ap.add_argument("--any-orbit", action="store_true",
-                    help="Don't filter on relOrbit=85 / ASCENDING.")
+    ap.add_argument("--selection", default=str(Path(S1_DIR) / "selection.json"),
+                    help="JSON written by src.fetch.select_s1 (track, dates, product ids)")
+    ap.add_argument("--dry-run", action="store_true", help="List the scenes; don't download.")
+    ap.add_argument("--download", action="store_true", help="Download to data/raw/sentinel1/<split>/.")
     args = ap.parse_args()
-
-    if not args.dry_run and not args.download:
-        args.dry_run = True  # default safe
-
-    print(f"🔍 Footprint: {FOOTPRINT_WKT}")
-    print(f"   relOrbit filter: {TARGET_REL_ORBIT}  pass: {TARGET_PASS_DIR}")
-    print()
-
-    picks: list[tuple[str, dict]] = []  # (label, product summary)
-
-    for label, dt_start, dt_end in DATE_RANGES:
-        print(f"── {label.upper()} window: {dt_start} .. {dt_end} ──")
-        try:
-            products = search(FOOTPRINT_WKT, dt_start, dt_end)
-        except requests.HTTPError as e:
-            print(f"   search failed: {e}")
-            print(f"   body: {getattr(e.response, 'text', '')[:300]}")
-            continue
-
-        print(f"   {len(products)} raw hits")
-
-        for p in products:
-            s = summarize(p)
-            if not args.any_orbit:
-                if s["relOrbit"] != TARGET_REL_ORBIT:  continue
-                if s["pass"]     != TARGET_PASS_DIR:   continue
-            print(f"   ✅ {s['name']}")
-            print(f"      date={s['date']}  relOrbit={s['relOrbit']}  "
-                  f"pass={s['pass']}  pol={s['polarisation']}  "
-                  f"size={s['size_mb']} MB  online={s['online']}")
-            picks.append((label, s))
-        print()
-
-    if not picks:
-        print("❌ No scenes matched. Try --any-orbit to see what IS available "
-              "over the footprint in these date windows.")
-        return
-
-    print(f"Found {len(picks)} matching scene(s):")
+    if not Path(args.selection).exists():
+        raise SystemExit(f"{args.selection} not found: run python -m src.fetch.select_s1 --bbox W,S,E,N --event-date YYYY-MM-DD first")
+    picks = picks_from_selection(args.selection)
+    sel = json.loads(Path(args.selection).read_text())
+    if sel.get("source", "cdse") != "cdse":
+        raise SystemExit(f"{args.selection} lists Planetary Computer items (source={sel.get('source')}); use the PC route (src.processing.pc_stack)")
+    print(f"track {sel['rel_orbit']} {sel['pass']}  post {sel['post']}  pre {sel['pre']}")
     for label, s in picks:
-        print(f"  [{label}] {s['name']}")
-
+        print(f"  [{label}] {s['name']}  {s.get('size_mb', '?')} MB")
     if not args.download:
-        print("\n(dry-run) Not downloading. Re-run with --download to fetch.")
+        print("\n(list only) Re-run with --download to fetch.")
         return
-
     out_dir = Path(S1_DIR)
     token = None  # fetched lazily, only if something is actually missing
     for label, s in picks:
         sub = out_dir / label
-        print(f"\n⬇️  downloading {label}: {s['name']}")
-        have = any(
-            (sub / f"{s['name']}{suf}").exists()
-            and (sub / f"{s['name']}{suf}").stat().st_size > 1_000_000
-            for suf in (".zip", ".SAFE.zip")
-        )
+        print(f"\ndownloading {label}: {s['name']}")
+        have = any((sub / f"{s['name']}{suf}").exists() and (sub / f"{s['name']}{suf}").stat().st_size > 1_000_000
+                   for suf in (".zip", ".SAFE.zip"))
         if not have and token is None:
             token = get_token()
         try:
-            path = download(s["id"], s["name"], token, sub)
+            download(s["id"], s["name"], token, sub)
         except requests.HTTPError as e:
-            print(f"   download failed: {e}")
-            print(f"   body: {getattr(e.response, 'text', '')[:300]}")
+            raise SystemExit(f"download failed: {e}\nbody: {getattr(e.response, 'text', '')[:300]}")
 
 
 if __name__ == "__main__":

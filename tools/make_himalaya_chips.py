@@ -4,7 +4,13 @@ Writes, in Sen1Floods11 layout so src.modeling.evaluate --extra works unchanged:
   data/external/himalaya_chips/S2/<name>_S2.tif      Sentinel-2 L2A 27 Aug 2026 RGB+NIR+SWIR1 (labelling only; Planetary Computer, no login)
   data/external/himalaya_chips/Label_A/, Label_B/   empty labels (-1 = not labelled) for tools/label_chips.py
   data/external/himalaya_chips/chips.csv
-python tools/make_himalaya_chips.py [--points data/external/himalaya_chips/points.csv] [--s2-date 2026-08-27]"""
+python tools/make_himalaya_chips.py [--points data/external/himalaya_chips/points.csv] [--s2-date 2026-08-27]
+
+Pre-event option (Step 10; used when fewer than 8 post-event chips pass tools/chip_clear.py):
+python tools/make_himalaya_chips.py --split pre        # s1_pre_*_10m.tif (2026-08-16) + the 12 Aug 2026 S2, same points
+  -> data/external/himalaya_chips_pre/, chip names tagged <name>_pre, chips_meta.csv says split=pre. These chips test the
+     model on river water vs hillside shadow WITHOUT an event; report them separately from the post-event chips.
+Labelling is done by people (tools/label_chips.py) under docs/chip_protocol.md; this script never labels anything."""
 import argparse
 from pathlib import Path
 import numpy as np, rasterio
@@ -19,15 +25,19 @@ def s2_items(bbox, date):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--points", default="data/external/himalaya_chips/points.csv"); ap.add_argument("--s2-date", default="2026-08-27")
-    ap.add_argument("--out", default="data/external/himalaya_chips"); a = ap.parse_args()
-    out = Path(a.out)
+    ap.add_argument("--points", default="data/external/himalaya_chips/points.csv"); ap.add_argument("--s2-date")
+    ap.add_argument("--split", choices=["post", "pre"], default="post", help="S1 scene to cut: post (event) or pre (no-event control)")
+    ap.add_argument("--out"); a = ap.parse_args()
+    a.s2_date = a.s2_date or ("2026-08-27" if a.split == "post" else "2026-08-12")
+    out = Path(a.out or ("data/external/himalaya_chips" if a.split == "post" else "data/external/himalaya_chips_pre"))
+    tag = "" if a.split == "post" else "_pre"; meta = ["name,split,s1_file,s2_date,purpose"]
     for sub in ("S1", "S2", "Label_A", "Label_B"): (out / sub).mkdir(parents=True, exist_ok=True)
     pts = [l.split(",") for l in Path(a.points).read_text().splitlines()[1:] if l.strip()]
     rows = []
-    with rasterio.open("data/processed/s1_post_VV_10m.tif") as v, rasterio.open("data/processed/s1_post_VH_10m.tif") as h:
+    with rasterio.open(f"data/processed/s1_{a.split}_VV_10m.tif") as v, rasterio.open(f"data/processed/s1_{a.split}_VH_10m.tif") as h:
         tf, inv = Transformer.from_crs(4326, v.crs, always_xy=True), Transformer.from_crs(v.crs, 4326, always_xy=True)
-        for name, lon, lat, *_ in pts:
+        for name0, lon, lat, *_ in pts:
+            name = name0 + tag
             r, c = v.index(*tf.transform(float(lon), float(lat))); win = Window(c - 128, r - 128, 256, 256); T = v.window_transform(win)
             prof = {"driver": "GTiff", "height": 256, "width": 256, "crs": v.crs, "transform": T, "compress": "deflate"}
             arr = np.stack([x.read(1, window=win, boundless=True, masked=True).astype("float32").filled(np.nan) for x in (v, h)])
@@ -49,7 +59,9 @@ def main():
                 print(f"{name}: S2 fetch failed ({ex}); label from the S2 indices in data/interim/s2 instead")
             with rasterio.open(out / "S2" / f"{name}_S2.tif", "w", count=5, dtype="float32", **prof) as d: d.write(s2)
             rows.append(f"{name}_S1.tif,{name}_Label.tif"); print("chip", name)
+            meta.append(f"{name},{a.split},s1_{a.split}_VV/VH_10m.tif,{a.s2_date},{'event test' if a.split == 'post' else 'no-event control: river water vs hillside shadow'}")
     (out / "chips.csv").write_text("\n".join(rows) + "\n")
+    (out / "chips_meta.csv").write_text("\n".join(meta) + "\n")
     print(f"{len(rows)} chips. Next: python tools/label_chips.py --annotator A  (and B on a subset)")
 
 if __name__ == "__main__":

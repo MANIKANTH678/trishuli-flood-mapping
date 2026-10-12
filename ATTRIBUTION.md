@@ -2,6 +2,15 @@
 
 Data sources retain their own licenses; this project's MIT license covers code.
 
+## Required attribution (exact strings, from `src/report/attribution.py`)
+
+- Contains modified Copernicus Sentinel data 2026.
+- Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
+- © OpenStreetMap contributors.
+- European Union, Copernicus Emergency Management Service data (EMSR927, checking only).
+
+Educational prototype, not an operational tool.
+
 ## Satellite data
 
 ### Sentinel-1 GRD
@@ -10,15 +19,14 @@ Data sources retain their own licenses; this project's MIT license covers code.
   - Pre: `2026-08-16T12:21:16` / `12:21:41`
   - Post: `2026-08-28T12:21:16` / `12:21:41`
 - **Source:** Copernicus Data Space Ecosystem — <https://dataspace.copernicus.eu/>
-- **Credit:** Contains modified Copernicus Sentinel data 2026
+- **Credit:** Contains modified Copernicus Sentinel data 2026.
 - **License:** Copernicus Sentinel Data Terms and Conditions
   <https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice>
 
 ### DEM
 
 - Copernicus DEM GLO-30, mosaicked to 30 m EPSG:32645 from `data/raw/dem/`.
-- Credit: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018,
-  provided under COPERNICUS by the European Union and ESA; all rights reserved.
+- Credit: Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
 
 ## Reference data
 
@@ -28,6 +36,8 @@ Data sources retain their own licenses; this project's MIT license covers code.
 - **AOIs:** 01 Syapru Besi, 02 Timure, 03 Bidur, 05 Phosretar
 - **Layers:** `builtUpP`, `observedEventA`, `areaOfInterestA`, `notAnalysedA`
 - **Source:** <https://rapidmapping.emergency.copernicus.eu/>
+- **Credit:** European Union, Copernicus Emergency Management Service data
+- **Holdings:** EMSR927 GRA products held locally (checked 2026-10-11) contain landslide polygons and damage points, no flood-extent layer.
 - **License:** Copernicus EMS licence
   <https://emergency.copernicus.eu/mapping/download/legal>
 - **Caveat:** GRA products contain landslide polygons and building-damage

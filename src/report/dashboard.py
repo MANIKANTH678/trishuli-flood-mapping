@@ -1,83 +1,239 @@
 #!/usr/bin/env python3
-import argparse, json
+"""THE dashboard deliverable: outputs/dashboard/index.html (folium / Leaflet), built only from the pipeline's JSON and rasters.
+
+    python -m src.report.dashboard [--out outputs/dashboard/index.html]
+
+Every number and status on the page is read from a file (run.json, detect_<track>.json, impact_summary.json,
+cutoff_settlements.json, class_nulls.json, emsr927_validation.json, flood_path*/summary.json); nothing is typed here.
+Case-study-only inputs (class nulls, EMS, flood path, scenario masks) are optional: a missing file drops its line or
+layer, so the page builds for any area. Leaflet, jQuery, Bootstrap, Font Awesome and the marker plugins are served
+from outputs/dashboard/vendor/ (copied from src/report/vendor/), so the map draws with no internet; when basemap tiles
+fail the page falls back to a plain background and says so. Replaces the retired static page src/report/dashboard_full.py."""
+import argparse, html, json, re, shutil
 from pathlib import Path
 import numpy as np, rasterio, geopandas as gpd, folium
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from src import config
+from src.report import attribution as A
 
-COLORS = {1: (31, 119, 180, 230), 2: (230, 85, 13, 220), 3: (214, 39, 40, 220), 254: (110, 110, 110, 140)}
+ROOT = Path(__file__).resolve().parents[2]
+VENDOR_SRC = Path(__file__).resolve().parent / "vendor"
+CLASS_RGBA = {1: (31, 119, 180, 230), 2: (230, 85, 13, 220), 3: (214, 39, 40, 220)}
+UNOBS_RGBA, NOTASSESSED_RGBA = (90, 90, 90, 150), (200, 200, 200, 90)
 STATUS = {"cut_off": "red", "degraded": "orange", "reachable": "green", "no_pre_flood_path": "gray", "is_town": "blue"}
-ATTR = ("Contains modified Copernicus Sentinel data 2026. Produced using Copernicus WorldDEM-30 &copy; DLR e.V. 2010-2014 and &copy; Airbus Defence and "
-        "Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. &copy; OpenStreetMap contributors.")
+BLANK_TILE = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+E = lambda s: html.escape(str(s), quote=True)
 
-def class_overlay(path):
+
+def J(p):
+    p = Path(p)
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def to_4326(path):
     with rasterio.open(path) as s:
         t, w, h = calculate_default_transform(s.crs, "EPSG:4326", s.width, s.height, *s.bounds)
         out = np.full((h, w), 255, np.uint8)
         reproject(s.read(1), out, src_transform=s.transform, src_crs=s.crs, src_nodata=255, dst_transform=t, dst_crs="EPSG:4326",
                   dst_nodata=255, resampling=Resampling.nearest)
-    rgba = np.zeros((h, w, 4), np.uint8)
-    for k, c in COLORS.items(): rgba[out == k] = c
     (west, north), (east, south) = t * (0, 0), t * (w, h)
-    return rgba, [[south, west], [north, east]]
+    return out, [[south, west], [north, east]]
+
+
+def rgba_of(cls, colors):
+    rgba = np.zeros(cls.shape + (4,), np.uint8)
+    for k, c in colors.items(): rgba[cls == k] = c
+    return rgba
+
+
+def span(r, key, fmt="{:,}"):
+    v = (r or {}).get(key)
+    if not v: return None
+    return fmt.format(v[0]) if v[0] == v[1] else f"{fmt.format(v[0])}&ndash;{fmt.format(v[1])}"
+
+
+def headline(det, imp, cutj, cn, ems, s2):
+    """All panel text, from the JSON files only."""
+    b = imp["buildings"]; rr = (imp.get("sensitivity") or {}).get("range") or {}
+    rb = imp["roads_bridges"]["exposure_by_tolerance"]["0m"]
+    cut = (cutj or {}).get("summary", {}); rc = ((cutj or {}).get("sensitivity") or {}).get("range") or {}
+    unk = (b.get("not_assessed", 0) + b.get("unobservable", 0)) / max(b["total"], 1)
+    rng = lambda key, fmt="{:,}": f" (range {span(rr, key, fmt)})" if span(rr, key, fmt) else ""
+    L = []
+    cal = "calibrated against pre-event nulls" if det.get("calibrated") else "UNCALIBRATED (fewer than 3 reference dates: no null gate)"
+    if det.get("calibrated") and det.get("alpha_met") is False:
+        cal = f"null-calibrated, but no threshold reached the 0.1% false-alarm target (largest grid value used; null max {100 * det.get('null_far_max', 0):.2f}%)"
+    L.append(f"Detector status: <b>{E(det['status'])}</b> &middot; track {E(det['track'])} &middot; {cal}")
+    if config.S1_SOURCE == "pc":
+        L.append(f"<b>Sentinel-1 source: {E(config.S1_SOURCE_LABEL)}</b> &mdash; numbers are a cross-check of the method, not the SNAP headline.")
+    area = det.get("area_km2", {})
+    L.append(f"Flagged on the valley floor: {area.get('flood_water', 0):.2f} km&sup2; flood-like (water-like backscatter change), "
+             f"{area.get('surface_dark', 0):.2f} km&sup2; dark change, {area.get('surface_bright', 0):.2f} km&sup2; bright change")
+    L.append(f"Buildings overlapping the mask: <b>{b['overlap']:,}</b>{rng('buildings_overlap')} of {b['total']:,} "
+             f"&middot; buildings of unknown status (outside the observed floor): <b>{unk:.0%}</b>")
+    L.append(f"Motorable road in mask: {rb['motorable_road_km']:.1f} km{rng('motorable_road_km', '{:.1f}')} &middot; "
+             f"bridges exposed (not failed): {rb['bridges']}{rng('bridges_exposed')}")
+    if cut:
+        sp = span(rc, "hospital_cut_off")
+        L.append(f"Settlements with no road path to a hospital: <b>{cut.get('cut_off', 0)}</b>{f' (range {sp})' if sp else ''} of "
+                 f"{cut.get('total_settlements', 0)}; {cut.get('hospital_no_pre_flood_path', 0)} had no pre-flood route (not assessed)")
+    if rr: L.append("<i>Range = detector thresholds low/base/high" + (" &times; mask &plusmn;1 px &times; bridge policy" if rc else "") + ".</i>")
+    if cn and cn.get("statement"): L.append(f"<b>{E(cn['statement'])}</b>")
+    if s2 and s2.get("status") and s2.get("status") != "change_detected":
+        L.append(f"Sentinel-2: {s2.get('floor_clear_post_fraction', 0):.0%} of the floor clear after the event, status {E(s2['status'])}; excluded.")
+    if ems: L.append(E(A.EMS_HOLDINGS) + " EMS data is used for checking only.")
+    return L
+
+
+def flood_path_layer(m, d, label, color, show):
+    d = Path(d); s = J(d / "summary.json")
+    if not s or not (d / "path.geojson").exists(): return None
+    fg = folium.FeatureGroup(name=f"Flood path, {label} ({s['path_km']} km within the study area)", show=show).add_to(m)
+    if (d / "corridor.geojson").exists():
+        folium.GeoJson(gpd.read_file(d / "corridor.geojson").to_crs(4326)[["geometry"]].to_json(),
+                       style_function=lambda _: {"color": color, "weight": 1, "fillOpacity": 0.12}).add_to(fg)
+    folium.GeoJson(gpd.read_file(d / "path.geojson").to_crs(4326)[["geometry"]].to_json(),
+                   style_function=lambda _: {"color": color, "weight": 3}).add_to(fg)
+    return s
+
+
+def vendorize(out_html):
+    """Copy src/report/vendor/ next to the page and point every CDN URL at it. Unknown URLs are reported, not fatal."""
+    out_html = Path(out_html); vd = out_html.parent / "vendor"
+    if VENDOR_SRC.exists():
+        # Copy over in place: no rmtree, because Windows/Drive-synced folders often refuse to delete dirs (WinError 5).
+        shutil.copytree(VENDOR_SRC, vd, dirs_exist_ok=True)
+    t = out_html.read_text(encoding="utf-8"); missing = []
+    def sub(mo):
+        url = mo.group(2); rel = re.sub(r"^https?://", "", url).split("?")[0]
+        if (vd / rel).exists(): return f'{mo.group(1)}vendor/{rel}{mo.group(3)}'
+        missing.append(url); return mo.group(0)
+    t = re.sub(r'((?:src|href)=")(https?://[^"]+\.(?:js|css))(")', sub, t)
+    out_html.write_text(t, encoding="utf-8")
+    if missing: print("WARNING: not vendored (page needs internet for these; run tools/vendor_assets.py):", *missing, sep="\n  ")
+    return missing
+
+
+TILE_FALLBACK_JS = """
+<script>
+(function(){
+  function hook(){
+    var maps = Object.keys(window).filter(function(k){return k.indexOf('map_')===0 && window[k] && window[k].eachLayer;});
+    if(!maps.length){ return setTimeout(hook, 200); }
+    var map = window[maps[0]], errors = 0, note = document.getElementById('tile-note');
+    map.getContainer().style.background = '#e9eef2';
+    map.eachLayer(function(l){
+      if(l instanceof L.TileLayer && l.options && String(l._url).indexOf('data:') !== 0){
+        l.on('tileerror', function(){
+          errors += 1;
+          if(errors >= 4 && note){ note.style.display = 'block'; }
+        });
+      }
+    });
+  }
+  hook();
+})();
+</script>"""
+
+
+def build(out="outputs/dashboard/index.html", cls="data/processed/fused_class_30m.tif", sens_dir="data/processed/_sens",
+          flood_path="outputs/flood_path", flood_path_trib="outputs/flood_path_trib"):
+    det = J(f"outputs/diagnostics/detect_{config.TRACK}.json")
+    imp, cutj = J("outputs/impact_summary.json"), J("outputs/cutoff_settlements.json")
+    if det is None or imp is None: raise SystemExit(f"dashboard: detect_{config.TRACK}.json and impact_summary.json are required")
+    cn, ems, s2 = J("outputs/validation/class_nulls.json"), J("outputs/validation/emsr927_validation.json"), J("outputs/diagnostics/s2_detect.json")
+    have_ems = bool(ems) and Path("data/external/EMSR927").is_dir()
+
+    base, bounds = to_4326(cls)
+    m = folium.Map(location=[(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2], zoom_start=11, tiles=None,
+                   control_scale=True)
+    folium.TileLayer("OpenStreetMap", name="OpenStreetMap", attr="&copy; OpenStreetMap contributors").add_to(m)
+    folium.TileLayer(tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                     attr="Esri World Imagery (basemap only, not an input)", name="Satellite basemap", show=False).add_to(m)
+    folium.TileLayer(tiles=BLANK_TILE, attr=" ", name="Plain background (offline)", show=False).add_to(m)
+
+    # scenarios: base shown, low / high as toggles (classes 1-3 only)
+    scen = {"base": (base, bounds)}
+    for nm in ("low", "high"):
+        p = Path(sens_dir) / nm / "fused_class_30m.tif"
+        if p.exists(): scen[nm] = to_4326(str(p))
+    for nm in ("low", "base", "high"):
+        if nm not in scen: continue
+        c, bb = scen[nm]
+        lab = {"base": "Scenario base threshold (headline)", "low": "Scenario low threshold (more change)",
+               "high": "Scenario high threshold (less change)"}[nm]
+        folium.raster_layers.ImageOverlay(rgba_of(c, CLASS_RGBA), bb, name=lab, opacity=1, show=(nm == "base"), zindex=3).add_to(m)
+    folium.raster_layers.ImageOverlay(rgba_of(base, {254: UNOBS_RGBA}), bounds, name="Radar-unobservable (layover / shadow): UNKNOWN",
+                                      opacity=1, show=True, zindex=2).add_to(m)
+    folium.raster_layers.ImageOverlay(rgba_of(base, {253: NOTASSESSED_RGBA}), bounds, name="Outside the assessed valley floor: UNKNOWN",
+                                      opacity=1, show=False, zindex=1).add_to(m)
+
+    fp_main = flood_path_layer(m, flood_path, "main stem", "#08519c", False)
+    fp_trib = flood_path_layer(m, flood_path_trib, "tributary", "#6a51a3", False)
+
+    def geo(path, name, style, show=True):
+        if Path(path).exists():
+            g = gpd.read_file(path)
+            if len(g): folium.GeoJson(g.to_crs(4326)[["geometry"]].to_json(), name=name, style_function=lambda _: style, show=show).add_to(m)
+    geo("outputs/affected_roads.geojson", "Motorable roads in the mask", {"color": "#7a0177", "weight": 3})
+    geo("outputs/affected_bridges.geojson", "Bridges exposed (not failed)", {"color": "#000000", "weight": 5})
+    if Path("outputs/affected_buildings.gpkg").exists():
+        bl = gpd.read_file("outputs/affected_buildings.gpkg"); bl = bl[bl["tier"] == "overlap"]
+        if len(bl):
+            folium.GeoJson(bl.to_crs(4326)[["geometry"]].to_json(), name=f"Buildings overlapping the mask ({len(bl):,})",
+                           style_function=lambda _: {"color": "#cc0000", "weight": 1, "fillOpacity": 0.5}).add_to(m)
+    if cutj and cutj.get("settlements"):
+        fg = folium.FeatureGroup(name="Settlements by road access to a hospital").add_to(m)
+        fb = folium.FeatureGroup(name="First break on the pre-flood route").add_to(m)
+        for s in cutj["settlements"]:
+            h = s["hospital"]
+            pop = (f"<b>{E(s['name'])}</b><br>status: {E(h['status'])}<br>to hospital: {E(h['pre_km'])} km before, {E(h['post_km'])} km after"
+                   f"<br>share of route observed by the detector: {E(s.get('route_assessed_frac'))}")
+            folium.CircleMarker([s["lat"], s["lon"]], radius=5 if h["status"] in ("cut_off", "degraded") else 3, color=STATUS.get(h["status"], "gray"),
+                                fill=True, fill_opacity=0.8, popup=folium.Popup(pop, max_width=260)).add_to(fg)
+            if s.get("first_break"):
+                f = s["first_break"]
+                folium.Marker([f["lat"], f["lon"]], icon=folium.Icon(color="black", icon="remove"),
+                              popup=f"first break ({E(f['cause'])}) on the route of {E(s['name'])}").add_to(fb)
+    if Path("data/raw/osm/hospitals.geojson").exists():
+        hs = gpd.read_file("data/raw/osm/hospitals.geojson")
+        if len(hs):
+            fh = folium.FeatureGroup(name="Hospitals (OSM, pre-event)").add_to(m)
+            for _, r in hs.to_crs(4326).iterrows():
+                c = r.geometry.centroid
+                folium.Marker([c.y, c.x], icon=folium.Icon(color="blue", icon="plus"), popup=E(r.get("name") or "hospital")).add_to(fh)
+
+    lines = headline(det, imp, cutj, cn, have_ems and ems, s2)
+    fp = [f"{lab}: {s['path_km']} km, {s['n_settlements']} settlements on the corridor (geometry only)" for lab, s in
+          (("main stem", fp_main), ("tributary", fp_trib)) if s]
+    if fp: lines.append("Flood path within the study area &mdash; " + "; ".join(fp) + ".")
+    legend = ("<span style='color:#1f77b4'>&#9632;</span> flood-like (water-like backscatter change) "
+              "<span style='color:#e6550d'>&#9632;</span> dark change <span style='color:#d62728'>&#9632;</span> bright change "
+              "<span style='color:#5a5a5a'>&#9632;</span> radar-unobservable")
+    panel = (f"<div id='hdr' style='position:fixed;top:10px;left:50px;z-index:9999;background:#fff;padding:8px 12px;border:1px solid #888;"
+             f"font:12px/1.35 sans-serif;max-width:430px;max-height:70vh;overflow:auto'>"
+             f"<b>{E(config.TITLE)}</b><br><i>{E(A.DISCLAIMER)} Exposure to a detected change mask, not a validated flood extent "
+             f"and not damage.</i><br>" + "<br>".join(lines) + f"<br>{legend}"
+             f"<div id='tile-note' style='display:none;margin-top:4px;color:#a50'>Basemap tiles could not load (offline?): choose "
+             f"&ldquo;Plain background (offline)&rdquo;. All analysis layers are embedded in this file.</div></div>")
+    foot = (f"<div style='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(255,255,255,.92);font:10px sans-serif;padding:2px 6px'>"
+            f"{A.html(with_ems=have_ems)} {E(A.DISCLAIMER)}</div>")
+    m.get_root().html.add_child(folium.Element(panel + foot + TILE_FALLBACK_JS))
+    folium.LayerControl(collapsed=False).add_to(m)
+    Path(out).parent.mkdir(parents=True, exist_ok=True); m.save(out)
+    vendorize(out)
+    print("wrote", out)
+    return Path(out)
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cls", default="data/processed/fused_class_30m.tif"); ap.add_argument("--sens-dir", default="data/processed/_sens")
-    ap.add_argument("--flood-path", default="outputs/flood_path"); ap.add_argument("--out", default="outputs/dashboard/index.html")
-    a = ap.parse_args(); J = lambda p: json.loads(Path(p).read_text(encoding="utf-8"))
-    imp, cut, det = J("outputs/impact_summary.json"), J("outputs/cutoff_settlements.json"), J("outputs/diagnostics/detect_asc85.json")
-    rgba, bounds = class_overlay(a.cls)
-    m = folium.Map(location=[(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2], zoom_start=11, tiles=None)
-    folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)          # CartoDB tiles now need an API key
-    folium.TileLayer(tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                     attr="Esri World Imagery (basemap only, not an input)", name="Satellite basemap", show=False).add_to(m)
-    folium.raster_layers.ImageOverlay(rgba, bounds, name="Detected change (base) + radar-unobservable (grey)", opacity=1, zindex=3).add_to(m)
-    for nm in ("low", "high"):
-        p = Path(a.sens_dir) / nm / "fused_class_30m.tif"
-        if p.exists():
-            r2, b2 = class_overlay(str(p)); folium.raster_layers.ImageOverlay(r2, b2, name=f"Scenario: {nm} threshold", opacity=1, show=False, zindex=2).add_to(m)
-    def geo(path, name, style, show=True):
-        if Path(path).exists():
-            g = gpd.read_file(path).to_crs(4326)
-            if len(g): folium.GeoJson(g[["geometry"]].to_json(), name=name, style_function=lambda _: style, show=show).add_to(m)
-    geo("outputs/affected_roads.geojson", "Motorable roads in mask", {"color": "#7a0177", "weight": 3})
-    geo("outputs/affected_bridges.geojson", "Bridges exposed (not failed)", {"color": "#000000", "weight": 5})
-    geo(f"{a.flood_path}/corridor.geojson", "Flood-path corridor", {"color": "#1f77b4", "weight": 1, "fillOpacity": 0.15}, show=False)
-    geo(f"{a.flood_path}/path.geojson", "Flood path (D8)", {"color": "#08519c", "weight": 3}, show=False)
-    if Path("outputs/affected_buildings.gpkg").exists():
-        b = gpd.read_file("outputs/affected_buildings.gpkg").to_crs(4326); b = b[b["tier"] == "overlap"]
-        folium.GeoJson(b[["geometry"]].to_json(), name=f"Buildings overlapping the mask ({len(b):,})",
-                       style_function=lambda _: {"color": "#cc0000", "weight": 1, "fillOpacity": 0.5}).add_to(m)
-    fg, fb_g = folium.FeatureGroup(name="Settlements by road access to a hospital").add_to(m), folium.FeatureGroup(name="First break on the route").add_to(m)
-    for s in cut["settlements"]:
-        h = s["hospital"]
-        pop = (f"<b>{s['name']}</b><br>status: {h['status']}<br>to hospital: {h['pre_km']} km before, {h['post_km']} km after"
-               f"<br>share of route observed by the detector: {s['route_assessed_frac']}")
-        folium.CircleMarker([s["lat"], s["lon"]], radius=5 if h["status"] in ("cut_off", "degraded") else 3, color=STATUS.get(h["status"], "gray"),
-                            fill=True, fill_opacity=0.8, popup=folium.Popup(pop, max_width=260)).add_to(fg)
-        if s.get("first_break"):
-            f = s["first_break"]; folium.Marker([f["lat"], f["lon"]], icon=folium.Icon(color="black", icon="remove"),
-                                                popup=f"first break ({f['cause']}) on the route of {s['name']}").add_to(fb_g)
-    if Path("data/raw/osm/hospitals.geojson").exists():
-        for _, r in gpd.read_file("data/raw/osm/hospitals.geojson").to_crs(4326).iterrows():
-            c = r.geometry.centroid; folium.Marker([c.y, c.x], icon=folium.Icon(color="blue", icon="plus"), popup=str(r.get("name") or "hospital")).add_to(m)
-    rr, rc, bs = imp["sensitivity"]["range"], cut["sensitivity"]["range"], imp["buildings"]
-    sp = lambda r: f"{r[0]:,}" if r[0] == r[1] else f"{r[0]:,}&ndash;{r[1]:,}"
-    unk = (bs["not_assessed"] + bs["unobservable"]) / bs["total"]
-    _cn = Path("outputs/validation/class_nulls.json")
-    null_note = "" if not _cn.exists() else "<br><b>" + json.loads(_cn.read_text(encoding="utf-8"))["statement"] + "</b>"
-    panel = (f"<div style='position:fixed;top:10px;left:50px;z-index:9999;background:#fff;padding:8px 12px;border:1px solid #888;font:12px sans-serif;max-width:380px'>"
-             f"<b>Trishuli / Bhote Koshi flood, {config.FLOOD_DATE}</b> &mdash; <i>educational prototype, not an operational tool; exposure to a detected mask, "
-             f"not a validated flood extent</i>{null_note}<br>Detector status: <b>{det['status']}</b> &middot; buildings overlapping the mask: <b>{sp(rr['buildings_overlap'])}</b> "
-             f"(unknown status: {unk:.0%}) &middot; motorable road in mask: {rr['motorable_road_km'][0]:.1f}&ndash;{rr['motorable_road_km'][1]:.1f} km &middot; "
-             f"bridges exposed: {sp(rr['bridges_exposed'])} &middot; settlements cut off from a hospital: <b>{sp(rc['hospital_cut_off'])}</b> "
-             f"(range: thresholds, mask &plusmn;1 px, bridge policy)<br><span style='color:#1f77b4'>&#9632;</span> flood-like "
-             f"<span style='color:#e6550d'>&#9632;</span> dark change <span style='color:#d62728'>&#9632;</span> bright change "
-             f"<span style='color:#6e6e6e'>&#9632;</span> radar-unobservable</div>")
-    foot = f"<div style='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(255,255,255,.9);font:10px sans-serif;padding:2px 6px'>{ATTR}</div>"
-    m.get_root().html.add_child(folium.Element(panel + foot)); folium.LayerControl(collapsed=False).add_to(m)
-    Path(a.out).parent.mkdir(parents=True, exist_ok=True); m.save(a.out); print("wrote", a.out)
+    ap.add_argument("--flood-path", default="outputs/flood_path"); ap.add_argument("--flood-path-trib", default="outputs/flood_path_trib")
+    ap.add_argument("--out", default="outputs/dashboard/index.html")
+    a = ap.parse_args()
+    build(a.out, a.cls, a.sens_dir, a.flood_path, a.flood_path_trib)
+
 
 if __name__ == "__main__":
     main()

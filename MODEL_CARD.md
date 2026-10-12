@@ -26,19 +26,20 @@ Open water only. No allowed dataset labels debris; debris and damage evidence co
 | test | 0.682 | 0.002 | 0.680 | 0.683 |
 | bolivia | 0.702 | 0.020 | 0.680 | 0.719 |
 
+Bolivia (the only unseen-region test, 15 chips): seed range 0.68–0.72; shipped-model chip CI 0.46–0.80: the interval is wide.
+
 3 seeds (0, 1, 2); the **seed-0 model is the shipped model**; seeds 1-2 only measure training noise.
 <!-- /STEP8:seeds -->
 
 ## Himalayan evidence
-
 <!-- STEP8:himalaya -->
 Himalayan hand-labelled chips: not evaluated yet.
-
-Agreement with Sentinel-2 MNDWI water on clear valley-floor pixels (a pseudo-reference, **not accuracy**: turbid water fools MNDWI, S1 and S2 are 1–4 days apart, 30 m): post (20260827) IoU 0.06, P 0.51, R 0.07, n=31,000; pre (20260812) IoU 0.03, P 0.49, R 0.03, n=22,127.
 
 Corridor test (prediction-only; shadow/layover masked, floor via HAND): new-water excess main − tributary floor 0.0086 vs largest leave-one-out null 0.0076: **not separable from the nulls**.
 
 The model detects **open water only**: no allowed training dataset labels debris, so debris and mud come from the change detector, not the AI.
+
+*Limitation (not a headline): AI vs Sentinel-2 cannot arbitrate.* Agreement with Sentinel-2 MNDWI water on clear valley-floor pixels is a pseudo-reference, **not accuracy** (turbid water fools MNDWI, S1 and S2 are 1–4 days apart, 30 m), and its precision is about 0.5 on both the pre- and post-event dates, so agreement that does not change with the event cannot arbitrate: post (20260827) IoU 0.06, P 0.51, R 0.07, n=31,000; pre (20260812) IoU 0.03, P 0.49, R 0.03, n=22,127.
 <!-- /STEP8:himalaya -->
 
 
@@ -52,3 +53,5 @@ Radar shadow in mountains; turbid or sediment-laden water; urban areas; arid sce
 
 ## Licences and attribution
 Sen1Floods11 (Bonafilia et al., 2020). ImageNet-pretrained ResNet34 weights via segmentation-models-pytorch; check and cite the weights' licence.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).

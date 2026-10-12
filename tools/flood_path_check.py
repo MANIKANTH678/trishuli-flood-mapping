@@ -3,7 +3,7 @@
 2. Distance along the path and offset of each EMSR927 AOI centroid (Syapru Besi, Timure, Bidur, Phosretar), so the
    downstream order can be read off. EMS is read here only to check geometry, never as an input.
 python tools/flood_path_check.py --path-dir outputs/flood_path"""
-import argparse, json
+import argparse, json, re, sys
 from pathlib import Path
 import numpy as np, geopandas as gpd, pyogrio, shapely
 
@@ -12,8 +12,11 @@ NAMES = {"AOI01": "Syapru Besi", "AOI02": "Timure", "AOI03": "Bidur", "AOI05": "
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--path-dir", default="outputs/flood_path"); ap.add_argument("--rivers", default="data/raw/osm/rivers.geojson")
-    ap.add_argument("--emsr-dir", default="data/external/EMSR927"); ap.add_argument("--crs", default="EPSG:32645"); ap.add_argument("--res", type=float, default=30)
+    ap.add_argument("--emsr-dir", default="data/external/EMSR927"); ap.add_argument("--crs", help="metric CRS (default: the CRS of data/processed/dem_30m.tif)"); ap.add_argument("--res", type=float, default=30)
     a = ap.parse_args(); d = Path(a.path_dir)
+    if not a.crs:
+        import rasterio
+        with rasterio.open("data/processed/dem_30m.tif") as s_: a.crs = s_.crs.to_string()
     path = gpd.read_file(d / "path.geojson").to_crs(a.crs).geometry.iloc[0]
     riv = shapely.union_all(gpd.read_file(a.rivers).to_crs(a.crs).geometry.to_numpy())
     pts = [path.interpolate(t) for t in np.arange(0, path.length, a.res)]
@@ -33,9 +36,16 @@ def main():
     res["median_distance_to_osm_river_px"] = res["path_vs_osm_river_px"]["median"]
     exp = [n for n in ("Timure", "Syapru Besi", "Bidur", "Phosretar") if n in res["ems_order_downstream"]]   # upstream -> downstream
     res["order_ok"] = res["ems_order_downstream"] == exp
+    # EMS locality names vs the OSM settlement layer: name:en first (the local `name` is often Devanagari), then name / alt_name
     st = gpd.read_file("data/raw/osm/settlements.geojson")
-    names = " ".join(st[[c for c in st.columns if c.startswith("name") or c.startswith("alt_name")]].fillna("").astype(str).values.ravel()).lower()
-    res["missing"] = [n for n in NAMES.values() if n.lower() not in names]       # EMS localities absent from the OSM settlement layer
+    norm = lambda t: re.sub(r"[^a-z]", "", str(t).lower())
+    cols = [c for c in ("name:en", "name", "int_name", "alt_name", "alt_name:en", "old_name") if c in st.columns]
+    match = {}
+    for n in NAMES.values():
+        k = norm(n); match[n] = next((c for c in cols if any(k and k in norm(v) for v in st[c].dropna())), None)
+    res["name_match"] = {n: (c or "absent") for n, c in match.items()}
+    res["missing"] = [n for n, c in match.items() if c is None]                 # absent from every OSM name column
+    res["missing_name_en"] = [n for n, c in match.items() if c != "name:en"]   # not found in name:en
     (d / "check.json").write_text(json.dumps(res, indent=2)); print(json.dumps(res, indent=2))
 
 if __name__ == "__main__":

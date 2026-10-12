@@ -50,3 +50,45 @@ flood_water is separable only if event area > 3x the largest null area
 - AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
 - corridor: not separable from the nulls
 - No EMS data was read by any of these runs.
+
+### Step 8/9 runs logged 2026-10-11 19:09 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. [class_nulls.json 9da5ed0cf781]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.
+
+### Step 8/9 runs logged 2026-10-11 19:09 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. [class_nulls.json 9da5ed0cf781]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).
+
+### Step 8/9 runs logged 2026-10-12 10:42 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. [class_nulls.json 9da5ed0cf781]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.
+
+### Step 8/9 runs logged 2026-10-12 10:46 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. [class_nulls.json 9da5ed0cf781]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.
+
+### Step 8/9 runs logged 2026-10-12 10:48 (tools/write_step8_docs.py)
+- class nulls (ungated, leave-one-out, rule >3x): Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. [class_nulls.json 9da5ed0cf781]
+- seeds: valid 0.672±0.005, test 0.682±0.002, bolivia 0.702±0.020 [seeds_summary.json cafbf933cce9]
+- Himalayan chips: not run; label agreement None [points.csv 632dec9b3f5e]
+- AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
+- corridor: not separable from the nulls
+- No EMS data was read by any of these runs.

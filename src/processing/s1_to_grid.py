@@ -39,6 +39,18 @@ def db(lin):
     with np.errstate(divide="ignore", invalid="ignore"):
         return np.where(lin > 0, 10 * np.log10(lin), np.nan)
 
+def grid_dem(bbox, epsg, dem_path="data/raw/dem/dem_glo30_wgs84.tif", resolutions=(10, 30), out=OUT):
+    """THE analysis grid: data/processed/dem_{10,30}m.tif on make_grids(bbox, epsg). Every later stage reads its grid from
+    dem_30m.tif, so the SNAP route (this file) and the PC route (src/processing/pc_stack.py) both call this."""
+    g = make_grids(tuple(bbox), epsg); Path(out).mkdir(parents=True, exist_ok=True)
+    for res in resolutions:
+        t, W, H = g[res]; dem = np.full((H, W), np.nan, np.float32)
+        with rasterio.open(dem_path) as src:
+            reproject(rasterio.band(src, 1), dem, src_nodata=-9999, dst_nodata=np.nan,
+                      dst_transform=t, dst_crs=f"EPSG:{epsg}", resampling=Resampling.bilinear)
+        write(Path(out) / f"dem_{res}m.tif", dem, t, epsg)
+    return g
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bbox", required=True); ap.add_argument("--epsg", required=True)
@@ -47,12 +59,7 @@ def main():
     bbox = tuple(map(float, a.bbox.split(","))); g = make_grids(bbox, a.epsg)
     OUT.mkdir(parents=True, exist_ok=True)
 
-    for res in (10, 30):
-        t, W, H = g[res]; dem = np.full((H, W), np.nan, np.float32)
-        with rasterio.open(a.dem) as src:
-            reproject(rasterio.band(src, 1), dem, src_nodata=-9999, dst_nodata=np.nan,
-                      dst_transform=t, dst_crs=f"EPSG:{a.epsg}", resampling=Resampling.bilinear)
-        write(OUT / f"dem_{res}m.tif", dem, t, a.epsg)
+    grid_dem(bbox, a.epsg, a.dem)
 
     for split in a.splits.split(","):
         for pol in ("VV", "VH"):

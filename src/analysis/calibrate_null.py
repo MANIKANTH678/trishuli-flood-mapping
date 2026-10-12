@@ -27,7 +27,7 @@ for j in members:
         far[t].append(float(patch_filter(floor & any_seed(z["VH"], zc, t), MINPX)[floor].mean()))
 worst = {t: max(v) for t, v in far.items()}
 ok = [t for t in GRID if worst[t] <= a.alpha]; t_hi = ok[0] if ok else GRID[-1]
-out = {"members": members, "alpha": a.alpha, "t_hi": t_hi, "null_far_max_at_t_hi": worst[t_hi],
+out = {"members": members, "alpha": a.alpha, "alpha_met": bool(ok), "t_hi": t_hi, "null_far_max_at_t_hi": worst[t_hi],
        "far_max_by_threshold": {str(t): v for t, v in worst.items()},
        "far_mean_by_threshold": {str(t): float(np.mean(v)) for t, v in far.items()},
        "floor_m": a.floor_m, "res": R, "min_patch_px": MINPX}

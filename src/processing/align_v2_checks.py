@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """align_v2_checks.py — verify pre/post S1 pairs are on the same
-relative orbit, pass direction, and 12-day repeat interval.
+relative orbit and pass direction (fatal), and report the date gap (Step 10.1: a gap that
+is not a multiple of the 6/12-day repeat is only a WARNING; same-track geometry is what matters).
 
-Reads manifest.safe from every .SAFE folder in data/raw/s1/{pre,post}/
-and raises if invariants are violated.
+Reads manifest.safe from every .SAFE folder in data/raw/sentinel1/{pre,post}/
+and exits 1 if the orbit or pass invariants are violated.
 """
 from __future__ import annotations
 import re
@@ -64,9 +65,8 @@ def main():
         print(f"\npre  = {pre}")
         print(f"post = {post}")
         print(f"gap  = {days} days")
-        if days != 12:
-            print(f"⚠️  expected 12-day S1 repeat, got {days}")
-            ok = False
+        if days % 6 != 0:
+            print(f"WARNING: gap of {days} days is not a multiple of the 6/12-day repeat (same-track geometry is what matters)")
 
     sys.exit(0 if ok else 1)
 

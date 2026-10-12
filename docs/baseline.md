@@ -61,3 +61,5 @@ HAND (hand.py, 30 m): <=15 m 4.0%, <=30 m 6.2%, <=60 m 10.1% of valid pixels.
 Radar mask (radar_mask.py, scene-wide, incidence 38.77 deg): ok 74.1%, layover 5.4%, shadow 0.5%, cast shadow 0.4%, poor local incidence 19.6%.
 
 Note: hand.py carries the np.in1d shim for NumPy 2.5; the committed code includes it.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).

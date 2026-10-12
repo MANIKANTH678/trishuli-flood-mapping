@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import numpy as np, rasterio, torch
 from src.modeling.dataset import normalize
-from src.modeling.common import build_model
+from src.modeling.common import build_model, default_run, load_weights
 
 @torch.no_grad()
 def predict(model, dev, db, T, stride):
@@ -25,8 +25,8 @@ def main():
     ap.add_argument("--splits", default="post,pre,placebo,pre3,pre4"); ap.add_argument("--res", type=int, default=10)
     ap.add_argument("--proc-dir", default="data/processed"); ap.add_argument("--out-dir", default="data/processed/ai")
     ap.add_argument("--tile", type=int, default=512); ap.add_argument("--stride", type=int, default=256)
-    a = ap.parse_args(); run = Path(a.run or f"outputs/ai/{a.arch}"); dev = "cuda" if torch.cuda.is_available() else "cpu"
-    model = build_model(a.arch).to(dev); model.load_state_dict(torch.load(a.ckpt or run / "model.pt", map_location=dev)); model.eval()
+    a = ap.parse_args(); run = Path(a.run) if a.run else default_run(a.arch); dev = "cuda" if torch.cuda.is_available() else "cpu"
+    model = build_model(a.arch, pretrained=False).to(dev); load_weights(model, run, a.ckpt, dev); model.eval()
     Path(a.out_dir).mkdir(parents=True, exist_ok=True)
     for sp in a.splits.split(","):
         with rasterio.open(f"{a.proc_dir}/s1_{sp}_VV_{a.res}m.tif") as s: vv, prof = s.read(1, masked=True).astype("float32").filled(np.nan), s.profile

@@ -38,7 +38,18 @@
   ],
   "median_distance_to_osm_river_px": 0.59,
   "order_ok": true,
+  "name_match": {
+    "Syapru Besi": "absent",
+    "Timure": "absent",
+    "Bidur": "name:en",
+    "Phosretar": "absent"
+  },
   "missing": [
+    "Syapru Besi",
+    "Timure",
+    "Phosretar"
+  ],
+  "missing_name_en": [
     "Syapru Besi",
     "Timure",
     "Phosretar"

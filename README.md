@@ -21,7 +21,7 @@ OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
 
 ## Pipeline
 
-`run_all.sh` runs these stages in order. A failure stops the run.
+`python -m src.run` (one entry point; `run_all.sh` is now a thin wrapper over it) runs these stages in order. A failure stops the run; see `docs/judges_day.md`.
 
 | #   | Stage                           | Script                                                                                   | Output                                                                                                                                                                                                               |
 | --- | ------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,27 +124,30 @@ interval is wide. Sen1Floods11 contains no Himalayan scenes. See `MODEL_CARD.md`
 
 | Metric                                                           | Value                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Water model (ResNet34 U-Net, Sen1Floods11), pooled IoU [95% CI] | val 0.672 [0.59, 0.74]; test 0.682 [0.57, 0.77]; Bolivia 0.680 [0.46, 0.80]. Old checkpoint: val 0.575, test 0.612, Bolivia 0.666 |
-| Labelled Himalayan chips | not made: no labelled Himalayan test exists; Sen1Floods11 has no Himalayan scenes |
+| Water model (ResNet34 U-Net, Sen1Floods11), pooled IoU [95% CI] | val 0.672 [0.59, 0.74]; test 0.682 [0.57, 0.77]; Bolivia (unseen region, 15 chips) 0.680, chip CI 0.46–0.80 (seed mean 0.702 ± 0.020). Old checkpoint: val 0.575, test 0.612, Bolivia 0.666 |
+| Labelled Himalayan chips | Not labelled. Clear-sky check (≥70% clear S2) keeps 0 of 20 chips on 27 Aug and 0 of 20 on 12 Aug, so any chip result is qualitative only (docs/chip_protocol.md) |
 | Detector threshold (null-calibrated)                             | t_hi 4.0: the smallest grid value whose worst leave-one-out false-alarm fraction is ≤ 1e-3 (3.5e-4 at 4.0). t_lo 2.5. Gate: seed fraction must exceed 1.05e-3 of the assessed floor                                                                    |
 | Event vs null                                                    | Event seed fraction 1.09e-2 (about 10× the gate), status `change_detected`. A pre-event scene tested against the other references: 0.0, `no_significant_change` (that scene was also one of the four calibration scenes)                               |
+| Class-level nulls | Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. |
 | Assessed floor                                                   | 199.9 km² (HAND ≤ 30 m), 89.7% radar-observable                                                                                                                                                                                                        |
-| Detected change                                                  | Flood water 0.31 km² (340 px). Surface change: dark 2.29 km², bright 0.54 km² (descriptive classes, not confirmed damage)                                                                                                                              |
+| Detected change | Water-like backscatter change ("flood-like") 0.31 km² (340 px). Surface change: dark 2.29 km², bright 0.54 km² (descriptive classes, not confirmed damage) |
 | Backscatter change (post − pre)                                  | river, 60 m buffer: median +0.02 dB, p1 −6.22 dB; river shifted ±1500 m: −0.08 dB, p1 −4.74 / −4.46 dB; whole scene: +0.00 dB. Flood-water pixels (340): −7.92 dB (the mask is selected on change, so this is not independent evidence)                |
 | EMSR927 damage points vs detected classes (1-3), assessed domain | Recall at 0 m [95% block-bootstrap CI] vs chance: AOI03 (hold-out) 23% [11-33%] vs 9%; AOI05 8% [2-18%] vs 8%. Indistinguishable from chance at 0, 30, 60 and 100 m in both. AOI01 and AOI02 flag nothing. Chance model relocates the mask's own blobs |
 | Buildings overlapping the mask vs EMS damage points              | Within 30 m of a damage point: AOI03 97% (n=329, baseline 54%); AOI05 78% (n=36, baseline 44%). A lower bound, and not independent of landslide location                                                                                               |
 | Detections on mapped landslide polygons                          | Precision (a lower bound) / recall / IoU: Bidur (hold-out AOI) 0.93 / 0.17 / 0.17; Phosretar 0.99 / 0.24 / 0.24; Syapru Besi and Timure 0 for all three. Landslide polygons are not flood extent, so these are proxies                                 |
 | EMSR927 content on the assessed floor                            | Damage points / landslide area: Bidur 91% / 95%; Phosretar 85% / 96%; Syapru Besi 40% / 56%; Timure 29% / 59%                                                                                                                                          |
 | AI corridor water test (prediction-only, shadow/layover masked, floor via HAND) | New-water excess main − tributary floor 0.86% vs largest leave-one-out null 0.76% (1.13x): not separable from the nulls. Does not independently confirm the flood |
-| Buildings in surface-change or flood classes                     | 3 flooded + 473 in surface-change classes, of 189,503 (0.002 % flooded). Not a validated flood                                                                                                                                                         |
-| Roads / bridges in flood class                                   | 0 of 14,151 roads; 0 of 385 bridges                                                                                                                                                                                                                    |
-| Settlements cut off from all 20 hospitals                        | 0 of 446 (379 reach a hospital before and after). The flood-water class is small, so this is not evidence that nothing was cut off                                                                                                                     |
+| Buildings overlapping the change mask (exposure, not damage) | **556** (scenario range 244–1,078) of 189,503; 92% of buildings are of unknown status (outside the assessed or radar-observable floor), not clear |
+| Bridges exposed (not failed) | 20 of 385 (range 12–30); 11.8 km of motorable road overlapping the mask (range 6.4–22.0 km) |
+| Settlements cut off from hospitals | 4 of 446 (range 2–12); 141 have no pre-flood road route to a hospital (not assessed, never counted as cut off). No cut-off ground truth |
 
 The EMSR927 numbers are proxies: the downloaded GRA products (AOI01 v1, AOI02 v2, AOI03 v1,
 AOI05 v2) contain landslide polygons and building damage points, not a flood extent, so the
 flood class is not validated against EMS. Earlier pipeline stages also ran EMS comparison
 scripts, so this is not an independent validation. No locality or district breakdown is reported: none of the flooded buildings
 carries an OSM `addr:city` tag and no administrative boundary layer is included.
+
+EMSR927 GRA products held locally (checked 2026-10-11) contain landslide polygons and damage points, no flood-extent layer. EMS data: European Union, Copernicus Emergency Management Service data (checking only, never an input).
 
 Full discussion: `FINAL_REPORT.md`.
 
@@ -174,7 +177,12 @@ python -m pytest tests/ -q
 
 ## Attribution
 
-See [ATTRIBUTION.md](ATTRIBUTION.md). Code: MIT. Data: own licenses.
+- Contains modified Copernicus Sentinel data 2026.
+- Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
+- © OpenStreetMap contributors.
+- European Union, Copernicus Emergency Management Service data (EMSR927, checking only).
+
+Educational prototype, not an operational tool. Full credits and licences: [ATTRIBUTION.md](ATTRIBUTION.md). Code: MIT. Data: own licences.
 
 ## Step 5: Sentinel-2 branch and fusion
 
@@ -206,7 +214,7 @@ Rule written before the run: separable only if event area > 3x the largest null 
 | surface_dark | 2.294 | 0.040 | 57.9 | yes |
 | surface_bright | 0.542 | 0.092 | 5.9 | yes |
 
-**Flood-like (new open water) change is separable from the no-flood nulls.**
+**Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.**
 
 ### AI model: seeds
 
@@ -216,17 +224,19 @@ Rule written before the run: separable only if event area > 3x the largest null 
 | test | 0.682 | 0.002 | 0.680 | 0.683 |
 | bolivia | 0.702 | 0.020 | 0.680 | 0.719 |
 
+Bolivia (the only unseen-region test, 15 chips): seed range 0.68–0.72; shipped-model chip CI 0.46–0.80: the interval is wide.
+
 3 seeds (0, 1, 2); the **seed-0 model is the shipped model**; seeds 1-2 only measure training noise.
 
 ### AI model: Himalayan evidence
 
 Himalayan hand-labelled chips: not evaluated yet.
 
-Agreement with Sentinel-2 MNDWI water on clear valley-floor pixels (a pseudo-reference, **not accuracy**: turbid water fools MNDWI, S1 and S2 are 1–4 days apart, 30 m): post (20260827) IoU 0.06, P 0.51, R 0.07, n=31,000; pre (20260812) IoU 0.03, P 0.49, R 0.03, n=22,127.
-
 Corridor test (prediction-only; shadow/layover masked, floor via HAND): new-water excess main − tributary floor 0.0086 vs largest leave-one-out null 0.0076: **not separable from the nulls**.
 
 The model detects **open water only**: no allowed training dataset labels debris, so debris and mud come from the change detector, not the AI.
+
+*Limitation (not a headline): AI vs Sentinel-2 cannot arbitrate.* Agreement with Sentinel-2 MNDWI water on clear valley-floor pixels is a pseudo-reference, **not accuracy** (turbid water fools MNDWI, S1 and S2 are 1–4 days apart, 30 m), and its precision is about 0.5 on both the pre- and post-event dates, so agreement that does not change with the event cannot arbitrate: post (20260827) IoU 0.06, P 0.51, R 0.07, n=31,000; pre (20260812) IoU 0.03, P 0.49, R 0.03, n=22,127.
 
 ### Flood path (bonus)
 

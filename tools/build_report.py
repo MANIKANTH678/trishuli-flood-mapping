@@ -11,11 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
 from src import config
 from src.report.pdf_gate import to_pdf
+from src.report import attribution as ATTR
 
 AOI = {"AOI01": "Syapru Besi", "AOI02": "Timure", "AOI03": "Bidur", "AOI05": "Phosretar"}
-REQ_ATTR = ('"Contains modified Copernicus Sentinel data 2026." "Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus '
-            'Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved." '
-            '"© OpenStreetMap contributors."')
+REQ_ATTR = " ".join(f'"{x}"' for x in ATTR.REQUIRED)        # exact strings, from src/report/attribution.py
 
 def J(p, need=False):
     p = ROOT / p
@@ -133,7 +132,7 @@ ResNet34 U-Net (segmentation-models-pytorch), Sentinel-1 VV+VH input, trained on
 |---|---|---|---|
 {chr(10).join(rows)}
 
-{'Himalayan chips by stratum: ' + per + '.' if per else ''}{ceil} Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Agreement with Sentinel-2 MNDWI water on clear floor pixels (pseudo-reference, not accuracy): {s2t}. Corridor null test (prediction-only): excess {f3((cor or {}).get('event', {}).get('excess'))} vs largest leave-one-out null {f3((cor or {}).get('max_null_excess'))}: **{(cor or {}).get('verdict', 'not run')}**. The model detects **open water only**; no allowed dataset labels debris, so debris comes from the change detector.""")
+{'Himalayan chips by stratum: ' + per + '.' if per else ''}{ceil} Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Bolivia (the only unseen-region test, 15 chips): shipped IoU {f3((sp.get('bolivia') or {}).get('at_threshold', {}).get('iou'))}, chip CI {f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[0])}–{f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[1])}. Corridor null test (prediction-only): excess {f3((cor or {}).get('event', {}).get('excess'))} vs largest leave-one-out null {f3((cor or {}).get('max_null_excess'))}: **{(cor or {}).get('verdict', 'not run')}**. The model detects **open water only**; no allowed dataset labels debris, so debris comes from the change detector.""")
 
     if ems:
         er, verd = [], []
@@ -163,11 +162,12 @@ The local EMSR927 products are grading maps: `observedEventA` is **landslide** p
            (f"Sentinel-2: {s2d['floor_clear_post_fraction']:.0%} of the floor has clear post-event coverage; status {s2d['status']}, so S2 is excluded from the fused product." if s2d else "Sentinel-2 excluded (gate not passed)."),
            "No cause attribution: flood-like, dark and bright are surface-change classes; bridges are exposed, never known failed.",
            f"OSM currency: snapshot {config.OSM_SNAPSHOT_DATE}; rural Rasuwa is under-mapped ({no_path} settlements have no pre-flood route), so cut-off can be overstated and damage undercounted.",
-           "No cut-off ground truth exists; the scenario range is the uncertainty we can quantify.", null_line]
+           "No cut-off ground truth exists; the scenario range is the uncertainty we can quantify.", null_line,
+           f"AI vs Sentinel-2 cannot arbitrate (appendix only): S2 MNDWI agreement on clear floor pixels is a pseudo-reference ({s2t}); precision is about 0.5 on both the pre- and post-event dates, so agreement that does not change with the event cannot arbitrate anything."]
     S.append("## 6. Limitations\n\n" + "\n".join(f"- {x}" for x in lim))
     S.append(f"""## 7. Attribution and citations
 
-{REQ_ATTR} Copernicus EMS credit: "European Union, Copernicus Emergency Management Service data" (EMSR927, checking only). Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0).{f" Flood-path bonus: D8 path {fpj['path_km']} km, {fpj['n_settlements']} settlements on the HAND corridor (geometry only, no hydraulics)." if fpj else ''}""")
+{REQ_ATTR} Copernicus EMS credit: "{ATTR.EMS}" (EMSR927, checking only). {ATTR.EMS_HOLDINGS} {ATTR.DISCLAIMER} Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0).{f" Flood-path bonus: D8 path {fpj['path_km']} km, {fpj['n_settlements']} settlements on the HAND corridor (geometry only, no hydraulics)." if fpj else ''}""")
 
     md = "\n\n".join(S).replace("{width=49%}", "").replace("{width=70%}", "")
     out = ROOT / "docs" / "REPORT.md"; out.write_text(md, encoding="utf-8"); print("wrote", out, len(md.split()), "words")

@@ -12,3 +12,5 @@ Limits: criteria written after the first event run; one event pair and one place
 ## Landslide check (step 3.9, after the outcome above)
 
 Main-stem floor exceedances lie mainly on EMSR927 mapped landslide polygons (VV 507 of 688, VH 1246 of 1664); none inside the AOIs off the polygons; Bidur held out. None at the Rasuwa AOIs. Does not separate flooding from debris or sediment. See FINAL_REPORT section 4.1c.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).

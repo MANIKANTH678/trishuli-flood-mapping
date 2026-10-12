@@ -68,61 +68,68 @@ def slide(title, lines, size=22):
         p.font.size = Pt(size)
 
 
-slide("Trishuli / Bhote Koshi flood: Sentinel-1 analysis",
-      ["Calibrated, terrain-corrected SAR and OpenStreetMap exposure",
-       "Preliminary and unvalidated",
+det = J(f"outputs/diagnostics/detect_{config.TRACK}.json")
+_cn = ROOT / "outputs/validation/class_nulls.json"
+cn = json.loads(_cn.read_text(encoding="utf-8")) if _cn.exists() else None
+_co = ROOT / "outputs/validation/ai_corridor.json"
+co = json.loads(_co.read_text(encoding="utf-8")) if _co.exists() else None
+b, rr = imp["buildings"], (imp.get("sensitivity") or {}).get("range") or {}
+rb = imp["roads_bridges"]["exposure_by_tolerance"]["0m"]
+cutj = J("outputs/cutoff_settlements.json"); rc = (cutj.get("sensitivity") or {}).get("range") or {}
+def rng(r, k, fmt="{:,}"):
+    v = r.get(k)
+    return "" if not v else f" (range {fmt.format(v[0])}-{fmt.format(v[1])})"
+unk = (b["not_assessed"] + b["unobservable"]) / max(b["total"], 1)
+A_ = det["area_km2"]
+
+slide(config.TITLE + ": Sentinel-1 analysis",
+      ["Calibrated SAR change detection and OpenStreetMap exposure",
+       "Educational prototype, not an operational tool",
        datetime.date.today().isoformat()])
 
 slide("Problem",
-      [f"• Suspected GLOF on {config.FLOOD_DATE}, Rasuwa District, Nepal",
-       "• Can free Sentinel-1 data map flood extent and impact quickly?",
-       "• The downloaded EMSR927 GRA products have no flood-extent layer"])
+      [f"• Event date {config.FLOOD_DATE}, {config.AREA_NAME}",
+       "• Can free Sentinel-1 data show where the valley floor changed, and what is exposed?",
+       "• Checking only: Copernicus EMS products (EMSR927 GRA: landslide polygons and damage points, no flood-extent layer)"])
 
 slide("Data",
-      [f"• Sentinel-1 GRD VV/VH: {config.PRE_DATE} (pre), {config.POST_DATE} (post)",
-       "• Copernicus GLO-30 DEM",
+      [f"• Sentinel-1 GRD VV/VH, track {det['track']}: references {', '.join(config.REF_DATES[r] for r in det['refs'])}; post {config.POST_DATE}",
+       "• Copernicus GLO-30 DEM (HAND valley floor, radar layover / shadow mask)",
        f"• OpenStreetMap snapshot of {config.OSM_SNAPSHOT_DATE} (pre-event)",
-       "• EMSR927 damage points, used only for validation"])
+       "• EMS products used only for checking"])
 
 slide("Method",
-      ["1. SNAP: orbit file, noise removal, sigma0, terrain correction",
-       "2. Average to a 30 m grid (UTM 45N)",
-       "3. Detect: mean VV/VH change below a threshold, flat land only",
-       "4. Overlay on OSM and validate against EMSR927"])
+      ["1. SNAP: orbit file, noise removal, sigma0, terrain correction; 30 m grid",
+       f"2. Robust-z change of the post scene against {len(det['refs'])} pre-event references, valley floor only",
+       "3. Thresholds from leave-one-out null runs on pre-event dates (no EMS)",
+       "4. Overlay on pre-event OSM: exposure, bridges exposed, hospital access"])
 
 slide("Key finding",
-      ["• No detectable flood signal on this Sentinel-1 pair",
-       "• River VV change in the Rasuwa reach is no darker than shifted controls",
-       "• The pair cannot resolve the event; it does not show that no flood occurred"])
+      [f"• Detector status: {det['status']} (calibrated = {det['calibrated']})",
+       f"• Flagged: {A_['flood_water']:.2f} km² flood-like (water-like backscatter change), {A_['surface_dark']:.2f} km² dark, {A_['surface_bright']:.2f} km² bright",
+       "• " + (cn["statement"] if cn else "Class-level nulls not run"),
+       "• Surface change on the valley floor, not a validated flood extent"], size=16)
 
-slide("Detector mask (unvalidated)",
-      [f"• {px:,} px ({area:.2f} km²), scattered",
-       "• Threshold clipped to -3.5 to -1.5 dB, slope under 12°, patches of 20+ px",
-       "• Selected from noise-level change, so not a flood extent"])
-
-slide("Exposure to the mask",
-      [f"• Buildings: {imp['flooded_buildings']:,} of {imp['total_buildings']:,} "
-       f"(+{imp['debris_buildings']:,} debris-affected)",
-       f"• Road segments: {imp['flooded_roads']:,} of {imp['total_roads']:,}",
-       f"• Bridges: {imp['flooded_bridges']:,} of {imp['total_bridges']:,}",
-       f"• Settlements cut off: {cut['cut_off']} of {cut['total_settlements']}"])
+slide("Exposure to the mask (not damage)",
+      [f"• Buildings overlapping the mask: {b['overlap']:,}{rng(rr, 'buildings_overlap')} of {b['total']:,}; {unk:.0%} unknown status",
+       f"• Motorable road in mask: {rb['motorable_road_km']:.1f} km{rng(rr, 'motorable_road_km', '{:.1f}')}",
+       f"• Bridges exposed (not failed): {rb['bridges']}{rng(rr, 'bridges_exposed')}",
+       f"• Settlements with no road path to a hospital: {cut.get('cut_off', 0)}{rng(rc, 'hospital_cut_off')} of {cut['total_settlements']}"], size=18)
 
 slide("Validation",
       ems_lines(val) +
-      ["• U-Net (Sen1Floods11) cannot separate the two scenes, so it is not "
-       "independent evidence"], size=20)
+      ([f"• Water model on the corridor (prediction-only): {co['verdict']}, so it is not independent evidence"] if co else []), size=18)
 
 slide("Deliverables",
-      ["• Interactive dashboard (outputs/dashboard.html)",
-       "• Situation report and final report",
-       "• Reproducible pipeline (run_all.sh)",
-       "• Trained U-Net weights (flood_unet.pt)"])
+      ["• Interactive dashboard (outputs/dashboard/index.html, works offline)",
+       "• Situation reports (EN, NE, one page) and docs/REPORT.pdf",
+       "• Reproducible pipeline: python -m src.run (SNAP route; --s1-source pc cross-check)",
+       "• Water-model weights (models/)"])
 
 slide("Limitations and next steps",
-      ["• Post scene is two days after the event",
-       "• 30 m pixels, steep terrain masked, OSM incomplete in rural Rasuwa",
-       "• Next: Sentinel-2, PlanetScope or high-resolution SAR within 24-72 h",
-       "• Replace the threshold detector before reuse"])
+      [f"• One track; post scene {config.POST_DATE}",
+       "• 30 m pixels, steep terrain masked, OSM incomplete in rural areas",
+       "• Next: a second track or a closer post scene, post-event OSM for cut-off checks"])
 
 out = ROOT / "outputs/presentation.pptx"
 prs.save(out)

@@ -1,3 +1,8 @@
+# Pinned for Step 10 (2026-10-12). Lines without a wildcard are exact versions: Bobby's laptop pins, or the versions the
+# sandbox / Kaggle dry runs were tested with (folium, matplotlib, Pillow, tifffile and the PC-route / report packages).
+# The few '==X.*' lines below are packages neither environment had installed; run_step10.bat writes the laptop's exact
+# versions to requirements_lock_win.txt (pip freeze) - paste those lines here before the final push.
+# The ohsome OSM route also needs pyarrow (imported lazily). Optional, not pip: osmium-tool (Geofabrik clip), playwright + chromium (dashboard screenshot only).
 fiona==1.10.1
 geopandas==1.2.0
 networkx==3.7
@@ -12,16 +17,15 @@ rioxarray==0.23.0
 scikit-image==0.26.0
 scipy==1.18.1
 shapely==2.1.2
-
 tqdm==4.70.1
 xarray==2026.9.0
 pyrosm==0.10.0
-tifffile==2024.*
+tifffile==2026.9.20
 imagecodecs==2024.*
-Pillow==11.*
-folium==0.18.*
+Pillow==12.3.0
+folium==0.20.0
 boto3==1.35.*
-matplotlib==3.9.*
+matplotlib==3.11.2
 scikit-learn==1.5.*
 xgboost==2.1.*
 joblib==1.4.*
@@ -29,3 +33,11 @@ osm2geojson==0.2.*
 torchvision==0.29.1
 torch==2.14.1
 segmentation-models-pytorch==0.5.0
+pystac-client==0.9.0
+planetary-computer==1.0.0
+odc-stac==0.5.3
+Markdown==3.11
+pypdf==6.20.0
+pysheds==0.5
+python-pptx==1.0.2
+osmium==4.3.1

@@ -64,7 +64,8 @@ if R == 30:                                         # names the downstream scrip
 
 pk = abs(prof["transform"].a * prof["transform"].e) / 1e6; fa = np.isfinite(hand) & np.isfinite(dem) & (hand <= a.floor_m)
 summary = {"track": a.track_id, "status": status, "refs": refs, "post": a.post, "t_hi": t_hi, "t_lo": a.t_lo,
-           "calibrated": bool(cal), "null_far_max": null_far, "gate_threshold": gate_thr, "seed_fraction_floor": seed_frac,
+           "calibrated": bool(cal), "alpha_met": bool(cal) and bool(cal.get("alpha_met", True)) if isinstance(cal, dict) else bool(cal),
+           "null_far_max": null_far, "gate_threshold": gate_thr, "seed_fraction_floor": seed_frac,
            "water_thresholds_db": {"VV": tvv, "VH": tvh, "source": wsrc}, "floor_km2": float(floor.sum() * pk),
            "usable_fraction_of_floor": float((fa & valid).sum() / max(fa.sum(), 1)),
            "area_km2": {n: float((cls == c).sum() * pk) for n, c in

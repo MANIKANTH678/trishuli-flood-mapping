@@ -1,6 +1,6 @@
 <!doctype html><meta charset='utf-8'><style>@page{size:A4;margin:14mm}body{font:9.5pt/1.32 'Segoe UI',Arial,sans-serif;color:#111}table{border-collapse:collapse;font-size:7.5pt;margin:3px 0}td,th{border:1px solid #999;padding:1px 4px;vertical-align:top}th{background:#eef}h1{font-size:13pt;margin:0 0 4px}h2{font-size:10pt;margin:6px 0 2px;color:#1e3a8a}p,li{margin:2px 0}ul{margin:2px 0;padding-left:16px}blockquote{margin:2px 0;color:#444}img{max-width:100%;max-height:150mm;display:block;margin:2px auto}</style><h1>Trishuli / Bhote Koshi flood, 2026-08-26: change detection, exposure and road access from open satellite data</h1>
-<p><em>Multimodal AI Hackathon 2026, FloodDamage from Space. Educational prototype, not an operational product. Generated 2026-10-11 from commit <code>c81474a</code>; every number below is read from the pipeline's output files.</em></p>
-<p><strong>Status.</strong> Detector status <strong>change_detected</strong> on Sentinel-1 track asc85. The product is surface change on the valley floor and exposure to it, <strong>not a validated flood extent</strong>. Flood-like (new open water) change is separable from the no-flood nulls.</p>
+<p><em>Multimodal AI Hackathon 2026, FloodDamage from Space. Educational prototype, not an operational product. Generated 2026-10-12 from commit <code>98b5082</code>; every number below is read from the pipeline's output files.</em></p>
+<p><strong>Status.</strong> Detector status <strong>change_detected</strong> on Sentinel-1 track asc85. The product is surface change on the valley floor and exposure to it, <strong>not a validated flood extent</strong>. Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.</p>
 <h2>1. Approach and data</h2>
 <p>One pipeline (<code>run_all.sh</code>) runs from raw data: Sentinel-1 GRD scenes are calibrated and terrain-corrected, gridded to 30 m (10 m for the AI model), and compared with four pre-event reference dates on the same track; the HAND valley floor and a radar layover/shadow mask come from the Copernicus DEM; detected change is overlaid on pre-event OpenStreetMap buildings, roads and bridges; road paths from each settlement to the nearest hospital are recomputed with blocked segments removed; a dashboard and a one-page situation report are built from the outputs.</p>
 <table>
@@ -110,7 +110,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Flood-like (new open water) change is separable from the no-flood nulls.</strong></p>
+<p><strong>Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.</strong></p>
 <p><img alt="" src="figures/step3_event.png" /> <img alt="" src="figures/step3_placebo.png" /></p>
 <h2>3. Impact and cut-off</h2>
 <table>
@@ -184,7 +184,7 @@
 </tr>
 </tbody>
 </table>
-<p>Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Agreement with Sentinel-2 MNDWI water on clear floor pixels (pseudo-reference, not accuracy): post IoU 0.06 (P 0.51, R 0.07); pre IoU 0.03 (P 0.49, R 0.03). Corridor null test (prediction-only): excess 0.009 vs largest leave-one-out null 0.008: <strong>not separable from the nulls</strong>. The model detects <strong>open water only</strong>; no allowed dataset labels debris, so debris comes from the change detector.</p>
+<p>Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Bolivia (the only unseen-region test, 15 chips): shipped IoU 0.680, chip CI 0.46–0.80. Corridor null test (prediction-only): excess 0.009 vs largest leave-one-out null 0.008: <strong>not separable from the nulls</strong>. The model detects <strong>open water only</strong>; no allowed dataset labels debris, so debris comes from the change detector.</p>
 <h2>5. Validation against Copernicus EMS EMSR927 (check only)</h2>
 <p>The local EMSR927 products are grading maps: <code>observedEventA</code> is <strong>landslide</strong> polygons and there is <strong>no flood-extent layer</strong>, so scores are "detected change vs EMS landslide polygons" and the flood class cannot be validated against EMS. Domain: AOI minus notAnalysedA, restricted to pixels the detector observed. Chance for damage points: the mask's own blobs relocated at random (100 draws); CI: 1 km block bootstrap.</p>
 <table>
@@ -251,7 +251,8 @@
 <li>No cause attribution: flood-like, dark and bright are surface-change classes; bridges are exposed, never known failed.</li>
 <li>OSM currency: snapshot 2026-07-27; rural Rasuwa is under-mapped (141 settlements have no pre-flood route), so cut-off can be overstated and damage undercounted.</li>
 <li>No cut-off ground truth exists; the scenario range is the uncertainty we can quantify.</li>
-<li>Flood-like (new open water) change is separable from the no-flood nulls.</li>
+<li>Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.</li>
+<li>AI vs Sentinel-2 cannot arbitrate (appendix only): S2 MNDWI agreement on clear floor pixels is a pseudo-reference (post IoU 0.06 (P 0.51, R 0.07); pre IoU 0.03 (P 0.49, R 0.03)); precision is about 0.5 on both the pre- and post-event dates, so agreement that does not change with the event cannot arbitrate anything.</li>
 </ul>
 <h2>7. Attribution and citations</h2>
-<p>"Contains modified Copernicus Sentinel data 2026." "Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved." "© OpenStreetMap contributors." Copernicus EMS credit: "European Union, Copernicus Emergency Management Service data" (EMSR927, checking only). Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0). Flood-path bonus: D8 path 89.6 km, 20 settlements on the HAND corridor (geometry only, no hydraulics).</p>
+<p>"Contains modified Copernicus Sentinel data 2026." "Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved." "© OpenStreetMap contributors." Copernicus EMS credit: "European Union, Copernicus Emergency Management Service data" (EMSR927, checking only). EMSR927 GRA products held locally (checked 2026-10-11) contain landslide polygons and damage points, no flood-extent layer. Educational prototype, not an operational tool. Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0). Flood-path bonus: D8 path 89.6 km, 20 settlements on the HAND corridor (geometry only, no hydraulics).</p>

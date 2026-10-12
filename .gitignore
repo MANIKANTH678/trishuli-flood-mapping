@@ -53,7 +53,6 @@ desktop.ini
 *.safe/
 *.zip
 *.log
-src/config.py
 *.env
 .env
 
@@ -82,3 +81,11 @@ outputs/affected_roads_map.png
 seed_metrics/
 hark_cpu_results/
 outputs/ai_seed*/**/model.pt
+
+# --- Step 10 ---
+runs/
+models/flood_unet_resnet34.pt
+outputs/ai/smp_resnet34/model.pt
+requirements_lock_win.txt
+!src/report/vendor/**/dist/
+!outputs/dashboard/vendor/**/dist/

@@ -19,3 +19,5 @@ Portal check (EMSR927 activation page, accessed 2026-10-06; activation status CL
 | AOI06 | none published       | n/a     | n/a              | n/a                                | n/a                                                                                                                                   | n/a                |
 
 Flood-extent reference: none. The portal lists only Grading and Grading Monitoring products (no delineation, first estimate or reference), checked on 2026-10-06.
+
+EMS credit: European Union, Copernicus Emergency Management Service data (EMSR927, used for checking only).

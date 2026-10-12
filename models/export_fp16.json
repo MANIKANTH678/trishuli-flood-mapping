@@ -1,0 +1,18 @@
+{
+  "fp32": "outputs\\ai\\smp_resnet34\\model.pt",
+  "fp32_mb": 97.9,
+  "fp16": "models\\flood_unet_resnet34_fp16.pt",
+  "fp16_mb": 49.0,
+  "sha256": {
+    "model.pt": "b9584f169ed814e235d06b71439cde182056a05a236c7d9d14d2c57075f4e06e",
+    "flood_unet_resnet34_fp16.pt": "075666f914c217357d01d6c2e3d245d8f3276c6dd72cd6d310a86f20d145d658",
+    "threshold.json": "c0d206c9e5dedf3d3355614e98fd6f982f68d0c48b8f7e634688bafb7be65a02"
+  },
+  "check": {
+    "max_abs_prob_diff": 0.037352919578552246,
+    "mean_abs_prob_diff": 5.757981489296071e-05,
+    "flipped_at_threshold": 4.882812572759576e-05,
+    "threshold": 0.4,
+    "input": "20 Himalayan S1 chips (256x256, 10 m)"
+  }
+}
