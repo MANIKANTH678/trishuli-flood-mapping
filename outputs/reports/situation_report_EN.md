@@ -1,10 +1,10 @@
 # Situation Report — Trishuli / Bhote Koshi flood, 2026-08-26
 
-> **PRELIMINARY** — generated 2026-10-12 from commit `98b5082` + uncommitted changes (DRAFT). Educational prototype, not an operational tool. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-12 from commit `bf89060` + uncommitted changes (DRAFT). Educational prototype, not an operational tool. Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
-Event date 2026-08-26, Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated against pre-event nulls, null false-alarm max 0.035%). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent and not damage**. Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.
+Event date 2026-08-26, Trishuli / Bhote Koshi, Rasuwa, Nepal; Sentinel-1 2026-08-16 / 2026-08-28, Copernicus GLO-30, OSM. Detector status: **change_detected** (track asc85; VH robust-z change of pre (2026-08-16), placebo (2026-08-04), pre3 (2026-07-23), pre4 (2026-07-11) against post (2026-08-28), thresholds 4 / 2.5, calibrated against pre-event nulls, null false-alarm max 0.035%; minimum detectable area ≈ 0.21 km²). The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent and not damage**. Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.
 
 ## 2. Detection signal
 
@@ -31,7 +31,7 @@ The main floor has more decrease pixels than the tributary floors in both bands,
 | Settlements degraded (≥2× and ≥2 km longer) | 0 | 0–1 |
 | Settlements not assessed (no pre-flood route) | 141 | n/a |
 
-Range = 3 thresholds × mask ±1 px × bridges fail/survive (n/a when the threshold-sensitivity runs were skipped, e.g. --profile fast). All 4 first breaks: 4 debris; the detector observed 28%–55% of each cut-off route. Cut-off covers only the 305 assessable settlements; 18 of 20 hospitals were snapped to the road network.
+Range = 3 thresholds × mask ±1 px × bridges fail/survive. All 4 first breaks: 4 debris; the detector observed 28%–55% of each cut-off route. Cut-off covers only the 305 settlements with a pre-flood route; 18 of 20 hospitals were snapped to the road network.
 
 ## 4. Validation against Copernicus EMS (EMSR927)
 
@@ -77,7 +77,7 @@ Verdict at 30 m: AOI01 n/a; AOI02 n/a; AOI03 indistinguishable from chance; AOI0
 - Produced using Copernicus WorldDEM-30 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
 - © OpenStreetMap contributors.
 - European Union, Copernicus Emergency Management Service data (validation only).
-- Sentinel-1 GRD (Copernicus Data Space Ecosystem); OpenStreetMap snapshot 2026-07-27 (pre-event, ODbL v1.0)
+- Sentinel-1 GRD (Copernicus Data Space Ecosystem), SNAP sigma0 terrain correction; OpenStreetMap snapshot 2026-07-27 (pre-event, ODbL v1.0)
 - Sen1Floods11 v1.1, CC BY 4.0: Bonafilia et al. (2020), CVPR EarthVision workshop
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md). Educational prototype, not an operational tool.

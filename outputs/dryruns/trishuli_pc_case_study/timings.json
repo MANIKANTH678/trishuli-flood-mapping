@@ -1,0 +1,18 @@
+{
+  "select_s1": 24,
+  "osm": 553,
+  "dem": 15,
+  "pc_stack": 334,
+  "geometry": 0,
+  "hand": 55,
+  "radar_mask": 18,
+  "null_calibration": 13,
+  "detect": 5,
+  "fuse": 1,
+  "damage": 14,
+  "cutoff": 34,
+  "dashboard": 7,
+  "situation_map": 2,
+  "report": 0,
+  "total_s": 1075
+}

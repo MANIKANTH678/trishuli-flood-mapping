@@ -92,3 +92,25 @@ EMS credit: European Union, Copernicus Emergency Management Service data (EMSR92
 - AI vs S2 agreement (pseudo-reference): post IoU 0.06; pre IoU 0.03
 - corridor: not separable from the nulls
 - No EMS data was read by any of these runs.
+
+### 2026-10-12 17:35 IST: route-equivalence acceptance rule (written BEFORE the PC-route case-study run)
+- Run: `python -m src.run --bbox 84.95,27.80,85.55,28.35 --event-date 2026-08-26 --name trishuli_pc --profile fast --s1-source pc` in its own directory; compared with the SNAP case-study `data/processed/fused_class_30m.tif`.
+- PASS only if all three hold: (a) flagged area (classes 1-3) within ±50% of the SNAP value 3.14 km² (1.57-4.71 km²); (b) pixel IoU of the flagged masks ≥ 0.3 (after aligning the PC grid to the SNAP grid by nearest-neighbour if the grids differ); (c) the same separable-vs-null verdicts per class (flood-like, dark, bright) under the >3x leave-one-out class-null rule, and the same gated detector status (change_detected).
+- If any fails, the PC route is labelled "cross-check only" everywhere (README, report, dashboard, situation report, judges_day.md, live demo).
+- No PC-route case-study output had been viewed when this was written.
+
+### 2026-10-12 17:47 IST: Himalayan chips, path 1 result and path-2 amendment (written BEFORE any labelling)
+- Path 1 (tools/chip_windows.py, windows chosen by Sentinel-2 clear fraction and stratum only, no model output read): 27 Aug 2026 main 1/8, trib 0/8, hill 1/4; 12 Aug 2026 main 0/8, trib 0/8, hill 2/4. Total 4 windows, fewer than 8, so path 1 is not used.
+- Amendment: no chip reached 70% clear. Chips will be labelled on clear pixels only (cloud/shadow = −1); all 20 stay. No model output has been viewed. The change doesn't depend on outcomes.
+- Metrics (tools/himalaya_path2.py): pooled IoU over labelled pixels, labelled pixels per chip, chip-bootstrap 95% CI, A/B agreement on the first 8 chips in points.csv order. Pre-event chips (12 Aug S2, data/external/himalaya_chips_pre) are labelled and reported separately.
+
+### 2026-10-12 17:51 IST: wording correction (review item 4)
+SUPERSEDES the ‘new open water’ wording above. Class 1 is water-like backscatter change; the single-date water model’s corridor test is not separable from nulls and Sentinel-2 does not confirm open water.
+
+### 2026-10-12 17:55 IST: route-equivalence result (rule above, 17:35 IST): FAIL
+- PC run: sandbox, `python -m src.run --bbox 84.95,27.80,85.55,28.35 --event-date 2026-08-26 --name trishuli_pc --profile fast --s1-source pc` (own directory), 1,075 s in timings.json. Same track and dates as the SNAP case study (asc85; post 2026-08-28; refs 08-16, 08-04, 07-23, 07-11). Grids identical (EPSG:32645, same transform and shape): compared pixel for pixel, no resampling.
+- (a) flagged area: SNAP 3.14 km², PC 3.53 km² (allowed 1.57-4.71): pass.
+- (b) pixel IoU of the flagged masks: 0.362 (≥ 0.3): pass.
+- (c) verdicts: gated status change_detected on both; class nulls (>3x rule) flood-like SNAP 0.306 vs null max 0.0144 separable / PC 0.050 vs 0.0000 separable; dark SNAP 2.294 vs 0.0396 separable / PC 2.775 vs 0.1035 separable; bright SNAP 0.542 vs 0.0918 separable (5.9x) / PC 0.701 vs 0.2844 NOT separable (2.5x): fail.
+- Also: PC calibrated t_hi 3.5 (SNAP 4.0); flood-like class 0.05 vs 0.31 km² (the fixed -16/-22 dB water gates were set for sigma0; gamma0 is brighter).
+- Verdict: FAIL. The PC route is labelled "cross-check only" everywhere (README, report, dashboard, situation report, judges_day.md, demo).

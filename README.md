@@ -2,10 +2,12 @@
 
 **Track B — Multimodal AI Hackathon 2026**
 
+> **Documentation (6-page report): [`docs/REPORT.pdf`](docs/REPORT.pdf)** (source `docs/REPORT.md`). Demo video: see the Devpost submission. Validation history: `docs/validation_log.md`; judges' Q&A: `docs/qa_sheet.md`.
+
 Post-event damage assessment for the **26 August 2026 Trishuli–Bhote Koshi
 flash flood (Rasuwa District, Nepal)** using free Sentinel-1 SAR, a DEM and
 OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
-`data/raw/osm/manifest.json`). © OpenStreetMap contributors (ODbL).
+`data/raw/osm/manifest.json`). Licence: MIT for the code (`LICENSE`); data credits in `ATTRIBUTION.md`. © OpenStreetMap contributors (ODbL).
 
 > **Status.** Sentinel-1 preprocessing is SNAP-based (calibrated, terrain-corrected
 > σ⁰, Copernicus GLO-30 DEM). The change map is a multi-temporal SAR change-detection
@@ -19,92 +21,82 @@ OpenStreetMap (ohsome API snapshot 2026-07-27, pre-event; manifest in
 > model, run prediction-only on the corridor, is not separable from pre-event nulls. An earlier README claimed the pair holds no GLOF signal; that claim is
 > withdrawn, because its diagnostic used uncalibrated, GCP-geocoded imagery.
 
-## Pipeline
+## Quick start (clean machine)
 
-`python -m src.run` (one entry point; `run_all.sh` is now a thin wrapper over it) runs these stages in order. A failure stops the run; see `docs/judges_day.md`.
-
-| #   | Stage                           | Script                                                                                   | Output                                                                                                                                                                                                               |
-| --- | ------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | S1 download                     | `src/fetch/fetch_sentinel1.py`                                                           | `data/raw/sentinel1/{pre,placebo,pre3,pre4,post}/*.SAFE.zip`                                                                                                                                                         |
-| 2   | Unzip                           | inline in `run_all.sh`                                                                   | `data/raw/sentinel1/{pre,placebo,pre3,pre4,post}/*.SAFE`                                                                                                                                                             |
-| 3   | Orbit / pass / 12-day gates     | `src/processing/align_v2_checks.py`, `src/processing/check_stack.py`                     | (gates; exit 1 on violation)                                                                                                                                                                                         |
-| 4   | OSM download                    | `src/download/fetch_osm.py`                                                              | `data/raw/osm/*.geojson`, `manifest.json`                                                                                                                                                                            |
-| 5   | DEM                             | `src/fetch/fetch_dem.py`                                                                 | `data/raw/dem/dem_glo30_wgs84.tif`                                                                                                                                                                                   |
-| 6   | SNAP preprocessing              | `src/processing/s1_preprocess.py`                                                        | `data/interim/s1_tc/`                                                                                                                                                                                                |
-| 7   | Grid + dB                       | `src/processing/s1_to_grid.py`                                                           | 30 m UTM 45N VV/VH dB rasters in `data/processed/`, one pair per split                                                                                                                                               |
-| 8   | Change detection                | `src/analysis/geometry.py`, `hand.py`, `radar_mask.py`, `calibrate_null.py`, `detect.py` | `hand_30m.tif`, `radar_mask_30m.tif`, `outputs/diagnostics/step4_null_calibration.json`, `detect_class_30m.tif`, `flood_mask.tif`, `debris_mask.tif`, `observable_mask.tif`, `outputs/diagnostics/detect_asc85.json` |
-| 9   | Damage                          | `src/processing/damage_v2.py`                                                            | `outputs/affected_*`, `impact_summary.json`                                                                                                                                                                          |
-| 9b  | Cutoff                          | `src/processing/cutoff_v2.py`                                                            | `outputs/cutoff_settlements.json`                                                                                                                                                                                    |
-| 10  | EMSR927 validation (check only) | `src/validation/emsr927_validate.py`                                                     | `outputs/validation/emsr927_validation.json`                                                                                                                                                                         |
-| 11  | Mask validation                 | `tools/signal_check.py`, `src/modeling/predict_scene.py`, `src/analysis/ai_corridor.py`                                        | JSON per tool                                                                                                                                                                                                        |
-| 12  | Maps, dashboard, slides, report | `src/report/impact.py`, `dashboard_full.py`, `slides.py`, `situation_report.py`          | `outputs/`                                                                                                                                                                                                           |
-
-Step 10 and the EMS block of the situation report need `data/external/EMSR927` (the downloaded
-GRA products AOI01 v1, AOI02 v2, AOI03 v1, AOI05 v2; inventory in `docs/ems_inventory.md`);
-without it they are skipped.
-
-**Detector classes** (`detect_class_30m.tif`): 1 flood water, 2 surface change (dark),
-3 surface change (bright), 0 no change on the assessed floor, 253 not assessed (above the
-HAND floor), 254 radar-unobservable, 255 no data. `flood_mask.tif` is class 1 and
-`debris_mask.tif` is classes 2 and 3 (descriptive surface change, not confirmed debris).
-If the seed fraction does not clearly exceed the null rate, `detect.py` writes empty
-masks and `status: no_significant_change`.
-
-Not part of `run_all.sh`:
-
-| Stage              | Script                                                                                                                                                      | Output                                                                           |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Detector null test | `python -m src.analysis.detect --ref placebo,pre3,pre4 --post pre --out-dir data/processed/_null --track-id null_pre` (create `data/processed/_null` first) | `outputs/diagnostics/detect_null_pre.json` (must report `no_significant_change`) |
-| Train water model | `src/modeling/train_segmentation.py` | `outputs/ai/<arch>/model.pt`, `train_log.json`, `threshold.json` |
-| Evaluate water model | `src/modeling/evaluate.py` | `outputs/ai/<arch>/metrics.json` |
-
-## Setup
+Tested route: Windows 10/11 or Linux, Python 3.12, 16 GB RAM. Educational prototype, not an operational tool.
 
 ```
+git clone https://github.com/MANIKANTH678/trishuli-flood-mapping.git
+cd trishuli-flood-mapping
 python -m venv .venv
-.venv\Scripts\activate          # Windows;  Linux/macOS: source .venv/bin/activate
-pip install -r requirements.txt
+.venv\Scripts\activate                 # Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt        # Windows: requirements_win.txt
+python -m pytest tests -q              # data-dependent tests skip on a fresh clone
 ```
 
-Requirements beyond Python packages:
+### Environment variables (read from the environment only; never put them in a file)
 
-- **bash** to run `run_all.sh` (Git Bash or WSL on Windows). The script uses the Python in
-  `.venv` when it exists.
-- **ESA SNAP** installed, for step 6.
-- **Network access** for the OSM (ohsome) and DEM downloads.
-- **An ohsome API key** for step 4 (free, https://account.heigit.org/signup), set as the
-  environment variable `OHSOME_API_KEY` for the session. Never commit it.
-- **Copernicus Data Space credentials**, needed only if scenes are not already on disk.
-  Register free at https://dataspace.copernicus.eu/ and set in `src/config.py`
-  (`.gitignore`d):
+| Variable | Needed for | Read by |
+|---|---|---|
+| `COPERNICUS_USER`, `COPERNICUS_PASS` | SNAP route: Sentinel-1 GRD download from the Copernicus Data Space Ecosystem (free account, https://dataspace.copernicus.eu/) | `src/run.py` (preflight), `src/fetch/fetch_sentinel1.py` |
+| `GPT` | SNAP route, only if ESA SNAP `gpt` is not on `PATH` or in `C:\Program Files\esa-snap\bin\gpt.exe` | `src/run.py`, `src/processing/s1_preprocess.py` |
+| `OHSOME_API_KEY` | optional: OSM snapshot at the exact pre-event date via ohsome; without it a dated Geofabrik extract is used | `src/download/fetch_osm.py` |
+| `CHROME` | optional: path to Chrome/Edge for the PDF page gate and screenshots (else WeasyPrint) | `src/report/pdf_gate.py`, `tools/screenshot.py` |
 
-```
-COPERNICUS_USER = "you@example.com"
-COPERNICUS_PASS = "your-password"
-```
+In `cmd`: `set "COPERNICUS_USER=you@example.com"` and `set "COPERNICUS_PASS=..."` (quotes around the whole assignment).
 
-## Run
+### Two routes, one of them validated
 
-```
-bash run_all.sh
-```
+| Route | Command | Sentinel-1 product | Status |
+|---|---|---|---|
+| **SNAP (headline, validated)** | `python -m src.run --bbox W,S,E,N --event-date YYYY-MM-DD --name <area> --profile fast --clean` | Sentinel-1 GRD (Copernicus Data Space Ecosystem), SNAP sigma0 terrain correction | Every case-study number in this README and the report comes from this route. Needs CDSE login, SNAP `gpt`, ~40 GB free. Laptop clean-clone timing: pending (`outputs/step11_snap_timings.json`). |
+| PC (no login) | add `--s1-source pc` | Sentinel-1 RTC (Planetary Computer sentinel-1-rtc, third-party processed from GRD) | **Cross-check only.** It failed the pre-registered route-equivalence test on the case study (2026-10-12): flagged area 3.53 vs 3.14 km² and pixel IoU 0.36 pass, but the bright-change class is not separable from the nulls on PC (it is on SNAP) and flood-like change falls from 0.31 to 0.05 km². `docs/validation_log.md`, `outputs/validation/route_equivalence.json`. ~14-18 min on 4 CPU cores. |
 
-All Sentinel-1 scenes are relative orbit 85, ascending, and 12 days apart (each date is two
-consecutive frames of one pass): reference scenes 2026-07-11 (`pre4`), 2026-07-23 (`pre3`),
-2026-08-04 (`placebo`) and 2026-08-16 (`pre`), and the post-event scene 2026-08-28 (`post`).
-The reference for each pixel is the median of the four earlier scenes in linear power.
-`check_stack.py` fails the run if the stack is not one track or the offsets are not
-multiples of 12 days. The event date is fixed for this flood.
+Organiser clarifications (hackathon Discord #help-desk, read 2026-10-12):
+- Sentinel-1 that arrives already terrain-corrected (Sentinel Hub on CDSE) was answered: "you still need to make a processing
+  pipeline for data, as the point is to process the raw stream". So the GRD + SNAP route is the one we present; the PC RTC
+  route stays a cross-check.
+- Judges' data access: make a video and document how to set up the free account; in live judging you may run the pipeline
+  with your own account. CDSE setup is in the quick start above. A live presentation may be held for winners only; no
+  run-time limit was stated, so live demos use cached scenes (`--profile fast`).
+- Only free/open APIs and models are allowed, each named in this README; the 6-page documentation lives in the repo (below).
 
-**Last full run.** `bash run_all.sh` completed end to end and reproduced the detector figures
-in Key results. SNAP outputs in `data/interim/s1_tc/` were reused, not regenerated, in that run.
+`--profile fast` skips Sentinel-2, the threshold-sensitivity runs and the AI layer, and keeps the null-calibrated gate.
+A failed stage prints `resume with --from-stage <name>`. A folder holding another run is refused; `--clean` archives it
+under `runs/<stamp>/` (never `models/`). Fewer than 3 reference dates means no null calibration (**UNCALIBRATED**);
+3+ dates where no threshold meets the 0.1% target means **calibration target not met**, and the report gives the
+minimum detectable area (gate × assessed floor). More in `docs/judges_day.md`.
 
-**ohsome quota.** Step 4 queries the ohsome API and can fail with `403 Quota exceeded`.
-Wait for the quota to reset and rerun. `HTTP 429, waiting 15s` messages are retries and are normal.
+## Pipeline stages (`python -m src.run`)
 
-**Freshness guards.** The situation report refuses to run if the OSM manifest snapshot
-differs from `config.OSM_SNAPSHOT_DATE`, or if `cutoff_settlements.json` and the three
-validation JSONs from step 11 are older than `flood_mask.tif`.
+| # | Stage | Module | Route | Output |
+|---|---|---|---|---|
+| 1 | select_s1 | `src.fetch.select_s1` | both | `data/raw/sentinel1/selection.json`: one relative orbit and pass, nearest post scene, up to 4 references; time-of-day and platform warnings |
+| 2 | fetch_s1 | `src.fetch.fetch_sentinel1 --selection ... --download` | SNAP | `data/raw/sentinel1/<split>/*.zip` |
+| 3 | unzip_s1 | inline in `src/run.py` | SNAP | `*.SAFE` |
+| 4 | check_stack | `src.processing.check_stack` | SNAP | orbit/pass equality (fatal); off-grid dates, > 10 min time-of-day spread, mixed S1A/S1D (warnings) |
+| 5 | osm | `src.download.fetch_osm` | both | `data/raw/osm/*.geojson`, `manifest.json` (pre-event snapshot) |
+| 6 | dem | `src.fetch.fetch_dem` | both | `data/raw/dem/dem_glo30_wgs84.tif` (Copernicus GLO-30) |
+| 7 | snap / grid | `src.processing.s1_preprocess`, `src.processing.s1_to_grid` | SNAP | sigma0 terrain-corrected, 30 m UTM VV/VH dB per split in `data/processed/` |
+| 7' | pc_stack | `src.processing.pc_stack` | PC | the same `s1_<split>_<pol>_30m.tif` files from RTC gamma0 |
+| 8 | geometry, hand, radar_mask | `src.analysis.geometry`, `.hand`, `.radar_mask` | both | look geometry, `hand_30m.tif`, `radar_mask_30m.tif` |
+| 9 | null_calibration | `src.analysis.calibrate_null` | both (≥ 3 refs) | `outputs/diagnostics/step4_null_calibration.json` (`alpha_met`) |
+| 10 | detect | `src.analysis.detect` | both | `detect_class_30m.tif`, masks, `outputs/diagnostics/detect_<track>.json` (`calibrated`, `alpha_met`, `min_detectable_km2`) |
+| 11 | s2_search / s2_ingest / s2_detect | `src.fetch.s2_search`, `src.processing.s2_ingest`, `src.analysis.s2_detect` | full profile | gated Sentinel-2 branch |
+| 12 | fuse | `src.analysis.fuse` | both | `fused_class_30m.tif` |
+| 13 | sens_masks, ai_scenes | `tools/make_sens_masks.py`, `src.modeling.predict_scene` | full profile | scenario masks, AI water probability |
+| 14 | damage, cutoff | `src.processing.damage_v2`, `src.processing.cutoff_v2` | both | `outputs/impact_summary.json`, `outputs/cutoff_settlements.json` |
+| 15 | dashboard, situation_map, report | `src.report.dashboard`, `tools/make_situation_map.py`, `src/report/situation_report.py` | both | `outputs/dashboard/index.html`, `outputs/reports/situation_report_{EN,NE}.md` |
+
+Timings per stage are written to `outputs/timings.json`. Not part of `src.run`: class-level nulls (`tools/class_nulls.py`),
+EMSR927 check (`src/validation/emsr927_validate.py`, needs `data/external/EMSR927`), the 6-page report
+(`tools/build_report.py`), water-model training/evaluation (`src/modeling/train_segmentation.py`, `src/modeling/evaluate.py`)
+and the Himalayan chip tools (`tools/chip_windows.py`, `tools/make_himalaya_chips.py`, `tools/label_chips.py`,
+`tools/himalaya_path2.py`).
+
+**Detector classes** (`detect_class_30m.tif`): 1 flood-like (water-like backscatter change, not confirmed open water),
+2 surface change (dark), 3 surface change (bright), 0 no change on the assessed floor, 253 not assessed (above the HAND
+floor), 254 radar-unobservable, 255 no data.
 
 ## Train / eval water model
 
@@ -125,7 +117,7 @@ interval is wide. Sen1Floods11 contains no Himalayan scenes. See `MODEL_CARD.md`
 | Metric                                                           | Value                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Water model (ResNet34 U-Net, Sen1Floods11), pooled IoU [95% CI] | val 0.672 [0.59, 0.74]; test 0.682 [0.57, 0.77]; Bolivia (unseen region, 15 chips) 0.680, chip CI 0.46–0.80 (seed mean 0.702 ± 0.020). Old checkpoint: val 0.575, test 0.612, Bolivia 0.666 |
-| Labelled Himalayan chips | Not labelled. Clear-sky check (≥70% clear S2) keeps 0 of 20 chips on 27 Aug and 0 of 20 on 12 Aug, so any chip result is qualitative only (docs/chip_protocol.md) |
+| Labelled Himalayan chips | Not labelled yet. Clear-sky check (≥70% clear S2) keeps 0 of 20 chips on 27 Aug and 0 of 20 on 12 Aug; an algorithmic window scan (clear fraction and stratum only) finds 4 windows over both dates, fewer than 8. Amendment logged before labelling: all 20 chips, clear pixels only (cloud/shadow = −1); metrics tool `tools/himalaya_path2.py`. Until labelled, qualitative only |
 | Detector threshold (null-calibrated)                             | t_hi 4.0: the smallest grid value whose worst leave-one-out false-alarm fraction is ≤ 1e-3 (3.5e-4 at 4.0). t_lo 2.5. Gate: seed fraction must exceed 1.05e-3 of the assessed floor                                                                    |
 | Event vs null                                                    | Event seed fraction 1.09e-2 (about 10× the gate), status `change_detected`. A pre-event scene tested against the other references: 0.0, `no_significant_change` (that scene was also one of the four calibration scenes)                               |
 | Class-level nulls | Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water. |

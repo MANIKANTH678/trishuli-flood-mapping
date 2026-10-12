@@ -25,5 +25,7 @@
     "flood_water": 0.306,
     "surface_dark": 2.2941,
     "surface_bright": 0.5418
-  }
+  },
+  "alpha_met": true,
+  "min_detectable_km2": 0.211
 }

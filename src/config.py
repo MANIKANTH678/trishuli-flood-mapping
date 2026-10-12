@@ -52,6 +52,6 @@ REF_DATES["post"] = POST_DATE
 AREA_NAME = _RUN.get("name_long") or ("Trishuli / Bhote Koshi, Rasuwa, Nepal" if not _RUN else _RUN.get("name", "area"))
 TITLE = _RUN.get("title") or (f"Trishuli / Bhote Koshi flood, {FLOOD_DATE}" if not _RUN else f"{AREA_NAME}: Sentinel-1 change, event {FLOOD_DATE}")
 CASE_STUDY = not _RUN or _RUN.get("case_study", False)              # case-study-only evidence sections are optional anyway
-S1_SOURCE = _RUN.get("s1_source", "snap")                            # snap = SNAP sigma0 (headline); pc = PC RTC gamma0 cross-check
-S1_SOURCE_LABEL = "PC RTC gamma0, cross-check route" if S1_SOURCE == "pc" else "SNAP sigma0 (terrain-corrected)"
+S1_SOURCE = _RUN.get("s1_source", "snap")                            # snap = SNAP sigma0 (headline, validated); pc = PC RTC gamma0, cross-check only
+S1_SOURCE_LABEL = "PC RTC gamma0 (Sentinel-1 RTC, third-party processed from GRD), cross-check only" if S1_SOURCE == "pc" else "SNAP sigma0 (terrain-corrected)"
 COPERNICUS_USER, COPERNICUS_PASS = _env("COPERNICUS_USER") or None, _env("COPERNICUS_PASS") or None

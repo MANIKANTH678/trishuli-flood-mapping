@@ -123,7 +123,7 @@ slide("Validation",
 slide("Deliverables",
       ["• Interactive dashboard (outputs/dashboard/index.html, works offline)",
        "• Situation reports (EN, NE, one page) and docs/REPORT.pdf",
-       "• Reproducible pipeline: python -m src.run (SNAP route; --s1-source pc cross-check)",
+       "• Reproducible pipeline: python -m src.run (SNAP route; --s1-source pc: cross-check only)",
        "• Water-model weights (models/)"])
 
 slide("Limitations and next steps",

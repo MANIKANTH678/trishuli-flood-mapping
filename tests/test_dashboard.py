@@ -23,6 +23,7 @@ def test_headline_uses_overlap_and_range_not_the_flood_only_key():
     imp = json.loads(json.dumps(IMP)); imp["buildings"].update(overlap=556, overlap_flood=6, overlap_debris=550, total=189503,
                                                                    not_assessed=160971, unobservable=13161)
     imp["sensitivity"]["range"] = {"buildings_overlap": [244, 1078]}
+    imp["sensitivity"]["scenarios"] = {"low": {}, "base": {}, "high": {}}       # Step 11: a range needs > 1 scenario
     t = " ".join(D.headline(dict(DET, status="change_detected"), imp, None, None, None, None))
     assert "<b>556</b> (range 244&ndash;1,078)" in t and "92%" in t and "<b>6</b>" not in t
 
@@ -37,3 +38,40 @@ def test_built_page_is_offline_and_attributed():
     for rel in re.findall(r'(?:src|href)="(vendor/[^"]+)"', h): assert (ROOT / "outputs/dashboard" / rel).exists(), rel
     for s in A.REQUIRED: assert s in h
     assert A.DISCLAIMER in h and "Radar-unobservable" in h and "Scenario base threshold" in h and "Plain background (offline)" in h
+
+
+# --- Step 11 review item 6 -------------------------------------------------------------------------------------
+def test_display_copy_is_dilated_but_numbers_use_the_true_mask():
+    import numpy as np
+    c = np.zeros((20, 20), np.uint8); c[10, 10] = 1; c[3, 3] = 2
+    v = D.display_classes(c)
+    assert (v == 1).sum() > 1 and v[10, 12] == 1 and v[10, 13] == 0 and v[3, 5] == 2   # 2-px dilation, display only
+    assert (c == 1).sum() == 1                                                       # the input mask is untouched
+
+
+def test_fit_bounds_on_flagged_pixels(tmp_path):
+    import numpy as np, rasterio
+    from rasterio.transform import from_origin
+    a = np.zeros((100, 100), np.uint8); a[40:42, 60:63] = 2
+    p = tmp_path / "c.tif"
+    with rasterio.open(p, "w", driver="GTiff", width=100, height=100, count=1, dtype="uint8", crs="EPSG:32645",
+                       transform=from_origin(300000, 3100000, 30, 30)) as d: d.write(a, 1)
+    (s, w), (n, e) = D.flag_bounds(p)
+    assert s < n and w < e and (n - s) < 0.01 and (e - w) < 0.01                      # ~60 m x 90 m box, not the whole raster
+    a[:] = 0
+    with rasterio.open(p, "r+") as d: d.write(a, 1)
+    assert D.flag_bounds(p) is None
+
+
+def test_assessable_denominator_is_computed_and_calibration_wording():
+    cut = {"summary": {"cut_off": 4, "total_settlements": 446, "hospital_no_pre_flood_path": 141}, "sensitivity": {"range": {"hospital_cut_off": [2, 12]}}}
+    t = " ".join(D.headline(DET, IMP, cut, None, None, None))
+    assert "<b>4</b> (range 2&ndash;12) of 446, of 305 assessable" in t
+    terai = dict(DET, calibrated=False, alpha_met=False, null_far_max=0.002, gate_threshold=0.0060652, floor_km2=2863.85, min_detectable_km2=17.37)
+    t = " ".join(D.headline(terai, IMP, None, None, None, None))
+    assert "calibration target not met; minimum detectable area ≈ 17 km²" in t and "calibrated against" not in t
+
+
+def test_dashboard_source_has_the_review_fixes():
+    s = (ROOT / "src/report/dashboard.py").read_text(encoding="utf-8")
+    assert "<details open><summary>" in s and "m.fit_bounds(" in s and 'UNKNOWN",\n                                      opacity=1, show=False' in s

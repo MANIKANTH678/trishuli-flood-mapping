@@ -1,8 +1,8 @@
 # Situation report: Trishuli / Bhote Koshi flood, 2026-08-26
 
-> PRELIMINARY, 2026-10-12, commit `98b5082` + uncommitted changes (DRAFT)
+> PRELIMINARY, 2026-10-12, commit `bf89060` + uncommitted changes (DRAFT)
 
-**Situation.** Event date 2026-08-26, Trishuli / Bhote Koshi, Rasuwa, Nepal. Sentinel-1 track asc85, 2026-08-16 / 2026-08-28: detector status **change_detected** (calibrated against pre-event nulls). Detected change on the valley floor is **not attributed to flooding, not a validated flood extent and not damage**. Counts below are exposure to that mask. Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.
+**Situation.** Event date 2026-08-26, Trishuli / Bhote Koshi, Rasuwa, Nepal. Sentinel-1 track asc85, 2026-08-16 / 2026-08-28: detector status **change_detected** (calibrated against pre-event nulls, null false-alarm max 0.035%; minimum detectable area ≈ 0.21 km²). Detected change on the valley floor is **not attributed to flooding, not a validated flood extent and not damage**. Counts below are exposure to that mask. Flood-like change (0.31 km² of water-like backscatter change) and surface change (2.29 km² dark, 0.54 km² bright) are each separable from all four pre-event nulls. An independent single-date water model could not separate the event from pre-event dates, and Sentinel-2 does not confirm open water.
 
 | Key number | Headline | Scenario range |
 |---|---|---|

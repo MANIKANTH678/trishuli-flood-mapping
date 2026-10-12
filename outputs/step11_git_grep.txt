@@ -1,0 +1,63 @@
+# Step 11 git evidence, 12-10-2026 19:57:24.49
+$ git status --short
+ M README.md
+ M docs/REPORT.html
+ M docs/REPORT.md
+ M docs/demo_script.md
+ M docs/judges_day.md
+ M docs/validation_log.md
+D  outputs/dashboard.html
+ M outputs/dashboard/index.html
+ M outputs/diagnostics/detect_asc85.json
+D  outputs/doc_backups/dashboard_full.py.final.bak
+ M outputs/presentation.pptx
+ M outputs/reports/situation_report_1p.html
+ M outputs/reports/situation_report_1p.md
+ M outputs/reports/situation_report_1p.pdf
+ M outputs/reports/situation_report_EN.md
+ M outputs/reports/situation_report_NE.md
+ M requirements.txt
+ M requirements_win.txt
+ M src/analysis/detect.py
+ M src/config.py
+ M src/fetch/select_s1.py
+ M src/processing/check_stack.py
+ M src/processing/pc_stack.py
+ M src/report/dashboard.py
+ M src/report/situation_report.py
+ M src/report/slides.py
+ M src/run.py
+ M tests/test_dashboard.py
+ M tools/build_report.py
+?? APPLY_STEP11.md
+?? LICENSE
+?? docs/qa_sheet.md
+?? outputs/dryruns/
+?? outputs/figures/himalaya_example_panels.png
+?? outputs/step11_git_grep.txt
+?? outputs/step11_pytest.txt
+?? outputs/validation/dry_runs.json
+?? outputs/validation/himalaya_chip_windows.json
+?? outputs/validation/route_equivalence.json
+?? run_step11.bat
+?? src/processing/stack_guards.py
+?? src/report/textbits.py
+?? tests/test_calibration_flags.py
+?? tests/test_himalaya_path2.py
+?? tests/test_stack_guards.py
+?? tests/test_textbits.py
+?? tools/chip_windows.py
+?? tools/himalaya_example_panels.py
+?? tools/himalaya_path2.py
+$ git rev-parse --short HEAD
+bf89060
+$ git grep -n -i -e "no flood signal could be detected" -e "cannot resolve the event" -e "thresholded dark tail" -e "new open water" HEAD
+HEAD:docs/validation_log.md:47:- class nulls (ungated, leave-one-out, rule >3x): Flood-like (new open water) change is separable from the no-flood nulls. [class_nulls.json f582ed00cac2]
+HEAD:outputs/dashboard.html:218:  event; it does not show that no flood occurred. The mask is the thresholded dark tail of the VV/VH change,
+HEAD:outputs/doc_backups/dashboard_full.py.final.bak:432:  event; it does not show that no flood occurred. The mask is the thresholded dark tail of the VV/VH change,
+HEAD:run_step10.bat:46:findstr /s /n /i /c:"no flood signal could be detected" /c:"cannot resolve the event" /c:"thresholded dark tail" /c:"new open water" *.py *.md *.html *.txt > grep_stale_laptop.txt
+HEAD:tests/test_no_stale_claims.py:5:STALE = ["no flood signal could be detected", "cannot resolve the event", "thresholded dark tail", "new open water"]
+$ git log -3 --oneline
+bf89060 Step 10 tidy: class nulls JSON, retire old runners
+42925be Step 10: attribution constant, wording fixes, select_s1, run.py + PC cross-check route, models/ fp16, vendored dashboard, dry runs
+98b5082 Step 9: dashboard, one-page report with page gate, flood-path bonus, class nulls, seeds

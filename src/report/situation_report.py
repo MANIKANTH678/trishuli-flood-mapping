@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from src import config
 from src.report import attribution as A
+from src.report import textbits as T
 
 REF_DATES = config.REF_DATES
 def rd(n): return f"{n} ({REF_DATES[n]})" if n in REF_DATES else n
@@ -98,6 +99,7 @@ try:
     nul = J("outputs/validation/emsr927_validation.json") if have_ems else {}
     pc = config.S1_SOURCE == "pc"
     calibrated = bool(det.get("calibrated"))
+    cstate = T.cal_state(det)                       # ok | target_not_met | none (Step 11: no "calibrated" when alpha missed)
     null_note = (" " + cn["statement"]) if cn and cn.get("statement") else ""
     if cn and cn.get("event_refs") and det.get("refs") and cn["event_refs"] != det["refs"]: null_note = ""   # nulls from another run
 
@@ -112,16 +114,20 @@ try:
     area_rng = f"{min(areas):.2f}–{max(areas):.2f} km²" if len(areas) == 2 else "n/a"
 
     # --- exposure ---------------------------------------------------------------------------------------------
-    b, rb, rr = imp["buildings"], imp["roads_bridges"]["exposure_by_tolerance"]["0m"], (imp.get("sensitivity") or {}).get("range") or {}
+    b, rb, rr = imp["buildings"], imp["roads_bridges"]["exposure_by_tolerance"]["0m"], T.scenario_range(imp)
     unknown = b["not_assessed"] + b["unobservable"]; unk_pct = 100 * unknown / max(b["total"], 1)
     cut_n = cut.get("cut_off", 0); deg_n = cut.get("hospital_degraded", 0)
     cut_set = [x for x in setl if x["hospital"]["status"] == "cut_off"]
     causes = Counter((x["first_break"] or {}).get("cause", "unknown") for x in cut_set)
     fr = [x["route_assessed_frac"] for x in cut_set if x.get("route_assessed_frac") is not None]
-    cut_detail = (f"All {len(cut_set)} first breaks: " + ", ".join(f"{n} {c}" for c, n in causes.most_common()) +
+    cut_detail = ((f"All {len(cut_set)} first breaks: " if len(cut_set) > 1 else "The one first break: ") + ", ".join(f"{n} {c}" for c, n in causes.most_common()) +
                   (f"; the detector observed {min(fr):.0%}–{max(fr):.0%} of each cut-off route." if fr else ".")) if cut_set else \
-                 "No settlement is cut off in the headline scenario."
+                 ""                                              # Step 11: zero-count sentences are omitted
     no_path = cut.get("hospital_no_pre_flood_path", 0)
+    range_txt = ("Range = 3 thresholds × mask ±1 px × bridges fail/survive." if (rr or areas) else
+                 "Scenario ranges are n/a: the threshold-sensitivity runs were skipped (--profile fast).")
+    km_rng = (span(rr, 'motorable_road_km', '{:.1f}') + ' km') if rr else 'n/a'
+    plural_assess = T.plural(cut['total_settlements'] - no_path, 'settlement')
 
     # --- AI line (optional): Bolivia quoted with its chip CI; seeds if present --------------------------------
     ai_sentence = ""
@@ -174,12 +180,12 @@ try:
     lims = [f"Single Sentinel-1 track ({det['track']}), {len(det.get('refs', []))} reference dates; the post scene is {days} days after the event, so a flash flood in a narrow gorge may already have drained.",
             f"Only the valley floor is assessed ({det['floor_km2']:.0f} km², {det['usable_fraction_of_floor']:.0%} usable). {unk_pct:.0f}% of OSM buildings, and hillside roads, lie outside it: UNKNOWN, not clear.",
             "No cause attribution: flood-like (water-like backscatter change), dark and bright classes are all surface change; this is exposure, not damage; bridges are exposed, never known to have failed.",
-            f"30 m pixels mix narrow channels; OSM snapshot {snap} predates the event and rural areas are under-mapped, so missing buildings undercount exposure and missing tracks overstate cut-off ({no_path} settlements have no pre-flood route)."]
+            f"30 m pixels mix narrow channels; OSM snapshot {snap} predates the event and rural areas are under-mapped, so missing buildings undercount exposure and missing tracks overstate cut-off{T.no_route_text(no_path)}."]
     if s2: lims.insert(2, f"Sentinel-2: {s2['floor_clear_post_fraction']:.0%} of the valley floor has clear post-event coverage and its status is {s2['status']}, so S2 is excluded and the fused product equals the S1 product.")
-    if calibrated and det.get("alpha_met") is False:
-        lims.insert(0, f"No detector threshold reached the 0.1% null false-alarm target in this area; the largest grid value (t_hi {det.get('t_hi')}) was used and the null false-alarm maximum is {100 * (det.get('null_far_max') or 0):.2f}%, so detections here are less constrained than in the case study.")
-    if not calibrated: lims.insert(0, "UNCALIBRATED: fewer than 3 reference dates, so there is no null calibration and no detection gate; a no-event date could produce false detections.")
-    if pc: lims.insert(0, f"Sentinel-1 source: {config.S1_SOURCE_LABEL}. These numbers are a cross-check of the method, not the SNAP headline.")
+    if cstate == "target_not_met":
+        lims.insert(0, f"Calibration target not met: no detector threshold reached the 0.1% null false-alarm target in this area (largest grid value t_hi {det.get('t_hi')} used; null false-alarm maximum {100 * (det.get('null_far_max') or 0):.2f}%). Minimum detectable area ≈ {T.mda_text(det)} km² (gate × assessed floor): a smaller event here would not be detected.")
+    if cstate == "none": lims.insert(0, "UNCALIBRATED: fewer than 3 reference dates, so there is no null calibration and no detection gate; a no-event date could produce false detections.")
+    if pc: lims.insert(0, f"Sentinel-1 source: {T.PC_SOURCE}. {T.PC_ROUTE_NOTE}")
     s2a = JO("outputs/validation/ai_vs_s2.json")
     if s2a and s2a.get("results"):
         r = s2a["results"]
@@ -190,9 +196,8 @@ try:
     sec = []
     status_line = (f"Detector status: **{det['status']}** (track {det['track']}; VH robust-z change of {', '.join(rd(x) for x in det['refs'])} against "
                    f"{rd(det['post'])}, thresholds {det['t_hi']:g} / {det['t_lo']:g}, " +
-                   (f"calibrated against pre-event nulls, null false-alarm max {100 * det['null_far_max']:.3f}%)" if calibrated and det.get("null_far_max") is not None
-                    else "**UNCALIBRATED**: no null gate)"))
-    src_line = f" Sentinel-1 source: {config.S1_SOURCE_LABEL}." if pc else ""
+                   (f"{T.cal_phrase(det)})" if cstate != "none" else "**UNCALIBRATED**: no null gate)"))
+    src_line = f" Sentinel-1 source: {T.PC_SOURCE} ({T.PC_ROUTE_STATUS})." if pc else ""
     sec.append(("Situation", f"""Event date {config.FLOOD_DATE}, {config.AREA_NAME}; Sentinel-1 {config.PRE_DATE} / {config.POST_DATE}, Copernicus GLO-30, OSM.{src_line} {status_line}. The mask is restricted to the HAND valley floor; the result is exposure to a detected mask, **not a validated flood extent and not damage**.{null_note}"""))
     sig_txt = ""
     if sig:
@@ -231,21 +236,19 @@ try:
 | Buildings overlapping the mask | {b['overlap']:,} ({b['overlap_flood']:,} flood-like class, {b['overlap_debris']:,} other surface change) of {b['total']:,} | {span(rr, 'buildings_overlap')} |
 | Buildings within 30 m | {b['within_30m']:,} | {span(rr, 'buildings_within_30m')} |
 | Buildings with unknown status | {unknown:,} ({unk_pct:.0f}%) | n/a |
-| Motorable road in mask | {rb['motorable_road_km']:.1f} km ({rb['roads']} segments) | {span(rr, 'motorable_road_km', '{:.1f}')} km |
+| Motorable road in mask | {rb['motorable_road_km']:.1f} km ({rb['roads']} segments) | {km_rng} |
 | Bridges exposed (not failed) | {rb['bridges']} of {imp['total_bridges']} | {span(rr, 'bridges_exposed')} |
 | Settlements cut off (no path to a hospital) | {cut_n} of {cut['total_settlements']} | {span(rngc, 'hospital_cut_off')} |
 | Settlements degraded (≥2× and ≥2 km longer) | {deg_n} | {span(rngc, 'hospital_degraded')} |
 | Settlements not assessed (no pre-flood route) | {no_path} | n/a |
 
-Range = 3 thresholds × mask ±1 px × bridges fail/survive (n/a when the threshold-sensitivity runs were skipped, e.g. --profile fast). {cut_detail} Cut-off covers only the {cut['total_settlements'] - no_path} assessable settlements; {cut.get('hospitals_snapped', '?')} of {cut.get('hospitals_total', '?')} hospitals were snapped to the road network."""))
+{range_txt}{(' ' + cut_detail) if cut_detail else ''} Cut-off covers only the {plural_assess} with a pre-flood route; {cut.get('hospitals_snapped', '?')} of {cut.get('hospitals_total', '?')} hospitals were snapped to the road network."""))
     if ems_block: sec.append((f"Validation against Copernicus EMS (EMSR927)", ems_block))
     else: sec.append(("Validation", "_No Copernicus EMS products for this area in data/external: section skipped._"))
     sec.append(("Limitations", "\n".join(f"- {x}" for x in lims)))
-    sec.append(("Next steps (in scope)", f"""1. Add a second Sentinel-1 track or a closer post scene and rerun unchanged; the headline should stay inside the ranges above.
-2. Check the {len(cut_set)} cut-off first-break points against field or imagery reports.
-3. Refresh OSM after the event and rerun cut-off to separate missing roads from real loss."""))
+    sec.append(("Next steps (in scope)", "\n".join(T.next_steps(bool(rr) or area_rng != "n/a", len(cut_set)))))
     sec.append(("Data sources", f"""{A.markdown_list(with_ems=have_ems)}
-- Sentinel-1 GRD ({'Microsoft Planetary Computer sentinel-1-rtc' if pc else 'Copernicus Data Space Ecosystem'}); OpenStreetMap snapshot {snap} (pre-event, ODbL v1.0)
+- {T.source_label(pc)}; OpenStreetMap snapshot {snap} (pre-event, ODbL v1.0)
 - Sen1Floods11 v1.1, CC BY 4.0: Bonafilia et al. (2020), CVPR EarthVision workshop
 
 Full attribution: [ATTRIBUTION.md](../../ATTRIBUTION.md). {A.DISCLAIMER}"""))
@@ -279,14 +282,14 @@ ne_md = f"""# स्थिति प्रतिवेदन (प्रारम
 > प्रारम्भिक: {ne(datetime.date.today())} मा पाइपलाइनका JSON फाइलबाट स्वतः बनाइएको ({stamp})। शैक्षिक प्रोटोटाइप, सञ्चालनमा प्रयोग गर्ने उपकरण होइन।
 > अनुवाद मेसिन-सहायतामा गरिएको हो; नेपाली भाषीले जाँच गर्नुहोस्। अंक अंग्रेजी प्रतिवेदन (situation_report_EN.md) सँग मिल्छन्।
 
-**अवस्था।** Sentinel-1 ({'Planetary Computer RTC gamma0, क्रस-जाँच मार्ग' if pc else 'SNAP sigma0'}) {ne(config.PRE_DATE)} / {ne(config.POST_DATE)}, ट्र्याक {det['track']}। डिटेक्टरको नतिजा: **{st_ne}**{'' if calibrated else ' — **क्यालिब्रेट नगरिएको** (३ भन्दा कम सन्दर्भ मिति)'}। यो उपत्यकाको सतहमा पत्ता लागेको परिवर्तनसँगको **जोखिम (exposure)** हो, पुष्टि गरिएको बाढी क्षेत्र होइन र क्षति होइन। "बाढी-जस्तो" वर्ग भनेको पानी-जस्तो ब्याकस्क्याटर परिवर्तन हो, खुला पानी पुष्टि भएको होइन। पुलहरू जोखिममा छन् भनिएको हो, भत्किएको होइन।
+**अवस्था।** Sentinel-1 ({'Planetary Computer RTC gamma0 (GRD बाट तेस्रो पक्षले प्रशोधन गरेको), क्रस-जाँच मात्र' if pc else 'SNAP sigma0'}) {ne(config.PRE_DATE)} / {ne(config.POST_DATE)}, ट्र्याक {det['track']}। डिटेक्टरको नतिजा: **{st_ne}** — {T.cal_phrase_ne(det)}। यो उपत्यकाको सतहमा पत्ता लागेको परिवर्तनसँगको **जोखिम (exposure)** हो, पुष्टि गरिएको बाढी क्षेत्र होइन र क्षति होइन। "बाढी-जस्तो" वर्ग भनेको पानी-जस्तो ब्याकस्क्याटर परिवर्तन हो, खुला पानी पुष्टि भएको होइन। पुलहरू जोखिममा छन् भनिएको हो, भत्किएको होइन।
 
 | मुख्य अंक | मुख्य नतिजा | परिदृश्य दायरा |
 |---|---|---|
 | चिन्ह लगाइएको क्षेत्र | {ne(f'{atot:.2f}')} वर्ग कि.मि. | {ne(area_rng)} |
 | मास्कसँग खप्टिएका भवन | {ne(f"{b['overlap']:,}")} (जम्मा {ne(f"{b['total']:,}")} मध्ये) | {ne_rng(rr, 'buildings_overlap')} |
 | स्थिति थाहा नभएका भवन (अवलोकन बाहिर) | {ne(f'{unk_pct:.0f}')}% | — |
-| मास्कभित्र मोटरबाटो | {ne(f"{rb['motorable_road_km']:.1f}")} कि.मि. | {ne_rng(rr, 'motorable_road_km', '{:.1f}')} कि.मि. |
+| मास्कभित्र मोटरबाटो | {ne(f"{rb['motorable_road_km']:.1f}")} कि.मि. | {ne_rng(rr, 'motorable_road_km', '{:.1f}')}{'' if not rr else ' कि.मि.'} |
 | जोखिममा रहेका पुल (भत्किएको होइन) | {ne(rb['bridges'])} | {ne_rng(rr, 'bridges_exposed')} |
 | अस्पतालसम्म सडक नरहेका बस्ती | {ne(cut_n)} (जम्मा {ne(cut['total_settlements'])} मध्ये) | {ne_rng(rngc, 'hospital_cut_off')} |
 | बाढीअघि नै सडक नभएका बस्ती (मूल्याङ्कन नगरिएको) | {ne(no_path)} | — |
@@ -303,8 +306,8 @@ if args.one_page:
     pic = ROOT / "outputs/reports/situation_map.png"
     if not pic.exists(): die("outputs/reports/situation_map.png is missing; run tools/make_situation_map.py")
     sit = (f"Event date {config.FLOOD_DATE}, {config.AREA_NAME}. Sentinel-1 track {det['track']}, {config.PRE_DATE} / {config.POST_DATE}"
-           + (f" ({config.S1_SOURCE_LABEL})" if pc else "") + f": detector status **{det['status']}** "
-           + ("(calibrated against pre-event nulls). " if calibrated else "(**UNCALIBRATED**: no null gate). ")
+           + (f" ({T.PC_SOURCE}; {T.PC_ROUTE_STATUS})" if pc else "") + f": detector status **{det['status']}** "
+           + (f"({T.cal_phrase(det)}). " if cstate != "none" else "(**UNCALIBRATED**: no null gate). ")
            + "Detected change on the valley floor is **not attributed to flooding, not a validated flood extent and not damage**. "
              "Counts below are exposure to that mask." + null_note)
     lim1 = [l for l in lims if not l.startswith(("AI vs Sentinel-2", "EMSR927"))][:4]
@@ -318,7 +321,7 @@ if args.one_page:
 |---|---|---|
 | Flagged area | {atot:.2f} km² | {area_rng} |
 | Buildings overlapping the mask (unknown status: {unk_pct:.0f}%) | {b['overlap']:,} ({b['overlap_flood']:,} flood-like, {b['overlap_debris']:,} other change) | {span(rr, 'buildings_overlap')} |
-| Motorable road in mask | {rb['motorable_road_km']:.1f} km | {span(rr, 'motorable_road_km', '{:.1f}')} km |
+| Motorable road in mask | {rb['motorable_road_km']:.1f} km | {km_rng} |
 | Bridges exposed (not failed) | {rb['bridges']} of {imp['total_bridges']} | {span(rr, 'bridges_exposed')} |
 | Settlements cut off (no path to hospital) | {cut_n} of {cut['total_settlements']} | {span(rngc, 'hospital_cut_off')} |
 | Settlements degraded | {deg_n} | {span(rngc, 'hospital_degraded')} |

@@ -1,0 +1,30 @@
+{
+  "name": "trishuli_pc",
+  "bbox": "84.95,27.80,85.55,28.35",
+  "event_date": "2026-08-26",
+  "profile": "fast",
+  "s1_source": "pc",
+  "s1_source_label": "PC RTC gamma0, cross-check route",
+  "started": "2026-10-12T12:06:29",
+  "epsg": "32645",
+  "track": "asc85",
+  "pre_dates": [
+    "2026-08-16",
+    "2026-08-04",
+    "2026-07-23",
+    "2026-07-11"
+  ],
+  "post_date": "2026-08-28",
+  "ref_splits": [
+    "pre",
+    "placebo",
+    "pre3",
+    "pre4"
+  ],
+  "calibrated_possible": true,
+  "osm_snapshot": "2026-01-01",
+  "detect_status": "change_detected",
+  "calibrated": true,
+  "finished": "2026-10-12T12:24:36",
+  "wall_s": 1088
+}

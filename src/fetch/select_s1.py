@@ -95,16 +95,25 @@ def select(bbox, event_date, n_pre=4, min_cov=0.9, source="cdse"):
             "products": {str(d): [p for p, _ in frames[tr][d]] for d in keep}, "candidates": cands}
 
 
+def add_guards(out):
+    """Step 11: time-of-day and platform guards (same rule as check_stack.py), recorded in selection.json."""
+    from src.processing.stack_guards import stack_warnings
+    out["acquisitions"], out["warnings"] = stack_warnings(out["products"])
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--bbox", required=True); ap.add_argument("--event-date", required=True)
     ap.add_argument("--n-pre", type=int, default=4); ap.add_argument("--min-cov", type=float, default=0.9)
     ap.add_argument("--source", choices=["cdse", "pc"], default="cdse"); ap.add_argument("--out", default=DEFAULT_OUT); a = ap.parse_args()
     try: out = select(a.bbox, a.event_date, a.n_pre, a.min_cov, a.source)
     except ValueError as e: sys.exit(f"select_s1: {e}")
+    add_guards(out)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True); Path(a.out).write_text(json.dumps(out, indent=2))
     gb = sum(p["size_mb"] for v in out["products"].values() for p in v) / 1000
     print(f"track {out['rel_orbit']} {out['pass']}: post {out['post']}, pre {out['pre']}"
           + (f"; download ~{gb:.1f} GB" if a.source == "cdse" else " (PC: streamed, nothing to download)"))
+    for w in out["warnings"]: print(w)
     if out["n_refs"] < 3: print("WARNING: fewer than 3 reference dates: no null calibration, the detector result will be UNCALIBRATED")
 
 

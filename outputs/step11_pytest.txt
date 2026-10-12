@@ -1,0 +1,17 @@
+......................................................                   [100%]
+============================== warnings summary ===============================
+tests/test_dashboard.py::test_fit_bounds_on_flagged_pixels
+  C:\Users\vijay\CODING\DEV\MULTIMODEL\trishuli-flood-mapping\.venv\Lib\site-packages\rasterio\transform.py:178: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    return Affine.translation(west, north) * Affine.scale(xsize, -ysize)
+
+tests/test_dashboard.py::test_fit_bounds_on_flagged_pixels
+tests/test_dashboard.py::test_fit_bounds_on_flagged_pixels
+  C:\Users\vijay\CODING\DEV\MULTIMODEL\trishuli-flood-mapping\src\report\dashboard.py:53: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    ys, xs = np.nonzero(flag); (w_, n_), (e_, s_) = t * (xs.min(), ys.min()), t * (xs.max() + 1, ys.max() + 1)
+
+tests/test_impact.py::test_building_tiers_and_unknown_domains
+  C:\Users\vijay\CODING\DEV\MULTIMODEL\trishuli-flood-mapping\src\analysis\impact_lib.py:47: PendingDeprecationWarning: Use `@` matmul instead of `*` mul operator for matrix multiplication
+    c, r = ~T * (np.asarray(xs), np.asarray(ys))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+54 passed, 4 warnings in 8.18s

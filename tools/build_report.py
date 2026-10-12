@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
 from src import config
 from src.report.pdf_gate import to_pdf
 from src.report import attribution as ATTR
+from src.report import textbits as T
 
 AOI = {"AOI01": "Syapru Besi", "AOI02": "Timure", "AOI03": "Bidur", "AOI05": "Phosretar"}
 REQ_ATTR = " ".join(f'"{x}"' for x in ATTR.REQUIRED)        # exact strings, from src/report/attribution.py
@@ -41,6 +42,8 @@ def main():
     ems, cor, ai = J("outputs/validation/emsr927_validation.json"), J("outputs/validation/ai_corridor.json"), J("outputs/ai/smp_resnet34/metrics.json", True)
     cn, sd, ag, s2a = (J(f"outputs/validation/{n}.json") for n in ("class_nulls", "seeds_summary", "himalaya_label_agreement", "ai_vs_s2"))
     s2d = J("outputs/diagnostics/s2_detect.json"); fpj = J("outputs/flood_path/summary.json")
+    rte, dry, cw = J("outputs/validation/route_equivalence.json"), J("outputs/validation/dry_runs.json"), J("outputs/validation/himalaya_chip_windows.json")
+    hp2 = J("outputs/validation/himalaya_path2_post.json")
     if a.final:
         miss = [n for n, v in (("class_nulls", cn), ("seeds_summary", sd), ("ai_vs_s2", s2a), ("himalaya_chips", ai["splits"].get("himalaya_chips"))) if not v]
         if miss: sys.exit("build_report --final: missing " + ", ".join(miss))
@@ -65,7 +68,7 @@ def main():
 
     S.append(f"""## 1. Approach and data
 
-One pipeline (`run_all.sh`) runs from raw data: Sentinel-1 GRD scenes are calibrated and terrain-corrected, gridded to 30 m (10 m for the AI model), and compared with four pre-event reference dates on the same track; the HAND valley floor and a radar layover/shadow mask come from the Copernicus DEM; detected change is overlaid on pre-event OpenStreetMap buildings, roads and bridges; road paths from each settlement to the nearest hospital are recomputed with blocked segments removed; a dashboard and a one-page situation report are built from the outputs.
+One pipeline (`python -m src.run`) runs from raw data. The validated route downloads Sentinel-1 GRD from the Copernicus Data Space Ecosystem; scenes are calibrated and terrain-corrected with ESA SNAP (sigma0), gridded to 30 m (10 m for the AI model), and compared with four pre-event reference dates on the same track; the HAND valley floor and a radar layover/shadow mask come from the Copernicus DEM; detected change is overlaid on pre-event OpenStreetMap buildings, roads and bridges; road paths from each settlement to the nearest hospital are recomputed with blocked segments removed; a dashboard and a one-page situation report are built from the outputs.
 
 | Data | Role | Dates |
 |---|---|---|
@@ -93,7 +96,7 @@ Rules enforced in code: the OSM snapshot must predate the flood; detector thresh
     figs12 = " ".join(f"![]({f}){{width=49%}}" for f in (F1, F2) if f)
     S.append(f"""## 2. Detection method and evidence
 
-VH robust-z change of the post scene against the four references, restricted to the HAND ≤ {det.get('floor_m', 30)} m valley floor ({det['floor_km2']:.0f} km², {det['usable_fraction_of_floor']:.0%} usable after the radar mask). Thresholds {det['t_hi']:g} / {det['t_lo']:g} are the smallest values whose worst false-alarm fraction over the null runs is ≤ 1e-3 (calibrated = {det['calibrated']}). Classes: flood-like (dark and below open-water dB), dark change, bright change. Headline areas: {A['flood_water']:.2f} km² flood-like, {A['surface_dark']:.2f} km² dark, {A['surface_bright']:.2f} km² bright.{s3}{nt}
+VH robust-z change of the post scene against the four references, restricted to the HAND ≤ {det.get('floor_m', 30)} m valley floor ({det['floor_km2']:.0f} km², {det['usable_fraction_of_floor']:.0%} usable after the radar mask). Thresholds {det['t_hi']:g} / {det['t_lo']:g} are the smallest values whose worst false-alarm fraction over the null runs is ≤ 1e-3 ({T.cal_phrase(det)}). Classes: flood-like (dark and below open-water dB), dark change, bright change. Headline areas: {A['flood_water']:.2f} km² flood-like, {A['surface_dark']:.2f} km² dark, {A['surface_bright']:.2f} km² bright.{s3}{nt}
 
 {figs12}""")
 
@@ -124,6 +127,18 @@ VH robust-z change of the post scene against the four references, restricted to 
     hc = sp.get("himalaya_chips"); per = ", ".join(f"{r} {v['iou']:.2f} (n={v['n_chips']})" for r, v in (hc or {}).get("per_region", {}).items())
     ceil = f" Two annotators agree at IoU {ag['iou_A_vs_B']:.2f} on {ag['n_chips']} chips (noise ceiling)." if ag and ag.get("iou_A_vs_B") is not None else ""
     s2t = "; ".join(f"{k} IoU {v['iou']:.2f} (P {v['precision']:.2f}, R {v['recall']:.2f})" for k, v in (s2a or {}).get("results", {}).items()) or "not run"
+    if hp2 and hp2.get("pooled_iou_labelled_pixels") is not None:
+        ci = hp2.get("iou_ci95_chip_bootstrap") or [None, None]; ab = hp2.get("ab_agreement_first8") or {}
+        himal = (f"**Himalayan chips (path 2, labelled on clear pixels only):** pooled IoU {f3(hp2['pooled_iou_labelled_pixels'])} [{f2(ci[0])}–{f2(ci[1])}] over "
+                 f"{hp2['n_chips_with_labels']} chips with labels, {sum(hp2['labelled_pixels_per_chip'].values()):,} labelled pixels; A/B agreement IoU "
+                 f"{f3(ab.get('iou_A_vs_B'))} on {ab.get('n_chips', 0)} chips. {hp2.get('note', '')}.")
+    else:
+        cnt = (cw or {}).get("counts", {})
+        cw_t = "; ".join(f"{d[6:]}/{d[4:6]}: " + ", ".join(f"{k} {v[0]}/{v[1]}" for k, v in c.items()) for d, c in cnt.items())
+        himal = ("**Himalayan evidence: no labelled Himalayan test yet.** The pre-registered rule (≥70% clear Sentinel-2) kept 0 of 20 chips on 27 Aug and on 12 Aug; "
+                 f"an algorithmic scan for clear windows by stratum (never by prediction) found {(cw or {}).get('total_windows', 'n/a')} windows over both dates ({cw_t}; 20 sought per date), fewer than the 8 required. "
+                 "The written amendment (docs/validation_log.md, before any labelling) keeps all 20 chips and labels clear pixels only; until those labels exist the "
+                 "Himalayan evidence is qualitative: six example panels (first six chips in file order, `outputs/figures/himalaya_example_panels.png`), Bolivia (not Himalayan) and the corridor null below.")
     S.append(f"""## 4. AI component
 
 ResNet34 U-Net (segmentation-models-pytorch), Sentinel-1 VV+VH input, trained on Sen1Floods11 hand labels; threshold {ai['threshold']} chosen on validation only. The seed-0 model is the shipped model; seeds 1 and 2 measure training noise.
@@ -132,7 +147,7 @@ ResNet34 U-Net (segmentation-models-pytorch), Sentinel-1 VV+VH input, trained on
 |---|---|---|---|
 {chr(10).join(rows)}
 
-{'Himalayan chips by stratum: ' + per + '.' if per else ''}{ceil} Chip points were pre-registered before any prediction was viewed and labelled from the clear parts of the 27 Aug 2026 Sentinel-2 scene; with about 20 chips the interval is wide. Bolivia (the only unseen-region test, 15 chips): shipped IoU {f3((sp.get('bolivia') or {}).get('at_threshold', {}).get('iou'))}, chip CI {f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[0])}–{f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[1])}. Corridor null test (prediction-only): excess {f3((cor or {}).get('event', {}).get('excess'))} vs largest leave-one-out null {f3((cor or {}).get('max_null_excess'))}: **{(cor or {}).get('verdict', 'not run')}**. The model detects **open water only**; no allowed dataset labels debris, so debris comes from the change detector.""")
+{'Himalayan chips by stratum: ' + per + '.' if per else ''}{ceil} {himal} Bolivia (the only unseen-region test, 15 chips): shipped IoU {f3((sp.get('bolivia') or {}).get('at_threshold', {}).get('iou'))}, chip CI {f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[0])}–{f2(((sp.get('bolivia') or {}).get('iou_ci95_chip_bootstrap') or [None, None])[1])}. Corridor null test (prediction-only): excess {f3((cor or {}).get('event', {}).get('excess'))} vs largest leave-one-out null {f3((cor or {}).get('max_null_excess'))}: **{(cor or {}).get('verdict', 'not run')}**. The model detects **open water only**; no allowed dataset labels debris, so debris comes from the change detector.""")
 
     if ems:
         er, verd = [], []
@@ -157,6 +172,28 @@ The local EMSR927 products are grading maps: `observedEventA` is **landslide** p
 
 {'; '.join(verd)}. Association with damage points is not attribution to flooding; every EMS scoring is listed in `docs/validation_log.md`.""")
 
+    if rte or dry:
+        R = []
+        if rte:
+            cn_ = rte["class_nulls"]
+            R.append(f"**Route equivalence (case study, rule written before the run): {rte['verdict']}.** Planetary Computer RTC gamma0 vs SNAP sigma0, same scenes and grid: "
+                     f"flagged {rte['pc_flagged_km2']:.2f} vs {rte['snap_flagged_km2']:.2f} km² (pass, ±50%), pixel IoU {rte['iou_flagged']:.2f} (pass, ≥ 0.3), but bright change is "
+                     f"{'separable' if cn_['surface_bright']['pc'][2] else 'not separable'} from the nulls on PC while it is separable on SNAP, and flood-like change falls from "
+                     f"{rte['per_class_km2']['flood_like']['snap']:.2f} to {rte['per_class_km2']['flood_like']['pc']:.2f} km² (the fixed water gates were set for sigma0; gamma0 is brighter). "
+                     f"The PC route, {T.PC_SOURCE}, is therefore **{T.PC_ROUTE_STATUS}**.")
+        if dry:
+            rows = []
+            for k, lab in (("negative_control", "Negative control (Trishuli box, event 2026-08-01)"), ("terai", "Terai (lowland box, event 2026-08-26)")):
+                r = dry["runs"].get(k)
+                if r: rows.append(f"| {lab} | {r['status']} | {r['t_hi']:g} | {100 * r['null_far_max']:.2f}% | {'yes' if r['calibrated'] else '**no**'} | "
+                                  f"{r['min_detectable_km2']:.2f} km² | {r['buildings_unknown_pct']}% | {r['total_s'] / 60:.1f} min |")
+            R.append("Dry runs on unseen areas (PC route, `--profile fast`, Kaggle CPU; cross-check only):\n\n| Run | Status | t_hi | Null FAR max | Alpha met | Min. detectable area | Buildings unknown | Run time |\n|---|---|---|---|---|---|---|---|\n" + "\n".join(rows))
+            t = dry["runs"].get("terai")
+            if t: R.append(f"Minimum detectable area = gate threshold × assessed floor. The case study's {dry['case_study_flagged_km2']:.2f} km² is about "
+                           f"{dry['case_study_flagged_km2'] / dry['case_study_min_detectable_km2']:.0f}× its limit of {dry['case_study_min_detectable_km2']:.2f} km²; in the Terai box no threshold met the "
+                           f"0.1% target and the limit is {t['min_detectable_km2']:.0f} km², so a same-size event there would be undetectable. One negative-control reference "
+                           "(2026-06-22) is Sentinel-1A while the others are Sentinel-1D on the same relative orbit, which is why it sits 7 days off the 12-day grid; the stack checks now warn on mixed platforms and on acquisition times > 10 min apart.")
+        S.append(f"## {len(S)}. Robustness: route check and dry runs\n\n" + "\n\n".join(R))
     lim = [f"Single Sentinel-1 track ({det['track']}), one post scene {(dt.date.fromisoformat(config.POST_DATE) - dt.date.fromisoformat(config.FLOOD_DATE)).days} days after the event; a flash flood in a gorge may have drained.",
            f"Valley floor only: {unk_pct:.0f}% of OSM buildings and the hillside roads are outside it and UNKNOWN, not clear.",
            (f"Sentinel-2: {s2d['floor_clear_post_fraction']:.0%} of the floor has clear post-event coverage; status {s2d['status']}, so S2 is excluded from the fused product." if s2d else "Sentinel-2 excluded (gate not passed)."),
@@ -164,8 +201,8 @@ The local EMSR927 products are grading maps: `observedEventA` is **landslide** p
            f"OSM currency: snapshot {config.OSM_SNAPSHOT_DATE}; rural Rasuwa is under-mapped ({no_path} settlements have no pre-flood route), so cut-off can be overstated and damage undercounted.",
            "No cut-off ground truth exists; the scenario range is the uncertainty we can quantify.", null_line,
            f"AI vs Sentinel-2 cannot arbitrate (appendix only): S2 MNDWI agreement on clear floor pixels is a pseudo-reference ({s2t}); precision is about 0.5 on both the pre- and post-event dates, so agreement that does not change with the event cannot arbitrate anything."]
-    S.append("## 6. Limitations\n\n" + "\n".join(f"- {x}" for x in lim))
-    S.append(f"""## 7. Attribution and citations
+    S.append(f"## {len(S)}. Limitations\n\n" + "\n".join(f"- {x}" for x in lim))
+    S.append(f"""## {len(S)}. Attribution and citations
 
 {REQ_ATTR} Copernicus EMS credit: "{ATTR.EMS}" (EMSR927, checking only). {ATTR.EMS_HOLDINGS} {ATTR.DISCLAIMER} Sen1Floods11: Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020), CVPR Workshops (CC BY 4.0).{f" Flood-path bonus: D8 path {fpj['path_km']} km, {fpj['n_settlements']} settlements on the HAND corridor (geometry only, no hydraulics)." if fpj else ''}""")
 

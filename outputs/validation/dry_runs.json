@@ -1,0 +1,197 @@
+{
+  "runs": {
+    "negative_control": {
+      "bbox": "84.95,27.8,85.55,28.35",
+      "event": "2026-08-01",
+      "route": "pc (cross-check only)",
+      "track": "asc85",
+      "post": "2026-08-04",
+      "pre": [
+        "2026-07-23",
+        "2026-07-11",
+        "2026-06-29",
+        "2026-06-22"
+      ],
+      "status": "no_significant_change",
+      "t_hi": 5.0,
+      "null_far_max": 0.0002881818427427707,
+      "calibrated": true,
+      "min_detectable_km2": 0.173,
+      "floor_km2": 199.9,
+      "area_km2_total": 0.0,
+      "buildings_total": 189319,
+      "buildings_unknown_pct": 92,
+      "total_s": 840,
+      "kaggle_kernel": "pagoluvijay/trishuli-step10-dryruns v2"
+    },
+    "terai": {
+      "bbox": "84.3,26.9,84.9,27.4",
+      "event": "2026-08-26",
+      "route": "pc (cross-check only)",
+      "track": "asc85",
+      "post": "2026-08-28",
+      "pre": [
+        "2026-08-16",
+        "2026-08-04",
+        "2026-07-23",
+        "2026-07-11"
+      ],
+      "status": "no_significant_change",
+      "t_hi": 6.0,
+      "null_far_max": 0.0020217422102768966,
+      "calibrated": false,
+      "min_detectable_km2": 17.37,
+      "floor_km2": 2863.9,
+      "area_km2_total": 0.0,
+      "buildings_total": 138359,
+      "buildings_unknown_pct": 3,
+      "total_s": 756,
+      "kaggle_kernel": "pagoluvijay/trishuli-step10-dryruns v2"
+    }
+  },
+  "case_study_min_detectable_km2": 0.211,
+  "case_study_flagged_km2": 3.14,
+  "orbit_table": [
+    {
+      "run": "dryrun1",
+      "role": "post",
+      "date": "2026-08-04",
+      "id": "S1D_IW_GRDH_1SDV_20260804T122140_20260804T122205_003976_00737A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3976,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "post",
+      "date": "2026-08-04",
+      "id": "S1D_IW_GRDH_1SDV_20260804T122115_20260804T122140_003976_00737A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3976,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref1",
+      "date": "2026-07-23",
+      "id": "S1D_IW_GRDH_1SDV_20260723T122140_20260723T122205_003801_006D5D_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3801,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref1",
+      "date": "2026-07-23",
+      "id": "S1D_IW_GRDH_1SDV_20260723T122115_20260723T122140_003801_006D5D_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3801,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref2",
+      "date": "2026-07-11",
+      "id": "S1D_IW_GRDH_1SDV_20260711T122139_20260711T122204_003626_00675A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3626,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref2",
+      "date": "2026-07-11",
+      "id": "S1D_IW_GRDH_1SDV_20260711T122114_20260711T122139_003626_00675A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3626,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref3",
+      "date": "2026-06-29",
+      "id": "S1D_IW_GRDH_1SDV_20260629T122138_20260629T122203_003451_006174_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3451,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref3",
+      "date": "2026-06-29",
+      "id": "S1D_IW_GRDH_1SDV_20260629T122113_20260629T122138_003451_006174_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3451,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun1",
+      "role": "ref4",
+      "date": "2026-06-22",
+      "id": "S1A_IW_GRDH_1SDV_20260622T122218_20260622T122243_065082_083408_rtc",
+      "platform": "sentinel-1a",
+      "rel_orbit": 85,
+      "abs_orbit": 65082,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun2",
+      "role": "post",
+      "date": "2026-08-28",
+      "id": "S1D_IW_GRDH_1SDV_20260828T122116_20260828T122141_004326_007FA4_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 4326,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun2",
+      "role": "ref1",
+      "date": "2026-08-16",
+      "id": "S1D_IW_GRDH_1SDV_20260816T122116_20260816T122141_004151_007980_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 4151,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun2",
+      "role": "ref2",
+      "date": "2026-08-04",
+      "id": "S1D_IW_GRDH_1SDV_20260804T122115_20260804T122140_003976_00737A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3976,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun2",
+      "role": "ref3",
+      "date": "2026-07-23",
+      "id": "S1D_IW_GRDH_1SDV_20260723T122115_20260723T122140_003801_006D5D_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3801,
+      "orbit_state": "ascending"
+    },
+    {
+      "run": "dryrun2",
+      "role": "ref4",
+      "date": "2026-07-11",
+      "id": "S1D_IW_GRDH_1SDV_20260711T122114_20260711T122139_003626_00675A_rtc",
+      "platform": "sentinel-1d",
+      "rel_orbit": 85,
+      "abs_orbit": 3626,
+      "orbit_state": "ascending"
+    }
+  ],
+  "platform_note": "Dry run 1's 2026-06-22 reference is Sentinel-1A; every other reference/post is Sentinel-1D, same relative orbit 85 ascending. In the PC catalogue track 85 was flown by S1A on a 12-day grid up to 2026-06-22 (05-29, 06-10, 06-22) and by S1D from 2026-06-29 (06-29, 07-11, ...), offset by 7 days; there is no 06-17 scene. First-frame start 12:22:18 UTC (S1A) vs 12:21:13-12:21:15 UTC (S1D): 1 min apart, so the 10-min time-of-day guard does not fire; the new platform-mix warning does."
+}

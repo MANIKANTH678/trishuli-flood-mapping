@@ -12,9 +12,11 @@ fail the page falls back to a plain background and says so. Replaces the retired
 import argparse, html, json, re, shutil
 from pathlib import Path
 import numpy as np, rasterio, geopandas as gpd, folium
+from scipy import ndimage as ndi
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from src import config
 from src.report import attribution as A
+from src.report import textbits as T
 
 ROOT = Path(__file__).resolve().parents[2]
 VENDOR_SRC = Path(__file__).resolve().parent / "vendor"
@@ -40,6 +42,29 @@ def to_4326(path):
     return out, [[south, west], [north, east]]
 
 
+def flag_bounds(cls_path):
+    """[[south, west], [north, east]] (EPSG:4326) of the classes 1-3 pixels of the TRUE mask, or None when nothing is
+    flagged. Computed on the native grid and transformed, so the view opens on the flagged change (review item 6)."""
+    from rasterio.warp import transform_bounds
+    with rasterio.open(cls_path) as s:
+        out, t, crs = s.read(1), s.transform, s.crs
+    flag = np.isin(out, (1, 2, 3))
+    if not flag.any(): return None
+    ys, xs = np.nonzero(flag); (w_, n_), (e_, s_) = t * (xs.min(), ys.min()), t * (xs.max() + 1, ys.max() + 1)
+    w, s, e, n = transform_bounds(crs, "EPSG:4326", min(w_, e_), min(s_, n_), max(w_, e_), max(s_, n_))
+    return [[s, w], [n, e]]
+
+
+def display_classes(c, iterations=2):
+    """Display-only copy: each flagged class dilated by `iterations` pixels so a 3 km² result is visible on a ~3,400 km²
+    view. The numbers always use the true mask; this array is only ever coloured. Water-like (1) is drawn on top."""
+    out = np.where(np.isin(c, (1, 2, 3)), c, 0).astype(np.uint8)
+    for k in (3, 2, 1):
+        vis = ndi.binary_dilation(c == k, iterations=iterations)
+        out[vis & ((out == 0) | (k == 1))] = k
+    return out
+
+
 def rgba_of(cls, colors):
     rgba = np.zeros(cls.shape + (4,), np.uint8)
     for k, c in colors.items(): rgba[cls == k] = c
@@ -54,18 +79,16 @@ def span(r, key, fmt="{:,}"):
 
 def headline(det, imp, cutj, cn, ems, s2):
     """All panel text, from the JSON files only."""
-    b = imp["buildings"]; rr = (imp.get("sensitivity") or {}).get("range") or {}
+    b = imp["buildings"]; rr = T.scenario_range(imp)
     rb = imp["roads_bridges"]["exposure_by_tolerance"]["0m"]
     cut = (cutj or {}).get("summary", {}); rc = ((cutj or {}).get("sensitivity") or {}).get("range") or {}
     unk = (b.get("not_assessed", 0) + b.get("unobservable", 0)) / max(b["total"], 1)
     rng = lambda key, fmt="{:,}": f" (range {span(rr, key, fmt)})" if span(rr, key, fmt) else ""
     L = []
-    cal = "calibrated against pre-event nulls" if det.get("calibrated") else "UNCALIBRATED (fewer than 3 reference dates: no null gate)"
-    if det.get("calibrated") and det.get("alpha_met") is False:
-        cal = f"null-calibrated, but no threshold reached the 0.1% false-alarm target (largest grid value used; null max {100 * det.get('null_far_max', 0):.2f}%)"
+    cal = E(T.cal_phrase(det))                        # Step 11: "calibration target not met; minimum detectable area ≈ N km²"
     L.append(f"Detector status: <b>{E(det['status'])}</b> &middot; track {E(det['track'])} &middot; {cal}")
     if config.S1_SOURCE == "pc":
-        L.append(f"<b>Sentinel-1 source: {E(config.S1_SOURCE_LABEL)}</b> &mdash; numbers are a cross-check of the method, not the SNAP headline.")
+        L.append(f"<b>Sentinel-1 source: {E(T.PC_SOURCE)}</b> &mdash; {E(T.PC_ROUTE_NOTE)}")
     area = det.get("area_km2", {})
     L.append(f"Flagged on the valley floor: {area.get('flood_water', 0):.2f} km&sup2; flood-like (water-like backscatter change), "
              f"{area.get('surface_dark', 0):.2f} km&sup2; dark change, {area.get('surface_bright', 0):.2f} km&sup2; bright change")
@@ -75,8 +98,9 @@ def headline(det, imp, cutj, cn, ems, s2):
              f"bridges exposed (not failed): {rb['bridges']}{rng('bridges_exposed')}")
     if cut:
         sp = span(rc, "hospital_cut_off")
+        tot, nop = cut.get("total_settlements", 0), cut.get("hospital_no_pre_flood_path", 0)
         L.append(f"Settlements with no road path to a hospital: <b>{cut.get('cut_off', 0)}</b>{f' (range {sp})' if sp else ''} of "
-                 f"{cut.get('total_settlements', 0)}; {cut.get('hospital_no_pre_flood_path', 0)} had no pre-flood route (not assessed)")
+                 f"{tot:,}, of {tot - nop:,} assessable" + (f"; {T.plural(nop, 'settlement')} had no pre-flood route (not assessed)" if nop else ""))
     if rr: L.append("<i>Range = detector thresholds low/base/high" + (" &times; mask &plusmn;1 px &times; bridge policy" if rc else "") + ".</i>")
     if cn and cn.get("statement"): L.append(f"<b>{E(cn['statement'])}</b>")
     if s2 and s2.get("status") and s2.get("status") != "change_detected":
@@ -162,9 +186,10 @@ def build(out="outputs/dashboard/index.html", cls="data/processed/fused_class_30
         c, bb = scen[nm]
         lab = {"base": "Scenario base threshold (headline)", "low": "Scenario low threshold (more change)",
                "high": "Scenario high threshold (less change)"}[nm]
-        folium.raster_layers.ImageOverlay(rgba_of(c, CLASS_RGBA), bb, name=lab, opacity=1, show=(nm == "base"), zindex=3).add_to(m)
+        folium.raster_layers.ImageOverlay(rgba_of(display_classes(c), CLASS_RGBA), bb, name=lab + " (drawn 2 px wider)", opacity=1,
+                                          show=(nm == "base"), zindex=3).add_to(m)
     folium.raster_layers.ImageOverlay(rgba_of(base, {254: UNOBS_RGBA}), bounds, name="Radar-unobservable (layover / shadow): UNKNOWN",
-                                      opacity=1, show=True, zindex=2).add_to(m)
+                                      opacity=1, show=False, zindex=2).add_to(m)
     folium.raster_layers.ImageOverlay(rgba_of(base, {253: NOTASSESSED_RGBA}), bounds, name="Outside the assessed valley floor: UNKNOWN",
                                       opacity=1, show=False, zindex=1).add_to(m)
 
@@ -212,14 +237,18 @@ def build(out="outputs/dashboard/index.html", cls="data/processed/fused_class_30
               "<span style='color:#5a5a5a'>&#9632;</span> radar-unobservable")
     panel = (f"<div id='hdr' style='position:fixed;top:10px;left:50px;z-index:9999;background:#fff;padding:8px 12px;border:1px solid #888;"
              f"font:12px/1.35 sans-serif;max-width:430px;max-height:70vh;overflow:auto'>"
+             f"<details open><summary><b>Summary</b></summary>"
              f"<b>{E(config.TITLE)}</b><br><i>{E(A.DISCLAIMER)} Exposure to a detected change mask, not a validated flood extent "
              f"and not damage.</i><br>" + "<br>".join(lines) + f"<br>{legend}"
+             f"<br><i>Flagged pixels are drawn 2 px wider so they are visible; every number uses the true mask.</i></details>"
              f"<div id='tile-note' style='display:none;margin-top:4px;color:#a50'>Basemap tiles could not load (offline?): choose "
              f"&ldquo;Plain background (offline)&rdquo;. All analysis layers are embedded in this file.</div></div>")
     foot = (f"<div style='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(255,255,255,.92);font:10px sans-serif;padding:2px 6px'>"
             f"{A.html(with_ems=have_ems)} {E(A.DISCLAIMER)}</div>")
     m.get_root().html.add_child(folium.Element(panel + foot + TILE_FALLBACK_JS))
     folium.LayerControl(collapsed=False).add_to(m)
+    fb_ = flag_bounds(cls)
+    m.fit_bounds(fb_ if fb_ else bounds, padding=(40, 40))      # open on the flagged change, else on the whole area
     Path(out).parent.mkdir(parents=True, exist_ok=True); m.save(out)
     vendorize(out)
     print("wrote", out)

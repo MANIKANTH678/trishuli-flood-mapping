@@ -9,7 +9,8 @@
     COPERNICUS_USER / COPERNICUS_PASS in the environment, SNAP gpt and ~40 GB free.
 --s1-source pc: Planetary Computer Sentinel-1 RTC (gamma0), no login, no SNAP. Replaces fetch_s1 / unzip_s1 / check_stack /
     snap / grid with src.processing.pc_stack, which writes the same s1_{split}_{pol}_30m.tif files on the same grid.
-    Outputs are labelled "PC RTC gamma0, cross-check route": a cross-check, never the SNAP headline.
+    Outputs are labelled "PC RTC gamma0 (Sentinel-1 RTC, third-party processed from GRD), cross-check only": it failed the Step 11 route-equivalence test on the case study
+    (docs/validation_log.md, 2026-10-12), so it is a cross-check only, never the SNAP headline.
 --profile fast skips Sentinel-2, the threshold-sensitivity runs and the AI layer, but keeps the null-calibrated gate.
 
 A run directory that holds another run (different bbox / event / source in run.json, or stale scenes) is refused:
@@ -26,7 +27,7 @@ REF_SPLITS = ["pre", "placebo", "pre3", "pre4"]                                 
 CLEAN = [f"{S1}/{s}" for s in REF_SPLITS + ["post", "pc_annotation"]] + [f"{S1}/selection.json", f"{S1}/pc_source.json",
          "data/raw/osm", "data/raw/s2", "data/raw/dem", "data/interim", "data/processed", "outputs", "run.json"]  # never 'models'
 OPTIONAL = {"s2_search", "s2_ingest", "s2_detect", "ai_scenes", "situation_map"}
-PC_LABEL = "PC RTC gamma0, cross-check route"
+PC_LABEL = "PC RTC gamma0 (Sentinel-1 RTC, third-party processed from GRD), cross-check only"
 
 
 def gpt_found():
@@ -39,7 +40,7 @@ def preflight(source):
     if source == "pc":                                   # PC route: no CDSE credentials, no SNAP
         return
     miss = [v for v in ("COPERNICUS_USER", "COPERNICUS_PASS") if not os.environ.get(v)]
-    if miss: sys.exit(f"missing environment variables: {miss} (or use --s1-source pc for the no-login cross-check route)")
+    if miss: sys.exit(f"missing environment variables: {miss} (or use --s1-source pc for the no-login route: cross-check only)")
     if not gpt_found(): sys.exit("SNAP gpt not found (set GPT), or use --s1-source pc")
 
 

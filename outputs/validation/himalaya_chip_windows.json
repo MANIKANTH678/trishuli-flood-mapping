@@ -1,0 +1,36 @@
+{
+  "rule": "windows by S2 clear fraction >= 0.7 and stratum only (tools/chip_windows.py); no model output read",
+  "counts": {
+    "20260827": {
+      "main": [
+        1,
+        8
+      ],
+      "trib": [
+        0,
+        8
+      ],
+      "hill": [
+        1,
+        4
+      ]
+    },
+    "20260812": {
+      "main": [
+        0,
+        8
+      ],
+      "trib": [
+        0,
+        8
+      ],
+      "hill": [
+        2,
+        4
+      ]
+    }
+  },
+  "total_windows": 4,
+  "path": 2,
+  "decision": "fewer than 8 windows: path-2 amendment logged; chips to be labelled on clear pixels only"
+}

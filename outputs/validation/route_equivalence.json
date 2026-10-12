@@ -1,0 +1,100 @@
+{
+  "how_aligned": "identical grids (same CRS, transform and shape): compared pixel for pixel",
+  "snap_flagged_km2": 3.1419,
+  "pc_flagged_km2": 3.5253,
+  "iou_flagged": 0.362,
+  "per_class_km2": {
+    "flood_like": {
+      "snap": 0.306,
+      "pc": 0.049
+    },
+    "dark": {
+      "snap": 2.294,
+      "pc": 2.775
+    },
+    "bright": {
+      "snap": 0.542,
+      "pc": 0.701
+    }
+  },
+  "agreement_unobservable_254": 1.0,
+  "snap_floor_px": 222059,
+  "pc_floor_px": 222550,
+  "pc_flagged_within_1px_of_snap_frac": 0.691,
+  "snap_flagged_within_1px_of_pc_frac": 0.78,
+  "pc_flagged_within_2px_of_snap_frac": 0.759,
+  "snap_flagged_within_2px_of_pc_frac": 0.86,
+  "status": {
+    "snap": "change_detected",
+    "pc": "change_detected"
+  },
+  "thresholds": {
+    "snap": [
+      4.0,
+      2.5
+    ],
+    "pc": [
+      3.5,
+      2.5
+    ]
+  },
+  "null_far_max": {
+    "snap": 0.0003512627445329106,
+    "pc": 0.0007863401482812851
+  },
+  "gate": {
+    "snap": 0.0010537882335987319,
+    "pc": 0.002359020444843855
+  },
+  "seed_fraction": {
+    "snap": 0.01091151450740569,
+    "pc": 0.012419680970568411
+  },
+  "class_nulls": {
+    "flood_water": {
+      "snap": [
+        0.306,
+        0.0144,
+        true
+      ],
+      "pc": [
+        0.0495,
+        0.0,
+        true
+      ]
+    },
+    "surface_dark": {
+      "snap": [
+        2.2941,
+        0.0396,
+        true
+      ],
+      "pc": [
+        2.7747,
+        0.1035,
+        true
+      ]
+    },
+    "surface_bright": {
+      "snap": [
+        0.5418,
+        0.0918,
+        true
+      ],
+      "pc": [
+        0.7011,
+        0.2844,
+        false
+      ]
+    }
+  },
+  "criteria": {
+    "a_area_within_50pct": [
+      true,
+      "1.57-4.71 km2"
+    ],
+    "b_iou_ge_0.3": true,
+    "c_same_verdicts": false
+  },
+  "verdict": "FAIL"
+}

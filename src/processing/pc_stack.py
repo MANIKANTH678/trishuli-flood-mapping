@@ -6,7 +6,7 @@ downstream stages read:
   data/processed/dem_30m.tif, dem_10m.tif           the analysis grid (src.processing.s1_to_grid.grid_dem, as in the SNAP route)
   data/processed/s1_{split}_{VV,VH}_30m.tif         dB, nodata -9999, on that grid (split = post, pre, placebo, pre3, pre4)
   data/raw/sentinel1/pc_annotation/pre/*.xml        GRD product annotation of the nearest pre scene (src.analysis.geometry --ann-dir)
-  data/raw/sentinel1/pc_source.json                 what was used, labelled "PC RTC gamma0, cross-check route"
+  data/raw/sentinel1/pc_source.json                 what was used, labelled "PC RTC gamma0 (Sentinel-1 RTC, third-party processed from GRD), cross-check only"
 
 Scenes come from data/raw/sentinel1/selection.json written by `src.fetch.select_s1 --source pc` (one relative orbit and
 pass, the nearest post date, up to four pre dates). Logic follows tools/pc_replica_stack.py, generalised to the
@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np, rasterio
 from rasterio.warp import reproject, Resampling
 
-LABEL = "PC RTC gamma0, cross-check route"
+LABEL = "PC RTC gamma0 (Sentinel-1 RTC, third-party processed from GRD), cross-check only"
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 SPLITS = ["pre", "placebo", "pre3", "pre4"]          # nearest pre-event date first (same order as fetch_sentinel1)
 ND = -9999.0

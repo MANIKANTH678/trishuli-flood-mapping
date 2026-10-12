@@ -1,0 +1,51 @@
+{
+  "rule": "separable only if event area > 3x the largest null area (nulls ungated, leave-one-out)",
+  "event_source": "detect_event_nogate.json",
+  "event_status": "change_detected",
+  "event_refs": [
+    "pre",
+    "placebo",
+    "pre3",
+    "pre4"
+  ],
+  "classes": {
+    "flood_water": {
+      "event_km2_ungated": 0.0495,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.0,
+        "pre4": 0.0
+      },
+      "max_null_km2": 0.0,
+      "ratio": null,
+      "separable": true
+    },
+    "surface_dark": {
+      "event_km2_ungated": 2.7747,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.1035,
+        "pre4": 0.0369
+      },
+      "max_null_km2": 0.1035,
+      "ratio": 26.8,
+      "separable": true
+    },
+    "surface_bright": {
+      "event_km2_ungated": 0.7011,
+      "null_km2": {
+        "pre": 0.0,
+        "placebo": 0.0,
+        "pre3": 0.0,
+        "pre4": 0.2844
+      },
+      "max_null_km2": 0.2844,
+      "ratio": 2.5,
+      "separable": false
+    }
+  },
+  "flood_water_separable": true,
+  "statement": "Flood-like change (0.05 km\u00b2 of water-like backscatter change) is separable from all four pre-event nulls; surface change (2.77 km\u00b2 dark, 0.70 km\u00b2 bright) is not."
+}

@@ -1,7 +1,8 @@
 # Pinned for Step 10 (2026-10-12). Lines without a wildcard are exact versions: Bobby's laptop pins, or the versions the
 # sandbox / Kaggle dry runs were tested with (folium, matplotlib, Pillow, tifffile and the PC-route / report packages).
-# The few '==X.*' lines below are packages neither environment had installed; run_step10.bat writes the laptop's exact
-# versions to requirements_lock_win.txt (pip freeze) - paste those lines here before the final push.
+# Step 11: the six former '==X.*' lines (imagecodecs, boto3, scikit-learn, xgboost, joblib, osm2geojson) are now exact.
+# No requirements_lock_win.txt was available and the sandbox venv does not have them, so each is the newest release of
+# the series that was already declared (PyPI, 2026-10-12). run_step11.bat checks them against the laptop's pip freeze.
 # The ohsome OSM route also needs pyarrow (imported lazily). Optional, not pip: osmium-tool (Geofabrik clip), playwright + chromium (dashboard screenshot only).
 fiona==1.10.1
 geopandas==1.2.0
@@ -21,15 +22,15 @@ tqdm==4.70.1
 xarray==2026.9.0
 pyrosm==0.10.0
 tifffile==2026.9.20
-imagecodecs==2024.*
+imagecodecs==2024.12.30
 Pillow==12.3.0
 folium==0.20.0
-boto3==1.35.*
+boto3==1.35.99
 matplotlib==3.11.2
-scikit-learn==1.5.*
-xgboost==2.1.*
-joblib==1.4.*
-osm2geojson==0.2.*
+scikit-learn==1.5.2
+xgboost==2.1.4
+joblib==1.4.2
+osm2geojson==0.2.9
 torchvision==0.29.1
 torch==2.14.1
 segmentation-models-pytorch==0.5.0
