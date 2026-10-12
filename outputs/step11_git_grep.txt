@@ -61,3 +61,19 @@ $ git log -3 --oneline
 bf89060 Step 10 tidy: class nulls JSON, retire old runners
 42925be Step 10: attribution constant, wording fixes, select_s1, run.py + PC cross-check route, models/ fp16, vendored dashboard, dry runs
 98b5082 Step 9: dashboard, one-page report with page gate, flood-path bonus, class nulls, seeds
+
+# after the Step 11 commit
+4043a28
+HEAD:docs/validation_log.md:47:- class nulls (ungated, leave-one-out, rule >3x): Flood-like (new open water) change is separable from the no-flood nulls. [class_nulls.json f582ed00cac2]
+HEAD:docs/validation_log.md:108:SUPERSEDES the ‘new open water’ wording above. Class 1 is water-like backscatter change; the single-date water model’s corridor test is not separable from nulls and Sentinel-2 does not confirm open water.
+HEAD:outputs/step11_git_grep.txt:54:$ git grep -n -i -e "no flood signal could be detected" -e "cannot resolve the event" -e "thresholded dark tail" -e "new open water" HEAD
+HEAD:outputs/step11_git_grep.txt:55:HEAD:docs/validation_log.md:47:- class nulls (ungated, leave-one-out, rule >3x): Flood-like (new open water) change is separable from the no-flood nulls. [class_nulls.json f582ed00cac2]
+HEAD:outputs/step11_git_grep.txt:56:HEAD:outputs/dashboard.html:218:  event; it does not show that no flood occurred. The mask is the thresholded dark tail of the VV/VH change,
+HEAD:outputs/step11_git_grep.txt:57:HEAD:outputs/doc_backups/dashboard_full.py.final.bak:432:  event; it does not show that no flood occurred. The mask is the thresholded dark tail of the VV/VH change,
+HEAD:outputs/step11_git_grep.txt:58:HEAD:run_step10.bat:46:findstr /s /n /i /c:"no flood signal could be detected" /c:"cannot resolve the event" /c:"thresholded dark tail" /c:"new open water" *.py *.md *.html *.txt > grep_stale_laptop.txt
+HEAD:outputs/step11_git_grep.txt:59:HEAD:tests/test_no_stale_claims.py:5:STALE = ["no flood signal could be detected", "cannot resolve the event", "thresholded dark tail", "new open water"]
+HEAD:run_step10.bat:46:findstr /s /n /i /c:"no flood signal could be detected" /c:"cannot resolve the event" /c:"thresholded dark tail" /c:"new open water" *.py *.md *.html *.txt > grep_stale_laptop.txt
+HEAD:run_step11.bat:51:>> outputs\step11_git_grep.txt echo $ git grep -n -i -e "no flood signal could be detected" -e "cannot resolve the event" -e "thresholded dark tail" -e "new open water" HEAD
+HEAD:run_step11.bat:52:git grep -n -i -e "no flood signal could be detected" -e "cannot resolve the event" -e "thresholded dark tail" -e "new open water" HEAD >> outputs\step11_git_grep.txt 2>&1
+HEAD:run_step11.bat:115:  git grep -n -i -e "no flood signal could be detected" -e "cannot resolve the event" -e "thresholded dark tail" -e "new open water" HEAD >> outputs\step11_git_grep.txt 2>&1
+HEAD:tests/test_no_stale_claims.py:5:STALE = ["no flood signal could be detected", "cannot resolve the event", "thresholded dark tail", "new open water"]
