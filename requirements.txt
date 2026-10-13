@@ -2,7 +2,7 @@
 # sandbox / Kaggle dry runs were tested with (folium, matplotlib, Pillow, tifffile and the PC-route / report packages).
 # Step 11: the six former '==X.*' lines (imagecodecs, boto3, scikit-learn, xgboost, joblib, osm2geojson) are now exact.
 # No requirements_lock_win.txt was available and the sandbox venv does not have them, so each is the newest release of
-# the series that was already declared (PyPI, 2026-10-12). run_step11.bat checks them against the laptop's pip freeze.
+# the series that was already declared (PyPI, 2026-10-12). They match the laptop pip freeze (checked 2026-10-12).
 # The ohsome OSM route also needs pyarrow (imported lazily). Optional, not pip: osmium-tool (Geofabrik clip), playwright + chromium (dashboard screenshot only).
 fiona==1.10.1
 geopandas==1.2.0

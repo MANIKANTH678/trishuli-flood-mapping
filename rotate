@@ -1,3 +1,0 @@
-ccc796d stop tracking config.py (contains credentials)
-bb73516 P1: align.py + VH patch — align DEM and S1 to common 30m grid, calibrated dB
-681abce Initial commit: project scaffold, config, DEM and OSM pipeline

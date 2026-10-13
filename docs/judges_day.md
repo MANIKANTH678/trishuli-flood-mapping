@@ -57,7 +57,7 @@ The SNAP route replaces `pc_stack` with download + SNAP + gridding of five GRD s
 for it on a laptop and do not start it live unless it has been timed on that machine.
 
 Step 11 PC-route case study (sandbox, 2026-10-12): 1,075 s total (osm 553 s with the 2026-01-01 Geofabrik extract, pc_stack 334 s).
-SNAP route on the laptop: **not yet timed**; `run_step11.bat clone` writes `outputs/step11_snap_timings.json`.
+SNAP route on the laptop (clean clone, S1 cached, 2026-10-12): 1,578 s total (osm 886 s, snap 386 s); see `outputs/step11_snap_timings.json`.
 
 ## 4. If something is down
 
