@@ -171,8 +171,7 @@ def build(out="outputs/dashboard/index.html", cls="data/processed/fused_class_30
     base, bounds = to_4326(cls)
     m = folium.Map(location=[(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2], zoom_start=11, tiles=None,
                    control_scale=True)
-    folium.TileLayer(tiles="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", subdomains="abcd", max_zoom=20,
-                     attr="&copy; OpenStreetMap contributors &copy; CARTO", name="Street map (OpenStreetMap data, CARTO tiles)").add_to(m)
+    folium.TileLayer("OpenStreetMap", name="OpenStreetMap", attr="&copy; OpenStreetMap contributors").add_to(m)
     folium.TileLayer(tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                      attr="Esri World Imagery (basemap only, not an input)", name="Satellite basemap", show=False).add_to(m)
     folium.TileLayer(tiles=BLANK_TILE, attr=" ", name="Plain background (offline)", show=False).add_to(m)
