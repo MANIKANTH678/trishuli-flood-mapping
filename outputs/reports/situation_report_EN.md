@@ -1,6 +1,6 @@
 # Situation Report — Trishuli / Bhote Koshi flood, 2026-08-26
 
-> **PRELIMINARY** — generated 2026-10-12 from commit `bf89060` + uncommitted changes (DRAFT). Educational prototype, not an operational tool. Numbers change if the detector or inputs change.
+> **PRELIMINARY** — generated 2026-10-14 from commit `886db8f`. Educational prototype, not an operational tool. Numbers change if the detector or inputs change.
 
 ## 1. Situation
 
