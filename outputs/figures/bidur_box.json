@@ -1,0 +1,35 @@
+{
+ "bbox_lonlat_WSEN": [
+  85.0999,
+  27.85893,
+  85.12989,
+  27.88641
+ ],
+ "bbox_projected": [
+  312915.0,
+  3083025.0,
+  315915.0,
+  3086025.0
+ ],
+ "crs": "EPSG:32645",
+ "size_km": 3.0,
+ "pre": "data\\processed\\s1_pre_VV_10m.tif",
+ "post": "data\\processed\\s1_post_VV_10m.tif",
+ "classes": "data/processed/fused_class_30m.tif",
+ "stretch_db": [
+  -25,
+  0
+ ],
+ "png_px": 1600,
+ "render_px_m": 1.88,
+ "pixels_by_class_in_box": {
+  "flood-like (water-like change)": 0,
+  "dark change": 117504,
+  "bright change": 5376
+ },
+ "legend": {
+  "flood-like (water-like change)": "#22D3EE",
+  "dark change": "#F59E0B",
+  "bright change": "#EC4899"
+ }
+}
